@@ -163,21 +163,6 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 
 		StringBundler sb = new StringBundler(18);
 
-		sb.append("<div id=\"");
-
-		StringBundler fragmentIdSB = new StringBundler(4);
-
-		fragmentIdSB.append("fragment-");
-		fragmentIdSB.append(fragmentEntryId);
-		fragmentIdSB.append("-");
-		fragmentIdSB.append(namespace);
-
-		sb.append(fragmentIdSB.toString());
-
-		sb.append("\" >");
-		sb.append(html);
-		sb.append("</div>");
-
 		if (Validator.isNotNull(css)) {
 			String outputKey = fragmentEntryId + "_CSS";
 
@@ -216,6 +201,21 @@ public class FragmentEntryFragmentRenderer implements FragmentRenderer {
 					WebKeys.OUTPUT_DATA, outputData);
 			}
 		}
+
+		sb.append("<div id=\"");
+
+		StringBundler fragmentIdSB = new StringBundler(4);
+
+		fragmentIdSB.append("fragment-");
+		fragmentIdSB.append(fragmentEntryId);
+		fragmentIdSB.append("-");
+		fragmentIdSB.append(namespace);
+
+		sb.append(fragmentIdSB.toString());
+
+		sb.append("\" >");
+		sb.append(html);
+		sb.append("</div>");
 
 		if (Validator.isNotNull(js)) {
 			sb.append("<script>(function() {");
