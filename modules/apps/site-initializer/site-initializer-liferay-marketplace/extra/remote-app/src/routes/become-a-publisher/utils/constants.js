@@ -14,7 +14,7 @@
 
 import {FormBasicBusinessInformation} from '../components/containers/Forms/Basics/BusinessInformation';
 import {FormBasicBusinessType} from '../components/containers/Forms/Basics/BusinessType';
-import {FormBasicProductQuote} from '../components/containers/Forms/Basics/ProductQuote';
+import {FormBasicGetStarted} from '../components/containers/Forms/Basics/GetStarted';
 import {FormBusiness} from '../components/containers/Forms/Business';
 import {FormEmployees} from '../components/containers/Forms/Employees';
 import {FormProperty} from '../components/containers/Forms/Property';
@@ -122,14 +122,14 @@ export const AVAILABLE_STEPS = {
 		subsection: 'business-type',
 		title: 'Select a primary industry.',
 	},
-	BASICS_PRODUCT_QUOTE: {
-		Component: FormBasicProductQuote,
+	BASICS_GET_STARTED: {
+		Component: FormBasicGetStarted,
 		active: true,
-		id: 'BASICS_PRODUCT_QUOTE',
+		id: 'BASICS_GET_STARTED',
 		index: 0,
 		section: 'basics',
-		subsection: 'product-quote',
-		title: 'Welcome! Select a product.',
+		subsection: 'get-started',
+		title: 'Let\'s get started',
 	},
 	BUSINESS: {
 		Component: FormBusiness,

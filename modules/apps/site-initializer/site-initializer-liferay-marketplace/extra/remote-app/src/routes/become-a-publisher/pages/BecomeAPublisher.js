@@ -18,7 +18,6 @@ import {useWatch} from 'react-hook-form';
 import {createExitAlert} from '../../../common/utils/exitAlert';
 import Providers from '../Providers';
 import {FormLayout} from '../components/containers/Forms';
-import {Steps} from '../components/containers/Steps';
 import {AppContext} from '../context/AppContextProvider';
 import {useStepWizard} from '../hooks/useStepWizard';
 import {useTriggerContext} from '../hooks/useTriggerContext';
@@ -75,8 +74,6 @@ const BecomeAPublisherApp = () => {
 
 	return (
 		<div className="become-a-publisher-structure d-flex justify-content-between">
-			<Steps />
-
 			<main className="d-flex flex-wrap justify-content-lg-start justify-content-md-center">
 				<h2 className="display-4 mb-6 mx-6 step-title">
 					{selectedStep.title}

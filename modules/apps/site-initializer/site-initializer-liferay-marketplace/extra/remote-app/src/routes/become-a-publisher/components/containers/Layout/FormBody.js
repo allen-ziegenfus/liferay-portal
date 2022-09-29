@@ -63,7 +63,7 @@ export function Forms({form, formActionContext: {isMobileDevice}}) {
 					setSection(AVAILABLE_STEPS.BASICS_BUSINESS_TYPE);
 				}
 				else {
-					setSection(AVAILABLE_STEPS.BASICS_PRODUCT_QUOTE);
+					setSection(AVAILABLE_STEPS.BASICS_GET_STARTED);
 				}
 				break;
 			case 'business':

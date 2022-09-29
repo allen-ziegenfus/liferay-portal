@@ -43,13 +43,13 @@ export function Steps() {
 				isMobile={isMobile}
 				onClick={() => {
 					Storage.setItem(STORAGE_KEYS.BASIC_STEP_CLICKED, true);
-					setSection(AVAILABLE_STEPS.BASICS_PRODUCT_QUOTE);
+					setSection(AVAILABLE_STEPS.BASICS_GET_STARTED);
 				}}
 				percentage={
-					percentage[AVAILABLE_STEPS.BASICS_PRODUCT_QUOTE.section]
+					percentage[AVAILABLE_STEPS.BASICS_GET_STARTED.section]
 				}
 				selected={
-					section === AVAILABLE_STEPS.BASICS_PRODUCT_QUOTE.section
+					section === AVAILABLE_STEPS.BASICS_GET_STARTED.section
 				}
 			>
 				Basics
