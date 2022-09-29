@@ -1,0 +1,17 @@
+[
+	{
+		"clientExtensionEntryKey": "MARKETPLACE",
+		"externalReferenceCode": "MKT001",
+		"htmlElementName": "liferay-remote-app-liferay-marketplace",
+		"name_i18n": {
+			"en_US": "Liferay Marketplace"
+		},
+		"portletCategoryName": "category.remote-apps",
+		"widgetName": "com_liferay_client_extension_web_internal_portlet_ClientExtensionEntryPortlet_[$CLIENT_EXTENSION_ENTRY_ID:MARKETPLACE$]",
+		"elementURLs": [
+			"[$DOCUMENT_URL:/site-initializer/documents/company/remote-app/site-initializer-liferay-marketplace/2.js$]",
+			"[$DOCUMENT_URL:/site-initializer/documents/company/remote-app/site-initializer-liferay-marketplace/main.js$]",
+			"[$DOCUMENT_URL:/site-initializer/documents/company/remote-app/site-initializer-liferay-marketplace/runtime-main.js$]"
+		]
+	}
+]
