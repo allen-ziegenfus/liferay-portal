@@ -16,9 +16,11 @@ import classNames from 'classnames';
 import React, {useContext} from 'react';
 
 import {AppContext} from '../../../../context/AppContextProvider';
+import {useAccountCatalogLookup} from '../../../../hooks/useAccountCatalogLookup';
 import {useUserAccountAccountBriefs} from '../../../../hooks/useUserAccountAccountBriefs';
 
 export function FormBasicInvites() {
+	const {accountCatalogLookup} = useAccountCatalogLookup();
 	const {userAccountAccountBriefs} = useUserAccountAccountBriefs();
 
 	console.log(userAccountAccountBriefs);
@@ -53,8 +55,13 @@ export function FormBasicInvites() {
 
 				<div>
 					{userAccountAccountBriefs &&
+						accountCatalogLookup &&
 						userAccountAccountBriefs.map((accountBrief) => (
-							<h4 key={accountBrief.id}>{accountBrief.name}</h4>
+							<h4 key={accountBrief.id}>
+								{accountBrief.name} :
+
+								{accountCatalogLookup[accountBrief.id]}{' '}
+							</h4>
 						))}
 				</div>
 			</div>

@@ -38,21 +38,21 @@ const adaptToMarketplaceApplicationToForm = (data) => {
 					addressApt: data.addressApt,
 					city: data.city,
 					state: data.state,
-					zip: data.zip,
+					zip: data.zip
 				},
 				phone: data.phone,
-				website: data.website,
+				website: data.website
 			},
 			firstName: data.firstName,
-			lastName: data.lastName,
+			lastName: data.lastName
 		},
 		businessSearch: data.businessSearch,
 		productId: Number(data.productId),
 		productName: data.productName,
 		properties: {
 			naics: data.naics,
-			segment: data.segment,
-		},
+			segment: data.segment
+		}
 	};
 
 	const business = {
@@ -62,7 +62,7 @@ const adaptToMarketplaceApplicationToForm = (data) => {
 		legalEntity: data.legalEntity,
 		overallSales: data.overallSales,
 		salesMerchandise: data.salesMerchandise,
-		yearsOfExperience: data.yearsOfExperience,
+		yearsOfExperience: data.yearsOfExperience
 	};
 
 	const employees = {
@@ -73,7 +73,7 @@ const adaptToMarketplaceApplicationToForm = (data) => {
 		fein: data.fein,
 		hasFein: data.hasFein,
 		partTimeEmployees: data.partTimeEmployees,
-		startBusinessAtYear: data.startBusinessAtYear,
+		startBusinessAtYear: data.startBusinessAtYear
 	};
 
 	const property = {
@@ -84,14 +84,14 @@ const adaptToMarketplaceApplicationToForm = (data) => {
 		isThereSwimming: data.isThereSwimming,
 		stories: data.stories,
 		totalBuildingSquareFeet: data.totalBuildingSquareFeet,
-		yearBuilding: data.yearBuilding,
+		yearBuilding: data.yearBuilding
 	};
 
 	const formState = {
 		basics,
 		business,
 		employees,
-		property,
+		property
 	};
 
 	for (const form in formState) {
@@ -117,7 +117,7 @@ const adaptToFormApplicationRequest = (form, status) => ({
 	applicationId: form?.basics?.applicationId,
 	applicationStatus: {
 		key: status?.key,
-		name: status?.name,
+		name: status?.name
 	},
 	businessCategoryId: form?.basics?.businessCategoryId,
 	city: form?.basics?.businessInformation?.business?.location?.city,
@@ -150,7 +150,7 @@ const adaptToFormApplicationRequest = (form, status) => ({
 		stories: form?.property?.stories,
 		totalBuildingSquareFeet: form?.property?.totalBuildingSquareFeet,
 		yearBuilding: form?.property?.yearBuilding,
-		yearsOfExperience: form?.business?.yearsOfExperience,
+		yearsOfExperience: form?.business?.yearsOfExperience
 	}),
 	email: form?.basics?.businessInformation?.business?.email,
 	firstName: form?.basics?.businessInformation?.firstName,
@@ -161,7 +161,7 @@ const adaptToFormApplicationRequest = (form, status) => ({
 	productName: form?.basics?.productName,
 	state: form?.basics?.businessInformation?.business?.location?.state,
 	website: form?.basics?.businessInformation?.business?.website,
-	zip: form?.basics?.businessInformation?.business?.location?.zip,
+	zip: form?.basics?.businessInformation?.business?.location?.zip
 });
 
 async function getSkuPrice(channelId, productId) {
@@ -186,17 +186,33 @@ const adaptToProductQuote = async (channelId, items = []) => {
 			)}-${_formatCommerceProductPrice(price)}/mo)`,
 			template: {
 				allowed: allowedProductQuote(name),
-				name: toSlug(name),
+				name: toSlug(name)
 			},
-			title: name,
+			title: name
 		});
 	}
 
 	return productsList;
 };
 
+const adaptToAccountCatalogLookup = async (items = []) => {
+	const accountCatalogLookup = {};
+
+	for (const item of items) {
+		console.log("adding ") 
+		console.log(item)
+		accountCatalogLookup[item.accountId] = item.catalogId;
+	}
+
+	console.log("Accountcataloglookup")
+	console.log(items);
+	console.log(accountCatalogLookup);
+
+	return accountCatalogLookup;
+};
 export const LiferayAdapt = {
+	adaptToAccountCatalogLookup,
 	adaptToFormApplicationRequest,
 	adaptToMarketplaceApplicationToForm,
-	adaptToProductQuote,
+	adaptToProductQuote
 };
