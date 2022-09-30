@@ -199,14 +199,8 @@ const adaptToAccountCatalogLookup = async (items = []) => {
 	const accountCatalogLookup = {};
 
 	for (const item of items) {
-		console.log("adding ") 
-		console.log(item)
 		accountCatalogLookup[item.accountId] = item.catalogId;
 	}
-
-	console.log("Accountcataloglookup")
-	console.log(items);
-	console.log(accountCatalogLookup);
 
 	return accountCatalogLookup;
 };
