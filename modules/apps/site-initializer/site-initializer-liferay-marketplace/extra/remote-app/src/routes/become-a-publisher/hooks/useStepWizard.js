@@ -100,7 +100,7 @@ export function useStepWizard() {
 
 	const _updateStepPercentage = () => {
 		switch (selectedStep.section) {
-			case AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section:
+			case AVAILABLE_STEPS.BASICS_INVITES.section:
 				if (loadInitialData) {
 					if (
 						selectedStep.subsection ===
@@ -111,7 +111,7 @@ export function useStepWizard() {
 								countCompletedFields(_fields?.basics || {}),
 								TOTAL_OF_FIELD.BASICS - 1
 							),
-							AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+							AVAILABLE_STEPS.BASICS_INVITES.section
 						);
 					}
 
@@ -122,20 +122,20 @@ export function useStepWizard() {
 					) {
 						return setPercentage(
 							currentPercentage.basics,
-							AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+							AVAILABLE_STEPS.BASICS_INVITES.section
 						);
 					}
 					else {
 						if (form?.basics?.businessCategoryId) {
 							return setPercentage(
 								100,
-								AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+								AVAILABLE_STEPS.BASICS_INVITES.section
 							);
 						}
 
 						return setPercentage(
 							currentPercentage.basics,
-							AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+							AVAILABLE_STEPS.BASICS_INVITES.section
 						);
 					}
 				}
@@ -145,7 +145,7 @@ export function useStepWizard() {
 						countCompletedFields(_fields?.basics || {}),
 						TOTAL_OF_FIELD.BASICS
 					),
-					AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+					AVAILABLE_STEPS.BASICS_INVITES.section
 				);
 
 			case AVAILABLE_STEPS.BUSINESS.section:
@@ -184,7 +184,7 @@ export function useStepWizard() {
 			default:
 				return setPercentage(
 					0,
-					AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+					AVAILABLE_STEPS.BASICS_INVITES.section
 				);
 		}
 	};
@@ -198,7 +198,7 @@ export function useStepWizard() {
 
 	const setPercentage = (
 		percentage = 0,
-		step = AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+		step = AVAILABLE_STEPS.BASICS_INVITES.section
 	) => {
 		dispatchPercentage({
 			...currentPercentage,

@@ -59,8 +59,8 @@ export function Forms({form, formActionContext: {isMobileDevice}}) {
 				if (stepBasicName === 'businessInformation') {
 					setSection(AVAILABLE_STEPS.BASICS_BUSINESS_INFORMATION);
 				}
-				else if (stepBasicName === 'business-type') {
-					setSection(AVAILABLE_STEPS.BASICS_BUSINESS_TYPE);
+				else if (stepBasicName === 'invites') {
+					setSection(AVAILABLE_STEPS.BASICS_INVITES);
 				}
 				else {
 					setSection(AVAILABLE_STEPS.BASICS_GET_STARTED);

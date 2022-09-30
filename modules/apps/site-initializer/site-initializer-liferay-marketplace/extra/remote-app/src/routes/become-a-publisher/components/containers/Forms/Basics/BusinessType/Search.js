@@ -86,7 +86,7 @@ export function BusinessTypeSearch({
 						TOTAL_OF_FIELD.BASICS - 1,
 						TOTAL_OF_FIELD.BASICS
 					),
-					AVAILABLE_STEPS.BASICS_BUSINESS_TYPE.section
+					AVAILABLE_STEPS.BASICS_INVITES.section
 				);
 			}
 

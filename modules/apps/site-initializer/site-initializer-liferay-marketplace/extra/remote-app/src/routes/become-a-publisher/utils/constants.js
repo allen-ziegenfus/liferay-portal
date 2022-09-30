@@ -13,8 +13,8 @@
  */
 
 import {FormBasicBusinessInformation} from '../components/containers/Forms/Basics/BusinessInformation';
-import {FormBasicBusinessType} from '../components/containers/Forms/Basics/BusinessType';
 import {FormBasicGetStarted} from '../components/containers/Forms/Basics/GetStarted';
+import {FormBasicInvites} from '../components/containers/Forms/Basics/Invites';
 import {FormBusiness} from '../components/containers/Forms/Business';
 import {FormEmployees} from '../components/containers/Forms/Employees';
 import {FormProperty} from '../components/containers/Forms/Property';
@@ -113,15 +113,6 @@ export const AVAILABLE_STEPS = {
 		subsection: 'businessInformation',
 		title: 'Just the business basics!',
 	},
-	BASICS_BUSINESS_TYPE: {
-		Component: FormBasicBusinessType,
-		active: false,
-		id: 'BASICS_BUSINESS_TYPE',
-		index: 1,
-		section: 'basics',
-		subsection: 'business-type',
-		title: 'Select a primary industry.',
-	},
 	BASICS_GET_STARTED: {
 		Component: FormBasicGetStarted,
 		active: true,
@@ -130,6 +121,15 @@ export const AVAILABLE_STEPS = {
 		section: 'basics',
 		subsection: 'get-started',
 		title: 'Let\'s get started',
+	},
+	BASICS_INVITES: {
+		Component: FormBasicInvites,
+		active: false,
+		id: 'BASICS_INVITES',
+		index: 1,
+		section: 'basics',
+		subsection: 'invites',
+		title: 'Invites',
 	},
 	BUSINESS: {
 		Component: FormBusiness,
