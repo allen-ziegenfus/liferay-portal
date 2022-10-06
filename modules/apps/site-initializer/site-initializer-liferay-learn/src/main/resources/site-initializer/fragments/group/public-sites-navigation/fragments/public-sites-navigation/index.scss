@@ -52,52 +52,47 @@ header.public-sites-navigation {
 		text-decoration: none;
 	}
 
+	.nav-items-wrapper {
+		align-items: stretch;
+		background-color: var(--white);
+	}
+
 	@media (max-width: 599px) {
 		.nav-items-wrapper {
-			align-items: center;
-			background-color: transparent;
-			height: 0;
-			left: 0;
-			opacity: 0;
-			padding-bottom: 8.5rem;
-			padding-top: 0;
-			position: absolute;
-			top: 0;
-			transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-			visibility: hidden;
-
 			&.menu-open {
 				background-color: var(--white);
 				height: 100vh;
 				opacity: 1;
-				overflow-x: hidden;
-				top: 0;
 				transform: translateY(0);
 				visibility: visible;
 				z-index: 2;
 			}
 		}
+
+		.nav-items-wrapper .cta-container-mobile {
+			display: flex;
+			padding: 0 1.5rem 10rem;
+			width: 100%;
+		}
+	}
+
+	@media screen and (max-width: 991px) {
+		.nav-items-wrapper {
+			display: flex;
+			flex-direction: column-reverse;
+			inset: 0;
+			position: absolute;
+		}
 	}
 
 	@media (min-width: 600px) and (max-width: 1199px) {
 		.nav-items-wrapper {
-			align-items: center;
-			background-color: transparent;
-			height: 0;
-			left: 0;
-			opacity: 0;
-			padding-bottom: 0;
-			padding-top: 0;
 			position: absolute;
-			top: 0;
 			transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-			visibility: hidden;
-			z-index: -1;
 
 			&.menu-open {
 				background-color: var(--white);
 				height: 100vh;
-				opacity: 1;
 				overflow: auto;
 				top: 3.5rem;
 				transform: translateY(0);
@@ -107,48 +102,9 @@ header.public-sites-navigation {
 		}
 	}
 
-	@media screen and (max-width: 991px) {
-		.nav-items-wrapper {
-			display: flex;
-			flex-direction: column-reverse;
-			height: 100vh;
-			left: 0;
-			overflow: scroll;
-			padding-bottom: 7.5rem;
-			position: absolute;
-			right: 0;
-			top: 0;
-			transform: translate3d(0, -100%, 0) scale3d(1, 1, 1) rotateX(0deg)
-				rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg);
-			transform-style: preserve-3d;
-			z-index: -1;
-		}
-	}
-
-	@media (min-width: 1200px) {
-		.nav-items-wrapper {
-			align-items: center;
-			display: flex;
-			padding: 0;
-		}
-	}
-
-	.nav-items-wrapper {
-		align-items: stretch;
-		background-color: var(--white);
-	}
-
 	@media (min-width: 600px) {
 		.cta-container-mobile {
 			display: none;
-		}
-	}
-
-	@media (max-width: 599px) {
-		.nav-items-wrapper .cta-container-mobile {
-			display: flex;
-			padding: 0 1.5rem 10rem;
-			width: 100%;
 		}
 	}
 }
