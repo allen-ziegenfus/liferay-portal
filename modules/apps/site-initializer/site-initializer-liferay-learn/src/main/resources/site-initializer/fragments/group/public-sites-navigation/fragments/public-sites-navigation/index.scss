@@ -8,6 +8,7 @@
 }
 
 header.public-sites-navigation {
+	justify-content: space-between;
 	position: fixed;
 	top: 0;
 	width: 100%;
@@ -15,11 +16,6 @@ header.public-sites-navigation {
 
 	&.dark-nav {
 		background-color: var(--color-brand-primary-darken-5);
-
-		.btn {
-			background-color: var(--white);
-			color: var(--color-action-primary-default);
-		}
 
 		.liferay-logo {
 			color: var(--white);
@@ -29,14 +25,22 @@ header.public-sites-navigation {
 		.svg-waffle {
 			fill: var(--white);
 		}
+
+		.btn-secondary.menu-btn {
+			border-color: var(--white);
+
+			.menu-btn-text {
+				color: var(--white);
+			}
+
+			svg {
+				fill: var(--white);
+			}
+		}
 	}
 
 	&.light-nav {
 		color: var(--color-neutral-10);
-
-		.btn:hover {
-			background-color: var(--color-brand-primary-darken-5);
-		}
 
 		.svg-liferay-text {
 			fill: var(--color-neutral-10);
@@ -45,11 +49,53 @@ header.public-sites-navigation {
 		.svg-waffle {
 			fill: var(--color-brand-primary);
 		}
+
+		.btn-secondary.menu-btn {
+			border-color: var(--color-action-primary-default);
+
+			.menu-btn-text {
+				color: var(--color-action-primary-default);
+			}
+
+			svg {
+				fill: var(--color-action-primary-default);
+			}
+		}
+	}
+
+	.btn-primary {
+		&:hover,
+		&:active,
+		&:focus {
+			outline: 1px solid rgba(0, 83, 240, 0.5);
+			outline-offset: 2px;
+			background-color: #0053f0;
+		}
 	}
 
 	.liferay-logo:hover,
 	.liferay-logo .logo-text:hover {
 		text-decoration: none;
+	}
+
+	.menu-button-group {
+		.menu-btn {
+			display: flex;
+		}
+
+		.close-btn {
+			display: none;
+		}
+
+		&.menu-open {
+			.menu-btn {
+				display: none;
+			}
+
+			.close-btn {
+				display: flex;
+			}
+		}
 	}
 
 	.nav-items-wrapper {
