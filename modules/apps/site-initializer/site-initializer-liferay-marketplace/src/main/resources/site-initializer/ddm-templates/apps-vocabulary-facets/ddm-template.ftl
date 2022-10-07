@@ -33,7 +33,10 @@
 	assetVocabularyLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetVocabularyLocalService")
 />
 
-<#macro getVocabularyFacet vocabIdString vocabName>
+<#macro getVocabularyFacet
+	vocabIdString
+	vocabName
+>
 <#assign
 	vocabId = vocabIdString?number
 	vocabulary = assetVocabularyLocalService.getVocabulary(vocabId)

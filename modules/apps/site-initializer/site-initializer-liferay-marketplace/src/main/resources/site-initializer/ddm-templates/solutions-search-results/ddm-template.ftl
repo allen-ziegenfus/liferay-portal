@@ -123,7 +123,7 @@
 						${productName}
 					</div>
 
-					<div class="color-black description-price-container flex flex-column font-size-paragraph-small h-100 justify-content-between px-4 pb-4">
+					<div class="color-black description-price-container flex flex-column font-size-paragraph-small h-100 justify-content-between pb-4 px-4">
 						<div class="description-price-text">
 							<div class="description font-weight-normal mb-2">
 								${productDescription}
@@ -131,16 +131,16 @@
 						</div>
 
 						<#if solutionsCategories?has_content>
-							<div class="align-center labels flex">
+							<div class="align-center flex labels">
 								<div class="bg-neutral-8 border-radius-small category-label color-neutral-3 font-size-paragraph-small font-weight-semi-bold px-1">
 									${solutionsCategories[0].getName()}
 								</div>
 
 								<#if (solutionsCategories?size > 1)>
-									<div class="color-primary category-label-remainder pl-2 position-relative">
+									<div class="category-label-remainder color-primary pl-2 position-relative">
 										+${solutionsCategories?size - 1}
 
-										<div class="bg-neutral-1 border-radius-medium category-names color-white font-size-paragraph-base position-absolute p-4">
+										<div class="bg-neutral-1 border-radius-medium category-names color-white font-size-paragraph-base p-4 position-absolute">
 											<#list solutionsCategories as category>
 												<#if !category?is_first>
 													${category.getName()}<#sep>, </#sep>
