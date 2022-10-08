@@ -26,6 +26,10 @@
 		"cssVariableMapping": "color-action-primary-default",
 		"value": "#0B5FFF"
 	},
+	"colorActionPrimaryDefaultHover": {
+		"cssVariableMapping": "color-action-primary-default-hover",
+		"value": "#0053F0"
+	},
 	"colorBrandPrimary": {
 		"cssVariableMapping": "color-brand-primary",
 		"value": "#0B63CE"

@@ -81,7 +81,7 @@ header.public-sites-navigation {
 
 	.btn-primary {
 		&:hover, &:active, &:focus {
-			background-color: #0053f0;
+			background-color: var(--color-action-primary-default-hover);
 		}
 	}
 
