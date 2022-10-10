@@ -4,87 +4,89 @@
 	[#assign navClass = "dark-nav" /]
 [/#if]
 
-<nav class="d-flex nav flex-column public-sites-navigation px-3 py-1">
-	<div
-		class="align-items-center mb-3 utility-nav d-flex justify-content-between w-100"
-	>
-		<div class="d-flex sites-languages-container">
-			<div class="sites">
-				<span class="pr-1">[@clay["icon"] symbol="sites"/]</span>
-				<span>Liferay Sites</span>
-				<span>[@clay["icon"] symbol="caret-bottom-l"/]</span>
-			</div>
-			[#if configuration.showLanguageMenu]
-				<div class="language pl-4">
-					<span class="pr-1">[@clay["icon"] symbol="globe-lines"/]</span>
-					<span>EN</span>
+<nav class="${navClass} d-flex nav flex-column public-sites-navigation">
+	<div class="utility-nav-container">
+		<div
+			class="align-items-center utility-nav d-flex justify-content-between w-100"
+		>
+			<div class="d-flex sites-languages-container">
+				<div class="sites">
+					<span class="pr-1">[@clay["icon"] symbol="sites"/]</span>
+					<span>Liferay Sites</span>
 					<span>[@clay["icon"] symbol="caret-bottom-l"/]</span>
 				</div>
-			[/#if]
-		</div>
-		<div class="search-account-container d-flex align-items-center">
-			<span class="pr-4"> [@clay["icon"] symbol="search"/] </span>
-				[#if configuration.showAccountMenu]
-					<div class="account position-relative">
-						<div class="account-info px-2 py-3 d-flex align-items-center">
-							[#if themeDisplay.isSignedIn()]
-								<div class="user-avatar">
-									<img class="mx-100 h-100" src="${user.fetchPortraitURL(themeDisplay)}"/>
-								</div>
-							[#else]
-								<div class="signed-out-account">
-									<span class="user-icon pr-1">[@clay["icon"] symbol="user"/]</span>
-									<span class="user-out account-text">
-										${languageUtil.get(locale, "account", "Account")}
-									</span>
-								</div>
-							[/#if]
-							<span class="pl-1">[@clay["icon"] symbol="caret-bottom-l"/]</span>
-						</div>
-						<div class="dropdown-content position-absolute pt-3">
-							<div class="dropdown-wrapper">
-								<div class="account-configurables px-3 pb-2 mb-1">
-									<lfr-drop-zone></lfr-drop-zone>
-								</div>
-								<div class="account-content pt-2">
-									<div class="create-account-settings">
-										[#if themeDisplay.isSignedIn()]
-											<div class="signed-in-account">
-												<a class="settings p-3 d-flex text-decoration-none">
-													<span class="pr-2">[@clay["icon"] symbol="cog"/]</span>
-													<span class="account-settings">
-														${languageUtil.get(locale, "account-settings", "Account Settings")}
-													</span>
-												</a>
-												<a class="sign-out p-3 d-flex text-decoration-none" href="${htmlUtil.escape(themeDisplay.getURLSignOut())}">
-													<span class="pr-2 ">[@clay["icon"] symbol="user"/]</span>
-													<span class="w-100">
-														${languageUtil.get(locale, "sign-out")}
-													</span>
-												</a>
-											</div>
-										[#else]
-											<div class="signed-out-account">
-												<div class="p-3 settings d-flex">
-													<span class="pr-2">[@clay["icon"] symbol="user-plus"/]</span>
-													<span>${languageUtil.get(locale, "create-an-account", "Create An Account")}</span>
+				[#if configuration.showLanguageMenu]
+					<div class="language pl-4">
+						<span class="pr-1">[@clay["icon"] symbol="globe-lines"/]</span>
+						<span>EN</span>
+						<span>[@clay["icon"] symbol="caret-bottom-l"/]</span>
+					</div>
+				[/#if]
+			</div>
+			<div class="search-account-container d-flex align-items-center">
+				<span class="pr-4"> [@clay["icon"] symbol="search"/] </span>
+					[#if configuration.showAccountMenu]
+						<div class="account position-relative">
+							<div class="account-info px-2 py-3 d-flex align-items-center">
+								[#if themeDisplay.isSignedIn()]
+									<div class="user-avatar">
+										<img class="mx-100 h-100" src="${user.fetchPortraitURL(themeDisplay)}"/>
+									</div>
+								[#else]
+									<div class="signed-out-account">
+										<span class="user-icon pr-1">[@clay["icon"] symbol="user"/]</span>
+										<span class="user-out account-text">
+											${languageUtil.get(locale, "account", "Account")}
+										</span>
+									</div>
+								[/#if]
+								<span class="pl-1">[@clay["icon"] symbol="caret-bottom-l"/]</span>
+							</div>
+							<div class="dropdown-content position-absolute pt-3">
+								<div class="dropdown-wrapper">
+									<div class="account-configurables px-3 pb-2 mb-1">
+										<lfr-drop-zone></lfr-drop-zone>
+									</div>
+									<div class="account-content pt-2">
+										<div class="create-account-settings">
+											[#if themeDisplay.isSignedIn()]
+												<div class="signed-in-account">
+													<a class="settings p-3 d-flex text-decoration-none">
+														<span class="pr-2">[@clay["icon"] symbol="cog"/]</span>
+														<span class="account-settings">
+															${languageUtil.get(locale, "account-settings", "Account Settings")}
+														</span>
+													</a>
+													<a class="sign-out p-3 d-flex text-decoration-none" href="${htmlUtil.escape(themeDisplay.getURLSignOut())}">
+														<span class="pr-2 ">[@clay["icon"] symbol="user"/]</span>
+														<span class="w-100">
+															${languageUtil.get(locale, "sign-out")}
+														</span>
+													</a>
 												</div>
-												<a class="p-3 sign-in d-flex text-decoration-none text-reset" href="${htmlUtil.escape(themeDisplay.getURLSignIn())}">
-													<span class="pr-2">[@clay["icon"] symbol="user"/]</span>
-													<span class="w-100">${languageUtil.get(locale, "sign-in")}
-													</span>
-												</a>
-											</div>
-										[/#if]
+											[#else]
+												<div class="signed-out-account">
+													<div class="p-3 settings d-flex">
+														<span class="pr-2">[@clay["icon"] symbol="user-plus"/]</span>
+														<span>${languageUtil.get(locale, "create-an-account", "Create An Account")}</span>
+													</div>
+													<a class="p-3 sign-in d-flex text-decoration-none text-reset" href="${htmlUtil.escape(themeDisplay.getURLSignIn())}">
+														<span class="pr-2">[@clay["icon"] symbol="user"/]</span>
+														<span class="w-100">${languageUtil.get(locale, "sign-in")}
+														</span>
+													</a>
+												</div>
+											[/#if]
+										</div>
 									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-				[/#if]
+					[/#if]
+			</div>
 		</div>
 	</div>
-	<header class="${navClass} d-flex justify-space-between px-3 py-1 w-100">
+	<header class="d-flex align-self-center justify-content-between primary-nav py-2 w-100">
 		<a class="align-items-center d-flex liferay-logo" href="/">
 			<svg height="40" viewBox="-.25 0 270 90" width="120">
 				<path class="svg-waffle" clip-rule="evenodd" d="M2 22a4 4 0 0 1 4-4h46a4 4 0 0 1 4 4v46a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V22zm8 5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6zm11-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6zm9 1a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6zm-19 9a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6zm9 1a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6zm21-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6zM10 47a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6zm21-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6zm9 1a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6zm-19 9a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6zm9 1a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6zm11-1a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6z" fill-rule="evenodd" />
