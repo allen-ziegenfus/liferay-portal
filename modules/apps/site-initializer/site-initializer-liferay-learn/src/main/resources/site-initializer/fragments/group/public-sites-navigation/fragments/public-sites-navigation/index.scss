@@ -1,13 +1,13 @@
-.has-control-menu header.public-sites-navigation {
+.has-control-menu nav.public-sites-navigation {
 	margin-top: 3.5rem;
 }
 
-.has-control-menu.has-edit-mode-menu header.public-sites-navigation {
+.has-control-menu.has-edit-mode-menu nav.public-sites-navigation {
 	margin-top: 0;
 	position: static;
 }
 
-header.public-sites-navigation {
+nav.public-sites-navigation {
 	justify-content: space-between;
 	position: fixed;
 	top: 0;
