@@ -184,6 +184,63 @@ nav.public-sites-navigation {
 	}
 }
 
+.utility-nav {
+	border-bottom: 1px solid var(--color-neutral-3);
+
+	.account {
+		&:hover {
+			color: var(--color-action-primary-active);
+			border-radius: var(--border-radius-xs);
+			background: var(--color-action-primary-hover-lighten);
+		}
+		.user-avatar {
+			height: 2rem;
+			width: 2rem;
+
+			img {
+				border-radius: 3.5rem;
+			}
+		}
+	}
+
+	.dropdown-content {
+		background: var(--white);
+		border: 1px solid var(--color-neutral-3);
+		color: var(--color-neutral-3);
+		display: none;
+		right: 0;
+		top: 4rem;
+		width: 15rem;
+		z-index: 1;
+
+		&.show {
+			display: block;
+		}
+
+		.account-configurables {
+			border-bottom: 1px solid var(--color-neutral-3);
+		}
+
+		.settings {
+			color: var(--color-neutral-3);
+		}
+
+		.sign-out {
+			color: var(--color-state-error);
+			border-radius: var(--border-radius);
+
+			&:hover {
+				background: var(--color-state-error-lighten-2);
+			}
+		}
+
+		.sign-in:hover {
+			background: var(--color-action-primary-hover);
+			border-radius: var(--border-radius);
+		}
+	}
+}
+
 html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 	margin-top: 3.5rem;
 }
