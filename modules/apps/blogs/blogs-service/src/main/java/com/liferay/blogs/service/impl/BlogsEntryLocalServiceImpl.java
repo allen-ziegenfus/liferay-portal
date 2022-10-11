@@ -1521,6 +1521,22 @@ public class BlogsEntryLocalServiceImpl extends BlogsEntryLocalServiceBaseImpl {
 				_pingTrackbacks(
 					entry, trackbacks, pingOldTrackbacks, serviceContext);
 			}
+
+			// Resources
+
+			if (oldStatus == WorkflowConstants.STATUS_DRAFT) {
+				if (serviceContext.isAddGroupPermissions() ||
+					serviceContext.isAddGuestPermissions()) {
+
+					addEntryResources(
+						entry, serviceContext.isAddGroupPermissions(),
+						serviceContext.isAddGuestPermissions());
+				}
+				else {
+					addEntryResources(
+						entry, serviceContext.getModelPermissions());
+				}
+			}
 		}
 		else {
 
