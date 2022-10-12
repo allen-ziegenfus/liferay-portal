@@ -13,7 +13,8 @@ nav.public-sites-navigation {
 	width: 100%;
 	z-index: 2;
 
-	.primary-nav, .utility-nav {
+	.primary-nav,
+	.utility-nav {
 		max-width: 1366px;
 	}
 
@@ -29,10 +30,12 @@ nav.public-sites-navigation {
 			fill: var(--white);
 		}
 
-		.menu-btn, .close-btn {
+		.menu-btn,
+		.close-btn {
 			border-color: var(--white);
 
-			.menu-btn-text, .close-btn-text {
+			.menu-btn-text,
+			.close-btn-text {
 				color: var(--white);
 			}
 
@@ -64,10 +67,12 @@ nav.public-sites-navigation {
 			fill: var(--color-brand-primary);
 		}
 
-		.menu-btn, .close-btn {
+		.menu-btn,
+		.close-btn {
 			border-color: var(--color-action-primary-default);
 
-			.menu-btn-text, .close-btn-text {
+			.menu-btn-text,
+			.close-btn-text {
 				color: var(--color-action-primary-default);
 			}
 
@@ -77,7 +82,75 @@ nav.public-sites-navigation {
 		}
 	}
 
-	.btn-primary, .menu-btn, .close-btn {
+	.account {
+		&:hover {
+			color: var(--color-action-primary-active);
+			border-radius: var(--border-radius-xs);
+			background: var(--color-action-primary-hover-lighten);
+		}
+
+		&.menu-open {
+			.dropdown-content {
+				display: block;
+			}
+		}
+
+		&.mobile {
+			.dropdown-content {
+				left: 0;
+			}
+		}
+
+		.user-avatar {
+			height: 2rem;
+			width: 2rem;
+
+			img {
+				border-radius: 3.5rem;
+			}
+		}
+	}
+
+	.dropdown-content {
+		background: var(--white);
+		border: 1px solid var(--color-neutral-3);
+		color: var(--color-neutral-3);
+		display: none;
+		right: 0;
+		top: 4rem;
+		width: 15rem;
+		z-index: 10;
+
+		&.show {
+			display: block;
+		}
+
+		.account-configurables {
+			border-bottom: 1px solid var(--color-neutral-3);
+		}
+
+		.settings {
+			color: var(--color-neutral-3);
+		}
+
+		.sign-out {
+			color: var(--color-state-error);
+			border-radius: var(--border-radius);
+
+			&:hover {
+				background: var(--color-state-error-lighten-2);
+			}
+		}
+
+		.sign-in:hover {
+			background: var(--color-action-primary-hover);
+			border-radius: var(--border-radius);
+		}
+	}
+
+	.btn-primary,
+	.menu-btn,
+	.close-btn {
 		&:hover,
 		&:active,
 		&:focus {
@@ -87,7 +160,9 @@ nav.public-sites-navigation {
 	}
 
 	.btn-primary {
-		&:hover, &:active, &:focus {
+		&:hover,
+		&:active,
+		&:focus {
 			background-color: var(--color-action-primary-default-hover);
 		}
 	}
@@ -124,7 +199,8 @@ nav.public-sites-navigation {
 	}
 
 	@media (max-width: 599px) {
-		.primary-nav, .utility-nav {
+		.primary-nav,
+		.utility-nav {
 			padding-left: 1.5rem;
 			padding-right: 1.5rem;
 		}
@@ -132,7 +208,6 @@ nav.public-sites-navigation {
 		.nav-items-wrapper {
 			&.menu-open {
 				background-color: var(--white);
-				height: 100vh;
 				opacity: 1;
 				transform: translateY(0);
 				visibility: visible;
@@ -149,10 +224,15 @@ nav.public-sites-navigation {
 		.cta-btn-nav {
 			display: none;
 		}
+
+		.account.primary {
+			display: none;
+		}
 	}
 
 	@media screen and (max-width: 991px) {
-		.primary-nav, .utility-nav {
+		.primary-nav,
+		.utility-nav {
 			padding-left: 2.5rem;
 			padding-right: 2.5rem;
 		}
@@ -164,7 +244,8 @@ nav.public-sites-navigation {
 			right: 0;
 			left: 0;
 			position: absolute;
-			transform: translate3d(0, -150%, 0) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg);
+			transform: translate3d(0, -150%, 0) scale3d(1, 1, 1) rotateX(0deg)
+				rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg);
 			transform-style: preserve-3d;
 		}
 
@@ -174,7 +255,8 @@ nav.public-sites-navigation {
 	}
 
 	@media (min-width: 600px) and (max-width: 1199px) {
-		.primary-nav, .utility-nav {
+		.primary-nav,
+		.utility-nav {
 			padding-left: 4rem;
 			padding-right: 4rem;
 		}
@@ -196,7 +278,8 @@ nav.public-sites-navigation {
 	}
 
 	@media (min-width: 1200px) {
-		.primary-nav, .utility-nav {
+		.primary-nav,
+		.utility-nav {
 			padding-left: 4rem;
 			padding-right: 4rem;
 		}
@@ -219,59 +302,6 @@ nav.public-sites-navigation {
 
 	.utility-nav {
 		border-bottom: 1px solid var(--color-neutral-3);
-
-		.account {
-			&:hover {
-				color: var(--color-action-primary-active);
-				border-radius: var(--border-radius-xs);
-				background: var(--color-action-primary-hover-lighten);
-			}
-			.user-avatar {
-				height: 2rem;
-				width: 2rem;
-
-				img {
-					border-radius: 3.5rem;
-				}
-			}
-		}
-
-		.dropdown-content {
-			background: var(--white);
-			border: 1px solid var(--color-neutral-3);
-			color: var(--color-neutral-3);
-			display: none;
-			right: 0;
-			top: 4rem;
-			width: 15rem;
-			z-index: 1;
-
-			&.show {
-				display: block;
-			}
-
-			.account-configurables {
-				border-bottom: 1px solid var(--color-neutral-3);
-			}
-
-			.settings {
-				color: var(--color-neutral-3);
-			}
-
-			.sign-out {
-				color: var(--color-state-error);
-				border-radius: var(--border-radius);
-
-				&:hover {
-					background: var(--color-state-error-lighten-2);
-				}
-			}
-
-			.sign-in:hover {
-				background: var(--color-action-primary-hover);
-				border-radius: var(--border-radius);
-			}
-		}
 	}
 }
 
