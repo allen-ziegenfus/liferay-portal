@@ -1,0 +1,9 @@
+{
+	"object-entries": [
+		{
+			"marketplaceAccountId": "1",
+			"marketplaceAccountInvitationStatus": "pending"
+		}
+	],
+	"objectDefinitionName": "MarketplaceAccountInvitation"
+}

@@ -1,0 +1,23 @@
+[
+	{
+		"key": "accepted",
+		"name": "Accepted",
+		"name_i18n": {
+			"en-US": "Accepted"
+		}
+	},
+	{
+		"key": "rejected",
+		"name": "Rejected",
+		"name_i18n": {
+			"en-US": "Rejected"
+		}
+	},
+	{
+		"key": "cancelled",
+		"name": "Cancelled",
+		"name_i18n": {
+			"en-US": "Cancelled"
+		}
+	}
+]
