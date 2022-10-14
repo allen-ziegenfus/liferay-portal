@@ -331,8 +331,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 		_styleBookEntryZipProcessor = styleBookEntryZipProcessor;
 		_taxonomyCategoryResourceFactory = taxonomyCategoryResourceFactory;
 		_taxonomyVocabularyResourceFactory = taxonomyVocabularyResourceFactory;
-		_templateEntryLocalService = templateEntryLocalService;
 		_themeLocalService = themeLocalService;
+		_templateEntryLocalService = templateEntryLocalService;
 		_userAccountResourceFactory = userAccountResourceFactory;
 		_userGroupLocalService = userGroupLocalService;
 		_userLocalService = userLocalService;
@@ -455,8 +455,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 
 			_invoke(
 				() -> _addOrUpdateDDMTemplates(
-					_ddmStructureLocalService,
-					_templateEntryLocalService,
+					_ddmStructureLocalService, _templateEntryLocalService,
 					serviceContext));
 			_invoke(
 				() -> _addOrUpdateJournalArticles(
@@ -1467,7 +1466,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 			JSONObject jsonObject = JSONFactoryUtil.createJSONObject(
 				StringUtil.read(url.openStream()));
 
-			String className = jsonObject.getString("className", DDMStructure.class.getName());
+			String className = jsonObject.getString(
+				"className", DDMStructure.class.getName());
 
 			long resourceClassNameId = _portal.getClassNameId(
 				jsonObject.getString(
@@ -1495,8 +1495,9 @@ public class BundleSiteInitializer implements SiteInitializer {
 				ddmTemplate = _ddmTemplateLocalService.addTemplate(
 					serviceContext.getUserId(),
 					serviceContext.getScopeGroupId(),
-					_portal.getClassNameId(className, ddmStructureId,
-					resourceClassNameId, jsonObject.getString("ddmTemplateKey"),
+					_portal.getClassNameId(
+						className, ddmStructureId, resourceClassNameId,
+						jsonObject.getString("ddmTemplateKey")),
 					HashMapBuilder.put(
 						LocaleUtil.getSiteDefault(),
 						jsonObject.getString("name")
@@ -1505,7 +1506,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 					TemplateConstants.LANG_TYPE_FTL,
 					SiteInitializerUtil.read(_bundle, "ddm-template.ftl", url),
 					false, false, null, null, serviceContext);
-			
+
 				if (Objects.equals(className, TemplateEntry.class.getName())) {
 					templateEntryLocalService.addTemplateEntry(
 						serviceContext.getUserId(),
