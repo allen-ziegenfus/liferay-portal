@@ -262,8 +262,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 		StyleBookEntryZipProcessor styleBookEntryZipProcessor,
 		TaxonomyCategoryResource.Factory taxonomyCategoryResourceFactory,
 		TaxonomyVocabularyResource.Factory taxonomyVocabularyResourceFactory,
-		ThemeLocalService themeLocalService,
 		TemplateEntryLocalService templateEntryLocalService,
+		ThemeLocalService themeLocalService,
 		UserAccountResource.Factory userAccountResourceFactory,
 		UserGroupLocalService userGroupLocalService,
 		UserLocalService userLocalService,
@@ -331,8 +331,8 @@ public class BundleSiteInitializer implements SiteInitializer {
 		_styleBookEntryZipProcessor = styleBookEntryZipProcessor;
 		_taxonomyCategoryResourceFactory = taxonomyCategoryResourceFactory;
 		_taxonomyVocabularyResourceFactory = taxonomyVocabularyResourceFactory;
-		_themeLocalService = themeLocalService;
 		_templateEntryLocalService = templateEntryLocalService;
+		_themeLocalService = themeLocalService;
 		_userAccountResourceFactory = userAccountResourceFactory;
 		_userGroupLocalService = userGroupLocalService;
 		_userLocalService = userLocalService;
@@ -1496,8 +1496,10 @@ public class BundleSiteInitializer implements SiteInitializer {
 					serviceContext.getUserId(),
 					serviceContext.getScopeGroupId(),
 					_portal.getClassNameId(
-						className, ddmStructureId, resourceClassNameId,
-						jsonObject.getString("ddmTemplateKey")),
+						jsonObject.getString(
+							"className", DDMStructure.class.getName())),
+					ddmStructureId, resourceClassNameId,
+					jsonObject.getString("ddmTemplateKey"),
 					HashMapBuilder.put(
 						LocaleUtil.getSiteDefault(),
 						jsonObject.getString("name")
