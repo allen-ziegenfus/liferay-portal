@@ -84,9 +84,9 @@ nav.public-sites-navigation {
 
 	.account {
 		&:hover {
-			color: var(--color-action-primary-active);
-			border-radius: var(--border-radius-xs);
 			background: var(--color-action-primary-hover-lighten);
+			border-radius: var(--border-radius-xs);
+			color: var(--color-action-primary-active);
 		}
 
 		&.menu-open {
@@ -134,8 +134,8 @@ nav.public-sites-navigation {
 		}
 
 		.sign-out {
-			color: var(--color-state-error);
 			border-radius: var(--border-radius);
+			color: var(--color-state-error);
 
 			&:hover {
 				background: var(--color-state-error-lighten-2);
@@ -240,10 +240,10 @@ nav.public-sites-navigation {
 		.nav-items-wrapper {
 			display: flex;
 			flex-direction: column-reverse;
-			top: 8rem;
-			right: 0;
 			left: 0;
 			position: absolute;
+			right: 0;
+			top: 8rem;
 			transform: translate3d(0, -150%, 0) scale3d(1, 1, 1) rotateX(0deg)
 				rotateY(0deg) rotateZ(0deg) skew(0deg, 0deg);
 			transform-style: preserve-3d;
