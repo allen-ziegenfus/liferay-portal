@@ -1,0 +1,7 @@
+{
+  "com.liferay.oauth2.provider.configuration.OAuth2ProviderApplicationUserAgentConfiguration~uscities": {
+      "description": "US Cities Resource Server",
+      "homePageURL": "https://$[conf:ext.lxc.liferay.com.mainDomain]",
+      "scopes": []
+  }
+}
