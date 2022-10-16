@@ -3,26 +3,6 @@
 		"en_US": "Marketplace Account Invitation"
 	},
 	"name": "MarketplaceAccountInvitation",
-	"objectActions": [
-		{
-			"active": true,
-			"conditionExpression": "",
-			"dateCreated": "2022-10-05T02:27:54Z",
-			"dateModified": "2022-10-05T23:33:48Z",
-			"description": "",
-			"name": "Marketplace Invitation Emailer",
-			"objectActionExecutorKey": "notification",
-			"objectActionTriggerKey": "onAfterAdd",
-			"parameters": {
-				"notificationTemplateId": 43991
-			},
-			"status": {
-				"code": 1,
-				"label": "success",
-				"label_i18n": "Success"
-			}
-		}
-	],
 	"objectFields": [
 		{
 			"DBType": "Long",
