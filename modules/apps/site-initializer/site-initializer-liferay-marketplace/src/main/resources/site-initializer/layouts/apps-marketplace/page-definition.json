@@ -679,7 +679,7 @@
 							"federatedSearchKey": "",
 							"filterField": "assetCategoryIds",
 							"filterQueryType": "term",
-							"filterValue": "449736586",
+							"filterValue": "[$TAXONOMY_CATEGORY_ID:/site-initializer/taxonomy-vocabularies/company/marketplace-product-type-vocabulary/app-asset-category.json$]",
 							"immutable": "false",
 							"invisible": "true",
 							"occur": "must",
