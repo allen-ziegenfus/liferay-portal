@@ -44,7 +44,7 @@
 		},
 		{
 			"DBType": "String",
-			"businessType": "Picklist",
+			"businessType": "Text",
 			"defaultValue": "pending",
 			"indexed": true,
 			"indexedAsKeyword": false,
@@ -52,7 +52,6 @@
 			"label": {
 				"en_US": "Marketplace Account Invitation Status"
 			},
-			"listTypeDefinitionId": "[$LIST_TYPE_DEFINITION_ID:InvitationStatus$]",
 			"name": "marketplaceAccountInvitationStatus",
 			"required": true,
 			"state": true,

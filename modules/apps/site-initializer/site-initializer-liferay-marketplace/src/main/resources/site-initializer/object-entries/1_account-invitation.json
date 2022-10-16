@@ -2,7 +2,10 @@
 	"object-entries": [
 		{
 			"marketplaceAccountId": "1",
-			"marketplaceAccountInvitationStatus": "pending"
+			"marketplaceAccountInvitationStatus": "pending",
+			"marketplaceAccountName": "SMC",
+			"recipientEmail": "smc-invitee-1@liferay.com",
+			"recipientName": "SMC Invitee 1"
 		}
 	],
 	"objectDefinitionName": "MarketplaceAccountInvitation"
