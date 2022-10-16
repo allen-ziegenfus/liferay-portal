@@ -74,7 +74,7 @@
 }
 
 html body:not(.has-edit-mode-menu) #main-content.layout-content {
-	margin-top: 3.5rem;
+	margin-top: 7.5rem;
 }
 
 html .layout-content .class-toggle {
