@@ -1,5 +1,6 @@
 package com.liferay.object.action.config;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,9 +11,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.nimbusds.jose.JOSEObjectType;
+import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
+import com.nimbusds.jose.proc.JWSAlgorithmFamilyJWSKeySelector;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 
 @Configuration
 public class HttpSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -54,16 +66,36 @@ public class HttpSecurityConfig extends WebSecurityConfigurerAdapter {
 		return source;
 	}
 
+	@Bean
+	public JwtDecoder jwtDecoder(@Value("${coupon-function-springboot-user-agent.oauth2.jwks.uri}") String jwkSetUrl) throws Exception {
+		JWSKeySelector<SecurityContext> jwsKeySelector =
+			JWSAlgorithmFamilyJWSKeySelector.fromJWKSetURL(new URL(jwkSetUrl));
+
+		DefaultJWTProcessor<SecurityContext> jwtProcessor =
+			new DefaultJWTProcessor<>();
+		jwtProcessor.setJWSKeySelector(jwsKeySelector);
+		jwtProcessor.setJWSTypeVerifier(
+			new DefaultJOSEObjectTypeVerifier<>(new JOSEObjectType("at+jwt")));
+
+		return new NimbusJwtDecoder(jwtProcessor);
+	}
+
 	@Override
 	protected void configure(HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.cors(
 		).and(
 		).csrf(
 		).disable(
+		).sessionManagement().sessionCreationPolicy(
+			SessionCreationPolicy.STATELESS
+		).and(
 		).authorizeRequests(
-		).antMatchers(
-			"/"
-		).permitAll();
+			confgurer -> confgurer.antMatchers(
+				"/"
+			).permitAll().anyRequest().authenticated()
+		).oauth2ResourceServer(
+			OAuth2ResourceServerConfigurer::jwt
+		);
 	}
 
 }

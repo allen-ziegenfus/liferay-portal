@@ -14,3 +14,7 @@ coupon-remote-app:
 assemble:
   - from: build/
     include: "static/**/*"
+    into: dockerRoot/
+
+runtime:
+  deps: ['coupon-definition']

@@ -18,12 +18,12 @@ public class OAuthClientConfiguration {
 
   @Bean
   public ReactiveClientRegistrationRepository clientRegistrations(
-      @Value("${coupon-function-user-agent.oauth2.authorization.uri}") String authorizationUri,
-      @Value("${coupon-function-user-agent.oauth2.redirect.uris}") String redirectUris,
-      @Value("${coupon-function-user-agent.oauth2.introspection.uri}") String introspectionUri,
-      @Value("${coupon-function-user-agent.oauth2.user.agent.client.id}") String clientId,
-      @Value("${coupon-function-user-agent.oauth2.token.uri}") String tokenUri,
-      @Value("${coupon-function-user-agent.oauth2.user.agent.scopes}") String scopes) {
+      @Value("${coupon-function-springboot-user-agent.oauth2.authorization.uri}") String authorizationUri,
+      @Value("${coupon-function-springboot-user-agent.oauth2.redirect.uris}") String redirectUris,
+      @Value("${coupon-function-springboot-user-agent.oauth2.introspection.uri}") String introspectionUri,
+      @Value("${coupon-function-springboot-user-agent.oauth2.user.agent.client.id}") String clientId,
+      @Value("${coupon-function-springboot-user-agent.oauth2.token.uri}") String tokenUri,
+      @Value("${coupon-function-springboot-user-agent.oauth2.user.agent.scopes}") String scopes) {
 
     ClientRegistration registration =
         ClientRegistration.withRegistrationId("dxp")
