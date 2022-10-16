@@ -1,0 +1,47 @@
+@import './components/progress-saved';
+@import './components/tip-container-modal';
+
+@media screen and (max-width: $breakpoint-tablet) {
+	.become-a-publisher-structure {
+		flex-direction: column;
+
+		.step-list {
+			align-items: center;
+			flex-direction: row !important;
+			justify-content: center;
+			margin: 39px 0 39px 20px;
+
+			&::-webkit-scrollbar {
+				width: 0;
+			}
+		}
+
+		h2 {
+			text-align: center;
+		}
+	}
+}
+
+@media screen and (max-width: $breakpoint-phone) {
+	.marketplace-template {
+		padding-left: 16px !important;
+	}
+
+	.become-a-publisher-structure {
+		h2.step-title {
+			display: none;
+		}
+
+		.step-list {
+			justify-content: center;
+		}
+	}
+}
+
+@media screen and (max-width: 644px) {
+	.become-a-publisher-structure {
+		.step-list {
+			justify-content: start;
+		}
+	}
+}

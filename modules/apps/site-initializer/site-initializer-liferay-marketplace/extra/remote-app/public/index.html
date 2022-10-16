@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<title>Liferay Marketplace</title>
+
+		<link
+			href="https://cdn.jsdelivr.net/npm/@clayui/css/lib/css/atlas.css"
+			rel="stylesheet"
+		/>
+
+		<script>
+			var Liferay = {
+				authToken: 'fUa2NyK2',
+				BREAKPOINTS: {
+					PHONE: 768,
+					TABLET: 980
+				},
+				ThemeDisplay: {
+					getCanonicalURL: function () {
+						return 'http://fred:8080';
+					},
+					getCompanyGroupId: function () {
+						return '21201';
+					},
+					getPathThemeImages: function () {
+						return '';
+					},
+					getPortalURL: function () {
+						return 'http://fred:8080';
+					},
+					getSiteGroupId: function () {
+						return '21201';
+					},
+					getUserId: function () {
+						return 43974;
+					}
+				}
+			};
+			window.process = {
+				...window.process
+			};
+		</script>
+	</head>
+
+	<body>
+		<noscript>You need to enable JavaScript to run this app.</noscript>
+
+		<liferay-remote-app-liferay-marketplace>
+		</liferay-remote-app-liferay-marketplace>
+	</body>
+</html>
