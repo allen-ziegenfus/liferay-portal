@@ -7,16 +7,22 @@
 						"key": "public-sites-navigation"
 					},
 					"fragmentConfig": {
-						"buttonType": "",
 						"darkNav": false,
 						"showAccountMenu": true,
-						"showLanguageMenu": false,
+						"showLanguageMenu": true,
 						"showSearch": true,
 						"showSiteName": true
 					},
 					"fragmentFields": [
 						{
-							"id": "sign-in-link",
+							"id": "close-toggle-btn",
+							"value": {
+								"fragmentLink": {
+								}
+							}
+						},
+						{
+							"id": "call-to-action-btn-mobile",
 							"value": {
 								"fragmentLink": {
 								}
@@ -33,10 +39,57 @@
 									}
 								}
 							}
+						},
+						{
+							"id": "menu-toggle-btn",
+							"value": {
+								"fragmentLink": {
+								}
+							}
+						},
+						{
+							"id": "call-to-action-btn",
+							"value": {
+								"fragmentLink": {
+									"value": {
+										"href": {
+											"mapping": {
+												"itemReference": {
+													"className": "com.liferay.portal.kernel.model.Layout",
+													"fields": [
+														{
+															"fieldName": "friendlyURL",
+															"fieldValue": "/become-a-publisher"
+														},
+														{
+															"fieldName": "privatePage",
+															"fieldValue": "true"
+														},
+														{
+															"fieldName": "siteKey",
+															"fieldValue": "[$GROUP_KEY$]"
+														}
+													]
+												}
+											}
+										}
+									}
+								},
+								"text": {
+									"value_i18n": {
+										"en_US": "Become a Publisher"
+									}
+								}
+							}
 						}
 					],
 					"indexed": true
 				},
+				"pageElements": [
+					{
+						"type": "FragmentDropZone"
+					}
+				],
 				"type": "Fragment"
 			},
 			{

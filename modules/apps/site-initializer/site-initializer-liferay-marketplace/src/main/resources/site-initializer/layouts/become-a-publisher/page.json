@@ -1,0 +1,12 @@
+{
+	"friendlyURL": "/become-a-publisher",
+	"hidden": false,
+	"name_i18n": {
+		"en_US": "Become a Publisher"
+	},
+	"private": true,
+	"system": false,
+	"type": "content",
+	"typeSettings": [
+	]
+}
