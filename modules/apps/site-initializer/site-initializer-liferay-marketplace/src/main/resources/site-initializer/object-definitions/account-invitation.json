@@ -54,44 +54,6 @@
 			},
 			"listTypeDefinitionId": "[$LIST_TYPE_DEFINITION_ID:InvitationStatus$]",
 			"name": "marketplaceAccountInvitationStatus",
-			"objectFieldSettings": [
-				{
-					"name": "stateFlow",
-					"value": {
-						"objectStates": [
-							{
-								"key": "pending",
-								"objectStateTransitions": [
-									{
-										"key": "accepted"
-									},
-									{
-										"key": "rejected"
-									},
-									{
-										"key": "canceled"
-									}
-								]
-							},
-							{
-								"key": "accepted",
-								"objectStateTransitions": [
-								]
-							},
-							{
-								"key": "rejected",
-								"objectStateTransitions": [
-								]
-							},
-							{
-								"key": "canceled",
-								"objectStateTransitions": [
-								]
-							}
-						]
-					}
-				}
-			],
 			"required": true,
 			"state": true,
 			"system": false,
