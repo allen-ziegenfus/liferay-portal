@@ -1,0 +1,51 @@
+////
+/// @group sheet
+////
+
+/// A mixin to force `.btn` or `.btn-group` into block level elements at a max-width breakpoint.
+/// @param {Map} $map - A map of `key: value` pairs. The keys and value types are listed below:
+/// @example
+/// enabled: {Bool}, // Set to false to prevent mixin styles from being output. Default: true
+/// breakpoint-down: {String, Null}, // The Bootstrap 4 Breakpoint {xs | sm | md | lg | xl}
+/// btn-margin-bottom-mobile: {Number | String | Null},
+/// @todo
+/// - Add @example
+/// - Add @link to documentation
+
+@mixin sheet-footer-btn-block($map) {
+	$enabled: setter(map-get($map, enabled), true);
+
+	$breakpoint-down: map-get($map, breakpoint-down);
+
+	$mobile: setter(map-get($map, mobile), ());
+
+	$btn-mobile: setter(map-get($mobile, btn), ());
+	$btn-mobile: map-merge(
+		$btn-mobile,
+		(
+			margin-bottom:
+				setter(
+					map-get($map, btn-margin-bottom-mobile),
+					map-get($btn-mobile, margin-bottom)
+				),
+		)
+	);
+
+	@if ($enabled) {
+		@include media-breakpoint-down($breakpoint-down) {
+			@include clay-css($mobile);
+
+			.btn {
+				@include clay-css($btn-mobile);
+			}
+
+			.btn-group {
+				@include clay-css(map-get($mobile, btn-group));
+			}
+
+			.btn-group-item {
+				@include clay-css(map-get($mobile, btn-group-item));
+			}
+		}
+	}
+}

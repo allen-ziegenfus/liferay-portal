@@ -1,0 +1,144 @@
+.loading-animation {
+	:not(.inline-item) > & {
+		margin-bottom: 20px;
+		margin-top: 20px;
+	}
+
+	.product-menu & {
+		margin-top: 160px;
+	}
+}
+
+@keyframes lfr-drop-active {
+	0% {
+		background-color: #ebebeb;
+		border-color: #ddd;
+	}
+
+	50% {
+		background-color: #ddedde;
+		border-color: #7d7;
+		transform: scale(1.1);
+	}
+
+	75% {
+		background-color: #ddedde;
+		border-color: #7d7;
+	}
+
+	100% {
+		background-color: #ebebeb;
+		border-color: #ddd;
+	}
+}
+
+.lfr-upload-container {
+	.progress-bar,
+	.progress {
+		border-radius: 10px;
+	}
+
+	.upload-file,
+	.upload-target {
+		border-radius: 5px;
+	}
+
+	.upload-target {
+		.upload-drop-active & {
+			animation: none;
+		}
+
+		.upload-drop-intent & {
+			animation: lfr-drop-active 1s ease 0.2s infinite;
+		}
+	}
+}
+
+.select-files {
+	border-radius: 5px;
+}
+
+.taglib-form-navigator > .form-steps > ul.form-navigator.list-group {
+	box-shadow: none;
+
+	.tab .tab-label {
+		&:hover,
+		&:focus {
+			.number {
+				box-shadow: 0 0 5px 0 #333;
+				transition-duration: 0.25s;
+				transition-property: box-shadow;
+				transition-timing-function: ease-out;
+			}
+		}
+
+		.number {
+			border-radius: 50%;
+		}
+	}
+}
+
+@keyframes progress-bar-stripes {
+	from {
+		background-position: 40px 0;
+	}
+
+	to {
+		background-position: 0 0;
+	}
+}
+
+.lfr-progress-active .progress-bar-status,
+.lfr-upload-container .file-uploading .progress-bar .progress {
+	$transparent: rgba(255, 255, 255, 0);
+
+	animation: progress-bar-stripes 0.5s linear infinite;
+	background-image: linear-gradient(
+		-45deg,
+		rgba(255, 255, 255, 0.3) 25%,
+		$transparent 25%,
+		$transparent 50%,
+		rgba(255, 255, 255, 0.3) 50%,
+		rgba(255, 255, 255, 0.3) 75%,
+		$transparent 75%,
+		$transparent
+	);
+	background-size: 40px 40px;
+	transition: width, 0.5s, ease-out;
+
+	@media (prefers-reduced-motion: reduce) {
+		transition: none;
+	}
+}
+
+@keyframes highlight-animation {
+	from {
+		background-color: #ffc;
+	}
+
+	to {
+		background-color: transparent;
+	}
+}
+
+.highlight-animation {
+	animation: highlight-animation 0.7s;
+}
+
+.portlet-options.btn-group {
+	&,
+	&.open {
+		.dropdown-toggle {
+			box-shadow: none;
+		}
+	}
+}
+
+.form-group.form-inline {
+	&.input-boolean-wrapper,
+	&.input-checkbox-wrapper {
+		label {
+			gap: 0.3125rem;
+		}
+	}
+}

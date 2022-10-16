@@ -1,0 +1,118 @@
+$cadmin-management-bar-base: () !default;
+$cadmin-management-bar-base: map-deep-merge(
+	(
+		border-color: transparent,
+		border-style: solid,
+		navbar-nav: (
+			nav-link: (
+				border-radius: $cadmin-border-radius,
+				outline: 0,
+				transition: box-shadow 0.15s ease-in-out,
+				focus: (
+					box-shadow: $cadmin-btn-focus-box-shadow,
+				),
+				disabled: (
+					box-shadow: none,
+				),
+			),
+		),
+		media-breakpoint-down: (),
+		media-breakpoint-up: (),
+	),
+	$cadmin-management-bar-base
+);
+
+$cadmin-management-bar-size: () !default;
+$cadmin-management-bar-size: map-deep-merge(
+	(
+		scaling-navbar: true,
+		border-bottom-width: 1px,
+		font-size: $cadmin-navbar-font-size,
+		height: 64px,
+		min-height: 64px,
+		padding-x: 0,
+		padding-y: 0,
+		height-mobile: 48px,
+		min-height-mobile: 48px,
+		btn-monospaced-font-size: 16px,
+		link-height: 32px,
+		link-height-mobile: 32px,
+		link-margin-x: 8px,
+		link-margin-x-mobile: 4px,
+		link-padding-x-mobile: 4px,
+		form-control-height-mobile: 32px,
+		toggler-margin-x: 14px,
+		active-border-bottom-width: 4px,
+		nav-item-dropdown-margin-top: 0,
+	),
+	$cadmin-management-bar-size
+);
+
+$cadmin-management-bar-light: () !default;
+$cadmin-management-bar-light: map-deep-merge(
+	(
+		background-color: $cadmin-white,
+		navbar-nav: (
+			nav-link: (
+				color: $cadmin-navbar-light-color,
+				font-weight: $cadmin-font-weight-semi-bold,
+				hover: (
+					color: $cadmin-gray-900,
+					background-color: rgba($cadmin-gray-900, 0.03),
+				),
+				focus: (
+					color: $cadmin-gray-900,
+					background-color: rgba($cadmin-gray-900, 0.03),
+				),
+				active: (
+					background-color: rgba($cadmin-gray-900, 0.06),
+					color: $cadmin-navbar-light-active-color,
+				),
+				disabled: (
+					background-color: transparent,
+					color: $cadmin-navbar-light-disabled-color,
+					opacity: 1,
+				),
+			),
+		),
+		media-breakpoint-down: (),
+		media-breakpoint-up: (),
+	),
+	$cadmin-management-bar-light
+);
+
+$cadmin-management-bar-primary: () !default;
+$cadmin-management-bar-primary: map-deep-merge(
+	(
+		background-color: $cadmin-primary-l3,
+		border-color: $cadmin-primary,
+		color: $cadmin-navbar-light-color,
+		navbar-nav: (
+			nav-link: (
+				border-radius: $cadmin-border-radius,
+				color: $cadmin-navbar-light-color,
+				font-weight: $cadmin-font-weight-semi-bold,
+				hover: (
+					color: $cadmin-gray-900,
+					background-color: rgba($cadmin-gray-900, 0.03),
+				),
+				focus: (
+					color: $cadmin-gray-900,
+					background-color: rgba($cadmin-gray-900, 0.03),
+				),
+				active: (
+					background-color: rgba($cadmin-gray-900, 0.06),
+					color: $cadmin-navbar-light-active-color,
+				),
+				disabled: (
+					background-color: transparent,
+					color: $cadmin-navbar-light-disabled-color,
+					opacity: 1,
+				),
+			),
+		),
+		media-breakpoint-down: (),
+		media-breakpoint-up: (),
+	),
+	$cadmin-management-bar-primary
+);

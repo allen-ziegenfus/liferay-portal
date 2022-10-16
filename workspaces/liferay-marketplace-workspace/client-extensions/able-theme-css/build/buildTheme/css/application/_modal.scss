@@ -1,0 +1,31 @@
+.modal-body.dialog-iframe-bd {
+	overflow: hidden;
+	padding: 0;
+}
+
+.modal-dialog {
+	&:not(.dialog-iframe-modal):not(.modal-full-screen) {
+		position: relative;
+	}
+
+	&.dialog-iframe-modal {
+		max-width: none;
+	}
+
+	&.modal-dialog-sm {
+		max-width: $modal-md;
+	}
+
+	.yui3-resize-handles-wrapper {
+		pointer-events: all;
+
+		.yui3-resize-handle-inner-br {
+			bottom: 0;
+			right: 0;
+		}
+	}
+}
+
+.modal-open .modal {
+	display: block;
+}

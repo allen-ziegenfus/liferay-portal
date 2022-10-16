@@ -1,0 +1,19 @@
+.portlet-content .lfr-icon-actions {
+	.lfr-configurator-visibility & {
+		opacity: 1;
+	}
+}
+
+.portlet-title {
+	.lfr-panel-page & {
+		font-size: 13px;
+	}
+}
+
+.lfr-panel-page {
+	width: 100%;
+
+	.lfr-add-content h2 span {
+		background-color: #d3dadd;
+	}
+}

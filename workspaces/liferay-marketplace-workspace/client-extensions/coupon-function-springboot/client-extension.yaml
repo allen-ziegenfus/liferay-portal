@@ -1,0 +1,13 @@
+coupon-function-user-agent:
+  type: oauthApplicationUserAgent
+  scopes:
+    - C_Coupon.everything
+
+coupon-function-springboot:
+  type: objectAction
+  resourcePath: /coupons/issued
+  oauth2Application: coupon-function-user-agent
+
+runtime:
+  type: springboot
+  workload: deployment

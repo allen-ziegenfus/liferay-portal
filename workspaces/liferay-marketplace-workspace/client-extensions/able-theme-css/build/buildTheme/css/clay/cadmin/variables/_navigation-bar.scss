@@ -1,0 +1,163 @@
+$cadmin-navigation-bar-size: () !default;
+$cadmin-navigation-bar-size: map-deep-merge(
+	(
+		scaling-navbar: false,
+		border-bottom-width: 1px,
+		font-size: $cadmin-navbar-font-size,
+		height: 48px,
+		padding-x: 0,
+		padding-y: 0,
+		link-padding-x: 16px,
+		nav-item-dropdown-margin-top: 0,
+		active-border-bottom-width: 4px,
+		active-border-offset-bottom: -8.5px,
+		link-height-mobile: 32px,
+		collapse-dropdown-item-padding-x-mobile: 16px,
+		collapse-dropdown-item-padding-y-mobile: 13px,
+		toggler-link-height: 32px,
+		toggler-link-margin-y: 7.5px,
+		toggler-link-padding-y: 0,
+	),
+	$cadmin-navigation-bar-size
+);
+
+$cadmin-navigation-bar-base: () !default;
+$cadmin-navigation-bar-base: map-deep-merge(
+	(
+		border-color: transparent,
+		border-style: solid,
+		navbar-nav: (
+			nav-link: (
+				border-radius: 0,
+				outline: 0,
+				focus: (
+					box-shadow: $cadmin-btn-focus-box-shadow,
+				),
+				disabled: (
+					box-shadow: none,
+				),
+			),
+		),
+		media-breakpoint-down: (),
+		media-breakpoint-up: (),
+	),
+	$cadmin-navigation-bar-base
+);
+
+$cadmin-navigation-bar-light: () !default;
+$cadmin-navigation-bar-light: map-deep-merge(
+	(
+		background-color: $cadmin-white,
+		border-color: $cadmin-gray-200,
+		navbar-nav: (
+			nav-link: (
+				color: $cadmin-navbar-light-color,
+				font-weight: $cadmin-font-weight-semi-bold,
+				hover: (
+					color: $cadmin-gray-900,
+				),
+				focus: (
+					color: $cadmin-gray-900,
+				),
+				active: (
+					color: $cadmin-navbar-light-active-color,
+				),
+				disabled: (
+					color: $cadmin-gray-600,
+					opacity: $cadmin-btn-disabled-opacity,
+				),
+			),
+		),
+		media-breakpoint-down: (
+			sm: (
+				navbar-expand-md: (
+					navbar-collapse: (
+						navbar-nav: (
+							dropdown-item: (
+								color: $cadmin-navbar-light-color,
+								font-weight: $cadmin-font-weight-semi-bold,
+								hover: (
+									color: $cadmin-gray-900,
+								),
+								focus: (
+									color: $cadmin-gray-900,
+								),
+								active: (
+									color: $cadmin-navbar-light-active-color,
+								),
+								disabled: (
+									color: $cadmin-gray-600,
+									opacity: $cadmin-btn-disabled-opacity,
+								),
+							),
+						),
+					),
+				),
+			),
+		),
+		media-breakpoint-up: (),
+	),
+	$cadmin-navigation-bar-light
+);
+
+$cadmin-navigation-bar-secondary: () !default;
+$cadmin-navigation-bar-secondary: map-deep-merge(
+	(
+		background-color: $cadmin-secondary-d1,
+		color: $cadmin-white,
+		navbar-nav: (
+			nav-link: (
+				color: $cadmin-secondary-l2,
+				font-weight: $cadmin-font-weight-semi-bold,
+				hover: (
+					color: $cadmin-white,
+				),
+				focus: (
+					color: $cadmin-white,
+				),
+				active: (
+					color: $cadmin-white,
+				),
+				disabled: (
+					color: $cadmin-gray-400,
+					opacity: $cadmin-btn-disabled-opacity,
+				),
+			),
+		),
+		navbar-brand: (
+			color: rgba(255, 255, 255, 0.9),
+			hover: (
+				color: rgba(255, 255, 255, 0.9),
+			),
+		),
+		media-breakpoint-down: (
+			sm: (
+				navbar-expand-md: (
+					navbar-collapse: (
+						navbar-nav: (
+							dropdown-item: (
+								color: $cadmin-secondary-l2,
+								font-weight: $cadmin-font-weight-semi-bold,
+								hover: (
+									color: $cadmin-white,
+								),
+								focus: (
+									color: $cadmin-white,
+								),
+								active: (
+									color: $cadmin-white,
+								),
+								disabled: (
+									color: $cadmin-gray-400,
+									opacity: $cadmin-btn-disabled-opacity,
+								),
+							),
+						),
+					),
+				),
+			),
+		),
+		media-breakpoint-up: (),
+	),
+	$cadmin-navigation-bar-secondary
+);

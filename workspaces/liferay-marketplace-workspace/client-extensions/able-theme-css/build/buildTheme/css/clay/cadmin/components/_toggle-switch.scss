@@ -1,0 +1,53 @@
+// Toggle Switch
+
+.toggle-switch {
+	@include clay-toggle-switch-variant($cadmin-toggle-switch);
+}
+
+.toggle-switch-check-bar {
+	@include clay-css($cadmin-toggle-switch-check-bar);
+}
+
+.toggle-switch-bar {
+	@include clay-toggle-switch-bar-variant($cadmin-toggle-switch-bar);
+}
+
+.toggle-switch-check {
+	@include clay-toggle-switch-check-variant($cadmin-toggle-switch-check);
+}
+
+.toggle-switch-label {
+	@include clay-css($cadmin-toggle-switch-label);
+}
+
+.toggle-switch-text {
+	@include clay-css($cadmin-toggle-switch-text);
+}
+
+.toggle-switch-text-left {
+	@include clay-css($cadmin-toggle-switch-text-left);
+}
+
+.toggle-switch-text-right {
+	@include clay-css($cadmin-toggle-switch-text-right);
+}
+
+// Simple Toggle Switch
+
+.simple-toggle-switch {
+	@include clay-toggle-switch-variant($cadmin-simple-toggle-switch);
+
+	// deprecated
+
+	.toggle-switch-check + .toggle-switch-label {
+		margin-right: $cadmin-simple-toggle-switch-label-spacer-x;
+	}
+
+	.toggle-switch-label + .toggle-switch-check-bar {
+		margin-left: $cadmin-simple-toggle-switch-label-spacer-x;
+	}
+}
+
+.simple-toggle-switch-reverse {
+	@include clay-toggle-switch-variant($cadmin-simple-toggle-switch-reverse);
+}

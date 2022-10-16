@@ -1,0 +1,32 @@
+.lfr-portlet-title-editable {
+	margin-top: 0;
+	z-index: 9999;
+
+	.lfr-portlet-title-editable-content {
+		padding: 0;
+
+		.field-input {
+			margin-bottom: 0;
+		}
+
+		.textfield-label {
+			display: none;
+		}
+
+		.btn-toolbar-content {
+			display: inline-block;
+			vertical-align: bottom;
+		}
+
+		.btn-group {
+			margin-top: 0;
+		}
+
+		.btn {
+			display: inline-block;
+			float: none;
+			margin-top: 0;
+			width: auto;
+		}
+	}
+}

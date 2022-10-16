@@ -1,0 +1,44 @@
+.item-selector {
+	.card-row > .autofit-col-expand {
+		padding-top: 4px;
+	}
+
+	.drop-zone {
+		background-color: #f1f2f5;
+		margin-top: 1rem;
+	}
+
+	.input-file {
+		height: 0.1px;
+		opacity: 0;
+		overflow: hidden;
+		position: absolute;
+		width: 0.1px;
+		z-index: -1;
+
+		& + label {
+			position: relative;
+
+			&::before {
+				border-radius: 4px;
+				bottom: -2px;
+				content: '';
+				display: block;
+				left: -2px;
+				position: absolute;
+				right: -2px;
+				top: -2px;
+				transition: box-shadow 0.15s ease-in-out;
+			}
+		}
+
+		&:focus + label::before {
+			box-shadow: 0 0 0 2px $white, 0 0 0 4px $primary-l1;
+		}
+	}
+
+	.item-selector-list-row:hover {
+		background-color: $primary-l3;
+		cursor: pointer;
+	}
+}

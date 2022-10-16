@@ -1,0 +1,10 @@
+.lfr-portal-tooltip {
+	display: inline-flex;
+
+	&,
+	a {
+		-webkit-touch-callout: none;
+
+		@include user-select(none);
+	}
+}
