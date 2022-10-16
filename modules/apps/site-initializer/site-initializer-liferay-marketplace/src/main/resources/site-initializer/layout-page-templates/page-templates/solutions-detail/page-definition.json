@@ -167,7 +167,7 @@
 													"widgetInstance": {
 														"widgetConfig": {
 															"displayStyle": "ddmTemplate_449486070",
-															"displayStyleGroupId": "448812852",
+															"displayStyleGroupId": "[$GROUP_ID$]",
 															"showCurrentGroup": "true",
 															"showGuestGroup": "true",
 															"showLayout": "true",

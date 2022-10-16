@@ -285,7 +285,7 @@
 														"widgetConfig": {
 															"destination": "",
 															"displayStyle": "default",
-															"displayStyleGroupId": "448812852",
+															"displayStyleGroupId": "[$GROUP_ID$]",
 															"federatedSearchKey": "",
 															"invisible": "false",
 															"keywordsParameterName": "q",
@@ -460,7 +460,7 @@
 													"widgetInstance": {
 														"widgetConfig": {
 															"displayStyle": "default",
-															"displayStyleGroupId": "448812852",
+															"displayStyleGroupId": "[$GROUP_ID$]",
 															"fields": "[{\"field\":\"displayDate_Number_sortable-\",\"label\":\"published\"}]"
 														},
 														"widgetName": "com_liferay_portal_search_web_internal_sort_portlet_SortPortlet"
@@ -504,7 +504,7 @@
 													"widgetInstance": {
 														"widgetConfig": {
 															"displayStyle": "ddmTemplate_449486070",
-															"displayStyleGroupId": "448812852",
+															"displayStyleGroupId": "[$GROUP_ID$]",
 															"showCurrentGroup": "true",
 															"showGuestGroup": "false",
 															"showLayout": "true",
@@ -521,7 +521,7 @@
 													"widgetInstance": {
 														"widgetConfig": {
 															"displayStyle": "ddmTemplate_450214104",
-															"displayStyleGroupId": "448812852",
+															"displayStyleGroupId": "[$GROUP_ID$]",
 															"frequenciesVisible": "true",
 															"frequencyThreshold": "1",
 															"maxTerms": "100",
@@ -564,8 +564,8 @@
 														"widgetConfig": {
 															"cpContentListRendererKey": "list-default",
 															"diagram--cpTypeListEntryRendererKey": "list-entry-diagram",
-															"displayStyle": "ddmTemplate_MARKETPLACE_SOLUTIONS_SEARCH_RESULTS",
-															"displayStyleGroupId": "448812852",
+															"displayStyle": "ddmTemplate_SOLUTIONS_SEARCH_RESULTS",
+															"displayStyleGroupId": "[$GROUP_ID$]",
 															"grouped--cpTypeListEntryRendererKey": "list-entry-default",
 															"paginate": "true",
 															"paginationDelta": "15",
