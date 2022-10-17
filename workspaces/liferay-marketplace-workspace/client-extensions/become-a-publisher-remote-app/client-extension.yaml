@@ -1,4 +1,4 @@
-coupon-remote-app:
+become-a-publisher-remote-app:
   cssURLs:
     - static/css/main.*.css
   friendlyURLMapping: become-a-publisher-remote-app
