@@ -154,7 +154,7 @@ nav.public-sites-navigation {
 		&:hover,
 		&:active,
 		&:focus {
-			outline: 1px solid var(--btn-outline-hover-color);
+			outline: 1px solid var(--color-action-primary-active-lighten);
 			outline-offset: 2px;
 		}
 	}
