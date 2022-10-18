@@ -12,17 +12,19 @@
  * details.
  */
 
-const menuButtonGroup = document.querySelector('.menu-button-group');
+/* eslint-disable no-undef */
 
-const tabletMobileNavSection = document.querySelector(
+const menuButtonGroup = fragmentElement.querySelector('.menu-button-group');
+
+const tabletMobileNavSection = fragmentElement.querySelector(
 	'.tablet-mobile-nav-section'
 );
 
-const menuBtn = document.querySelector('.menu-btn');
+const menuBtn = fragmentElement.querySelector('.menu-btn');
 
-const closeBtn = document.querySelector('.close-btn');
+const closeBtn = fragmentElement.querySelector('.close-btn');
 
-const accountMenus = document.querySelectorAll('.account');
+const accountMenus = fragmentElement.querySelectorAll('.account');
 
 menuBtn.addEventListener('click', () => {
 	menuButtonGroup.classList.toggle('menu-open');
