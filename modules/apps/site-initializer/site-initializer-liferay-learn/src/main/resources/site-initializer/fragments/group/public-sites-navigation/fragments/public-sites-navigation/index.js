@@ -12,30 +12,30 @@
  * details.
  */
 
-var menuButtonGroup = fragmentElement.querySelector('.menu-button-group');
+const menuButtonGroup = document.querySelector('.menu-button-group');
 
-var tabletMobileNavSection = fragmentElement.querySelector(
+const tabletMobileNavSection = document.querySelector(
 	'.tablet-mobile-nav-section'
 );
 
-var menuBtn = fragmentElement.querySelector('.menu-btn');
+const menuBtn = document.querySelector('.menu-btn');
 
-var closeBtn = fragmentElement.querySelector('.close-btn');
+const closeBtn = document.querySelector('.close-btn');
 
-var accountMenus = fragmentElement.querySelectorAll('.account');
+const accountMenus = document.querySelectorAll('.account');
 
-menuBtn.addEventListener('click', function () {
+menuBtn.addEventListener('click', () => {
 	menuButtonGroup.classList.toggle('menu-open');
 	tabletMobileNavSection.classList.toggle('menu-open');
 });
 
-closeBtn.addEventListener('click', function () {
+closeBtn.addEventListener('click', () => {
 	menuButtonGroup.classList.toggle('menu-open');
 	tabletMobileNavSection.classList.toggle('menu-open');
 });
 
-accountMenus.forEach(function (accountMenu) {
-	accountMenu.addEventListener('click', function () {
+accountMenus.forEach((accountMenu) => {
+	accountMenu.addEventListener('click', () =>  {
 		accountMenu.classList.toggle('menu-open');
 	});
 });
