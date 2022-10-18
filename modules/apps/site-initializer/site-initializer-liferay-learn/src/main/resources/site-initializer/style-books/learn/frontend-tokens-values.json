@@ -12,11 +12,6 @@
 		"name": "brandColor1",
 		"value": "#0b5fff"
 	},
-	"btnOutlineHoverColor": {
-		"cssVariableMapping": "btn-outline-hover-color",
-		"name": "brandColor1",
-		"value": "#0053f050"
-	},
 	"btnPrimaryBackgroundColor": {
 		"cssVariableMapping": "btn-primary-background-color",
 		"name": "brandColor1",
@@ -26,6 +21,10 @@
 		"cssVariableMapping": "btn-primary-border-color",
 		"name": "brandColor1",
 		"value": "#0b5fff"
+	},
+	"colorActionPrimaryActiveLighten": {
+		"cssVariableMapping": "color-action-primary-active-lighten",
+		"value": "#0053f050"
 	},
 	"colorActionPrimaryDefault": {
 		"cssVariableMapping": "color-action-primary-default",
