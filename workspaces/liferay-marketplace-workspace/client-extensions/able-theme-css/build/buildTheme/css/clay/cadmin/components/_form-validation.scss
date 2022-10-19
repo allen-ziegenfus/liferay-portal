@@ -1,0 +1,37 @@
+// Form Feedback
+
+.form-feedback-group {
+	@include clay-css($cadmin-form-feedback-group);
+}
+
+.form-feedback-item {
+	@include clay-css($cadmin-form-feedback-item);
+}
+
+.form-feedback-indicator {
+	@include clay-css($cadmin-form-feedback-indicator);
+
+	&:first-child {
+		@include clay-css(
+			map-get($cadmin-form-feedback-indicator, first-child)
+		);
+	}
+}
+
+.form-text {
+	@include clay-css($cadmin-form-text);
+}
+
+// Non HTML5 Form Validator
+
+.has-error {
+	@include clay-form-validation-variant($cadmin-has-error);
+}
+
+.has-warning {
+	@include clay-form-validation-variant($cadmin-has-warning);
+}
+
+.has-success {
+	@include clay-form-validation-variant($cadmin-has-success);
+}

@@ -1,0 +1,10 @@
+.lfr-search-container td .overlay {
+	&.entry-action {
+		position: static;
+
+		.btn a {
+			display: block;
+			padding: 4px 12px;
+		}
+	}
+}

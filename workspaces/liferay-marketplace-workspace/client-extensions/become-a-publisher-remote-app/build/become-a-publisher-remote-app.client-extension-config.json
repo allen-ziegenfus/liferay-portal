@@ -1,0 +1,11 @@
+{
+  "com.liferay.client.extension.type.configuration.CETConfiguration~become-a-publisher-remote-app" : {
+    "baseURL" : "${portalURL}/o/become-a-publisher-remote-app",
+    "description" : "",
+    "dxp.lxc.liferay.com.virtualInstanceId" : "default",
+    "name" : "Become A Publisher Remote App",
+    "sourceCodeURL" : "",
+    "type" : "customElement",
+    "typeSettings" : [ "friendlyURLMapping=become-a-publisher-remote-app", "instanceable=false", "urls=static/js/main.*.js", "useESM=false", "htmlElementName=become-a-publisher-remote-app", "cssURLs=static/css/main.*.css", "portletCategoryName=category.remote-apps" ]
+  }
+}

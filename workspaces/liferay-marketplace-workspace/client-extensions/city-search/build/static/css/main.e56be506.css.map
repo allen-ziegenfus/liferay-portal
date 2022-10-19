@@ -1,0 +1,1 @@
+{"version":3,"file":"static/css/main.e56be506.css","mappings":"AACC,4BACC,aCFc,CDGd","sources":["common/styles/hello-world.scss","common/styles/variables.scss"],"sourcesContent":[".hello-world {\n\th1 {\n\t\tcolor: $primary-color;\n\t\tfont-weight: bold;\n\t}\n}\n","$primary-color: #295ccc;\n"],"names":[],"sourceRoot":""}

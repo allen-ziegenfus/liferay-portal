@@ -1,0 +1,291 @@
+////
+/// @group stickers
+////
+
+/// A mixin that helps create custom Sticker sizes.
+/// @deprecated  after 3.9.0 use `clay-sticker-variant` instead
+/// @param {Map} $map - A map of `key: value` pairs. The keys and value types are listed below:
+/// @example
+/// font-size: {Number | String | Null},
+/// inline-item-font-size: {Number | String | Null},
+/// outside-offset: {Number | String}, // Default: -(map-get($map, size) * 0.5)
+/// size: {Number | String | Null},
+/// @todo
+/// - Add @example
+/// - Add @link to documentation
+
+@mixin clay-sticker-size($map) {
+	@if (type-of($map) == 'map') {
+		$font-size: map-get($map, font-size);
+		$inline-item-font-size: map-get($map, inline-item-font-size);
+		$outside-offset: setter(
+			map-get($map, outside-offset),
+			math-sign(map-get($map, size) * 0.5)
+		);
+		$size: map-get($map, size);
+
+		font-size: $font-size;
+
+		@include clay-monospace($size);
+
+		> .inline-item {
+			font-size: $inline-item-font-size;
+		}
+
+		&.sticker-outside {
+			left: $outside-offset;
+			top: $outside-offset;
+
+			&.sticker-bottom-left {
+				bottom: $outside-offset;
+				top: auto;
+			}
+
+			&.sticker-bottom-right {
+				bottom: $outside-offset;
+				left: auto;
+				right: $outside-offset;
+				top: auto;
+			}
+
+			&.sticker-top-right {
+				left: auto;
+				right: $outside-offset;
+			}
+		}
+	}
+}
+
+/// A mixin to create sticker variants. You can base your variant off `.sticker` or create your own base class (e.g., `<span class="sticker my-custom-sticker-variant"></span>` or `<span class="my-custom-sticker"></span>`).
+/// @param {Map} $map - A map of `key: value` pairs. The keys and value types are listed below:
+/// @example
+///
+/// (
+///     enabled: {Bool}, // Set to false to prevent mixin styles from being output. Default: true
+///     inline-item: (
+///         // .your-variant-name > .inline-item
+///         lexicon-icon: (
+///             // .your-variant-name > .inline-item .lexicon-icon
+///         ),
+///     ),
+///     lexicon-icon: (
+///         // .your-variant-name .lexicon-icon
+///     ),
+///     sticker-img: (
+///         // .your-variant-name .sticker-img
+///     ),
+///     sticker-overlay: (
+///         // .your-variant-name .sticker-overlay
+///     ),
+///     rounded: (
+///         // .your-variant-name.rounded
+///         sticker-overlay: (
+///             // .your-variant-name.rounded .sticker-overlay
+///         ),
+///     ),
+///     rounded-circle: (
+///         // .your-variant-name.rounded-circle
+///         sticker-overlay: (
+///             // .your-variant-name.rounded-circle .sticker-overlay
+///         ),
+///     ),
+///     rounded-0: (
+///         // .your-variant-name.rounded-0
+///         sticker-overlay: (
+///             // .your-variant-name.rounded-0 .sticker-overlay
+///         ),
+///     ),
+///     sticker-outside: (
+///         // .your-variant-name.sticker-outside
+///         sticker-bottom-left: (
+///             // .your-variant-name.sticker-outside.sticker-bottom-left
+///         ),
+///         sticker-bottom-right: (
+///             // .your-variant-name.sticker-outside.sticker-bottom-right
+///         ),
+///         sticker-top-right: (
+///             // .your-variant-name.sticker-outside.sticker-top-right
+///         ),
+///     ),
+/// )
+/// -=-=-=-=-=- Deprecated -=-=-=-=-=-
+/// bg: {Color | String | Null}, // deprecated after 3.9.0
+/// @todo
+/// - Add @example
+/// - Add @link to documentation
+
+@mixin clay-sticker-variant($map) {
+	@if (type-of($map) == 'map') {
+		$enabled: setter(map-get($map, enabled), true);
+
+		$base: map-merge(
+			$map,
+			(
+				background-color:
+					setter(map-get($map, bg), map-get($map, background-color)),
+				height: setter(map-get($map, size), map-get($map, height)),
+				line-height:
+					setter(map-get($map, size), map-get($map, line-height)),
+				width: setter(map-get($map, size), map-get($map, width)),
+			)
+		);
+
+		$inline-item: setter(map-get($map, inline-item), ());
+		$inline-item: map-merge(
+			$inline-item,
+			(
+				font-size:
+					setter(
+						map-get($map, inline-item-font-size),
+						map-get($inline-item, font-size)
+					),
+			)
+		);
+
+		$outside-offset: setter(
+			map-get($map, outside-offset),
+			if(
+				map-get($map, size),
+				calc(#{math-sign(map-get($map, size))} / 2),
+				null
+			)
+		);
+
+		$sticker-outside: setter(map-get($map, sticker-outside), ());
+
+		$sticker-outside-bottom-left: setter(
+			map-get($sticker-outside, sticker-bottom-left),
+			()
+		);
+		$sticker-outside-bottom-left: map-merge(
+			$sticker-outside-bottom-left,
+			setter(map-get($map, sticker-outside-bottom-left), ())
+		);
+
+		$sticker-outside-bottom-right: setter(
+			map-get($sticker-outside, sticker-bottom-right),
+			()
+		);
+		$sticker-outside-bottom-right: map-merge(
+			$sticker-outside-bottom-right,
+			setter(map-get($map, sticker-outside-bottom-right), ())
+		);
+
+		$sticker-outside-top-right: setter(
+			map-get($sticker-outside, sticker-top-right),
+			()
+		);
+		$sticker-outside-top-right: map-merge(
+			$sticker-outside-top-right,
+			setter(map-get($map, sticker-outside-top-right), ())
+		);
+
+		@if ($outside-offset) {
+			$sticker-outside: map-merge(
+				$sticker-outside,
+				(
+					left: $outside-offset,
+					top: $outside-offset,
+				)
+			);
+
+			$sticker-outside-bottom-left: map-merge(
+				$sticker-outside-bottom-left,
+				(
+					bottom: $outside-offset,
+					top: auto,
+				)
+			);
+
+			$sticker-outside-bottom-right: map-merge(
+				$sticker-outside-bottom-right,
+				(
+					bottom: $outside-offset,
+					left: auto,
+					right: $outside-offset,
+					top: auto,
+				)
+			);
+
+			$sticker-outside-top-right: map-merge(
+				$sticker-outside-top-right,
+				(
+					left: auto,
+					right: $outside-offset,
+				)
+			);
+		}
+
+		@if ($enabled) {
+			@include clay-css($base);
+
+			> .inline-item {
+				@include clay-css($inline-item);
+
+				.lexicon-icon {
+					@include clay-css(
+						map-deep-get($map, inline-item, lexicon-icon)
+					);
+				}
+			}
+
+			.lexicon-icon {
+				@include clay-css(map-get($map, lexicon-icon));
+			}
+
+			.sticker-img {
+				@include clay-css(map-get($map, sticker-img));
+			}
+
+			.sticker-overlay {
+				@include clay-css(map-get($map, sticker-overlay));
+			}
+
+			&.rounded {
+				@include clay-css(map-get($map, rounded));
+
+				.sticker-overlay {
+					@include clay-css(
+						map-deep-get($map, rounded, sticker-overlay)
+					);
+				}
+			}
+
+			&.rounded-circle {
+				@include clay-css(map-get($map, rounded-circle));
+
+				.sticker-overlay {
+					@include clay-css(
+						map-deep-get($map, rounded-circle, sticker-overlay)
+					);
+				}
+			}
+
+			&.rounded-0 {
+				@include clay-css(map-get($map, rounded-0));
+
+				.sticker-overlay {
+					@include clay-css(
+						map-deep-get($map, rounded-0, sticker-overlay)
+					);
+				}
+			}
+
+			&.sticker-outside {
+				@include clay-css($sticker-outside);
+
+				&.sticker-bottom-left {
+					@include clay-css($sticker-outside-bottom-left);
+				}
+
+				&.sticker-bottom-right {
+					@include clay-css($sticker-outside-bottom-right);
+				}
+
+				&.sticker-top-right {
+					@include clay-css($sticker-outside-top-right);
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,214 @@
+$panel-bg: $white !default;
+$panel-border-color: transparent !default;
+$panel-border-style: solid !default;
+
+$panel-border-bottom-width: 1px !default;
+$panel-border-left-width: 1px !default;
+$panel-border-right-width: 1px !default;
+$panel-border-top-width: 1px !default;
+$panel-border-width: $panel-border-top-width $panel-border-right-width
+	$panel-border-bottom-width $panel-border-left-width !default;
+
+$panel-border-radius: $border-radius !default;
+$panel-box-shadow: null !default;
+$panel-margin-bottom: $spacer !default;
+
+// Panel Header
+
+$panel-header-border-bottom-width: 1px !default;
+$panel-header-offset-border-radius: calc(
+	#{$panel-border-radius} - #{$panel-border-top-width}
+) !default;
+$panel-header-font-size: $font-size-base !default;
+$panel-header-line-height: $headings-line-height !default;
+$panel-header-padding-x: 1.25rem !default;
+$panel-header-padding-y: 0.75rem !default;
+
+$panel-header-collapse-icon-font-size: 0.875rem !default; // 14px
+$panel-header-collapse-icon-bottom: null !default;
+$panel-header-collapse-icon-left: null !default;
+$panel-header-collapse-icon-right: null !default;
+$panel-header-collapse-icon-top: clay-collapse-icon-align(
+	$panel-header-padding-y,
+	0,
+	1em,
+	$panel-header-line-height
+) !default;
+
+$panel-header-collapse-icon-padding-left: null !default;
+$panel-header-collapse-icon-padding-right: null !default;
+
+$panel-header-link-text-decoration: null !default;
+$panel-header-link-hover-text-decoration: null !default;
+
+$panel-header-link: () !default;
+$panel-header-link: map-deep-merge(
+	(
+		color: inherit,
+		display: block,
+		text-decoration: $panel-header-link-text-decoration,
+		transition: #{border-color 0.1s ease,
+		border-radius 0.5s ease},
+		hover: (
+			color: inherit,
+			text-decoration: $panel-header-link-hover-text-decoration,
+		),
+		focus: (
+			z-index: $zindex-panel-header-link-focus,
+		),
+	),
+	$panel-header-link
+);
+
+$panel-header-collapsed-link: () !default;
+$panel-header-collapsed-link: map-deep-merge(
+	(
+		border-color: transparent,
+		transition: border-color 0.75s ease,
+	),
+	$panel-header-collapsed-link
+);
+
+// Panel Body
+
+$panel-body-padding-x: 1.25rem !default;
+$panel-body-padding-y: 0.75rem !default;
+
+// Panel Footer
+
+$panel-footer-border-top-width: 1px !default;
+$panel-footer-offset-border-radius: calc(
+	#{$panel-border-radius} - #{$panel-border-bottom-width}
+) !default;
+$panel-footer-padding-x: $panel-header-padding-x !default;
+$panel-footer-padding-y: $panel-header-padding-y !default;
+
+// Panel Title
+
+$panel-title-font-size: null !default;
+$panel-title-font-weight: $font-weight-semi-bold !default;
+$panel-title-text-transform: null !default;
+
+// Panel Title Small Element
+
+$panel-title-small-font-size: null !default;
+$panel-title-small-margin-left: null !default;
+
+// Panel Group
+
+$panel-group-panel-margin-bottom: math-sign(
+	$panel-border-bottom-width
+) !default;
+
+$panel-group-panel-unstyled: () !default;
+$panel-group-panel-unstyled: map-deep-merge(
+	(
+		margin-bottom: 1.5rem,
+	),
+	$panel-group-panel-unstyled
+);
+
+// Panel Group Sm
+
+$panel-group-sm: () !default;
+$panel-group-sm: map-deep-merge(
+	(
+		font-size: 0.875rem,
+		header: (
+			padding-bottom: 0.5rem,
+			padding-top: 0.5rem,
+		),
+		title: (
+			font-size: 0.875rem,
+		),
+		collapse-icon: (
+			top: 0.6875rem,
+		),
+	),
+	$panel-group-sm
+);
+
+$panel-group-sm-panel-unstyled: () !default;
+$panel-group-sm-panel-unstyled: map-deep-merge(
+	(
+		margin-bottom: 1rem,
+	),
+	$panel-group-sm-panel-unstyled
+);
+
+// Panel Group Flush
+
+$panel-group-flush-body-margin-bottom: 1.5rem !default;
+$panel-group-flush-body-padding: 0 !default;
+
+$panel-group-flush-collapse-icon-left: null !default;
+$panel-group-flush-collapse-icon-right: 0 !default;
+$panel-group-flush-collapse-icon-padding-left: null !default;
+$panel-group-flush-collapse-icon-padding-right: 1.5rem !default;
+
+$panel-group-flush-panel-unstyled: () !default;
+$panel-group-flush-panel-unstyled: map-deep-merge(
+	(
+		margin-bottom: 1.5rem,
+		body: (
+			margin-bottom: 0,
+		),
+	),
+	$panel-group-flush-panel-unstyled
+);
+
+// Panel Variants
+
+$panel-secondary-header-link: () !default;
+
+$panel-secondary: () !default;
+$panel-secondary: map-deep-merge(
+	(
+		border-color: rgba($black, 0.125),
+		header: (
+			background-color: $gray-100,
+			border-color: rgba($black, 0.125),
+			link: $panel-secondary-header-link,
+		),
+		footer: (
+			background-color: $gray-100,
+			border-color: rgba($black, 0.125),
+		),
+	),
+	$panel-secondary
+);
+
+// Panel Unstyled
+
+$panel-unstyled-header-link: () !default;
+
+$panel-unstyled: () !default;
+$panel-unstyled: map-deep-merge(
+	(
+		background-color: transparent,
+		border-radius: 0px,
+		border-width: 0px,
+		margin-bottom: 1.5rem,
+		header: (
+			border-color: $gray-500,
+			border-radius: 0px,
+			border-style: solid,
+			border-width: 0 0 1px 0,
+			padding-left: 0,
+			collapsed: (
+				border-color: $gray-500,
+			),
+			link: $panel-unstyled-header-link,
+		),
+		collapse-icon: (
+			right: 0,
+		),
+		body: (
+			padding: 1rem 0 0.1px 0,
+		),
+		footer: (
+			padding: 1rem 0 0.1px 0,
+		),
+	),
+	$panel-unstyled
+);

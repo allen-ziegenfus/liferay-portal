@@ -1,0 +1,14 @@
+{
+  "com.liferay.oauth2.provider.configuration.OAuth2ProviderApplicationHeadlessServerConfiguration~commerce-catalogs" : {
+    "baseURL" : "${portalURL}/o/commerce-catalogs",
+    "description" : "",
+    "dxp.lxc.liferay.com.virtualInstanceId" : "default",
+    "homePageURL" : "https://$[conf:ext.lxc.liferay.com.mainDomain]",
+    "name" : "Commerce Catalogs",
+    "scopes" : [ "Liferay.Headless.Commerce.Admin.Catalog.everything", "Liferay.Headless.Batch.Engine.everything" ],
+    "sourceCodeURL" : "",
+    "type" : "oauthApplicationHeadlessServer",
+    "typeSettings" : [ "userAccountEmailAddress=test@$[conf:dxp.lxc.liferay.com.virtualInstanceId]", "scopes=Liferay.Headless.Commerce.Admin.Catalog.everything\nLiferay.Headless.Batch.Engine.everything", "homePageURL=https://$[conf:ext.lxc.liferay.com.mainDomain]" ],
+    "userAccountEmailAddress" : "test@$[conf:dxp.lxc.liferay.com.virtualInstanceId]"
+  }
+}

@@ -1,0 +1,23 @@
+.lfr-url-error {
+	display: inline-block;
+	white-space: normal;
+
+	@include overflow-wrap(break-all);
+}
+
+.lfr-page-layouts {
+	padding: 0;
+
+	input[type='radio'] {
+		opacity: 0;
+		position: absolute;
+
+		&:checked + .card-horizontal {
+			@include clay-card-variant($lfr-page-layouts-card-checked);
+		}
+	}
+
+	.card-horizontal {
+		@include clay-card-variant($lfr-page-layouts-card);
+	}
+}

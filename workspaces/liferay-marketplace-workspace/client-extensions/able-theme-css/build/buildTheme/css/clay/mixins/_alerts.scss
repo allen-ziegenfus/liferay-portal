@@ -1,0 +1,253 @@
+////
+/// @group Alerts
+////
+
+/// This is Bootstrap 4's Alert Variant Mixin.
+/// @deprecated use the mixin `clay-alert-variant` instead
+/// @param {Color} $background
+/// @param {Color} $border
+/// @param {Color} $color
+
+@mixin alert-variant($background, $border, $color) {
+	@include gradient-bg($background);
+
+	border-color: $border;
+	color: $color;
+
+	hr {
+		border-top-color: clay-darken($border, 5%);
+	}
+
+	.alert-link {
+		color: clay-darken($color, 10%);
+	}
+}
+
+/// A mixin to create alert variants.
+/// @param {Map} $map - A map of `key: value` pairs. The keys and value types are listed below:
+/// @example
+/// (
+/// 	enabled: {Bool}, // Set to false to prevent mixin styles from being output. Default: true
+/// 	// .alert
+/// 	first-child: (
+/// 		// .alert:first-child
+/// 	),
+/// 	last-child: (
+/// 		// .alert:last-child
+/// 	),
+/// 	hr: (
+/// 		// .alert hr
+/// 	),
+/// 	alert-dismissible: (
+/// 		// .alert.alert-dismissible
+/// 		container-fluid: (
+/// 			// .alert.alert-dismissible .container, .alert.alert-dismissible .container-fluid
+/// 		),
+/// 	),
+/// 	alert-indicator: (
+/// 		// .alert .alert-indicator
+/// 		lexicon-icon: (
+/// 			// .alert .alert-indicator .lexicon-icon
+/// 		),
+/// 		lead: (
+/// 			// .alert .alert-indicator + .lead
+/// 		),
+/// 	),
+/// 	alert-btn: (
+/// 		// .alert .alert-btn
+/// 	),
+/// 	btn-group: (
+/// 		// .alert .btn-group
+/// 	),
+/// 	btn-group-item: (
+/// 		// .alert .btn-group-item
+/// 	),
+/// 	close: (
+/// 		// .alert .close
+/// 	),
+/// 	container-fluid: (
+/// 		// .alert .container, .alert .container-fluid
+/// 	),
+/// 	lead: (
+/// 		// .alert .lead
+/// 	),
+/// 	alert-link: (
+/// 		// .alert .alert-link
+/// 	),
+/// 	component-title: (
+/// 		// .alert .component-title
+/// 	),
+/// 	component-subtitle: (
+/// 		// .alert .component-subtitle
+/// 	),
+/// 	custom-selectors: (
+/// 		// add custom selectors here, see examples below
+/// 		btn-primary: (
+/// 			// .alert .btn-primary
+/// 		),
+/// 		btn-secondary: (
+/// 			// .alert .btn-secondary
+/// 		),
+/// 		'#custom-alert-btn': (
+/// 			// .alert #custom-alert-btn
+/// 		),
+/// 	),
+/// )
+
+@mixin clay-alert-variant($map) {
+	@if (type-of($map) == 'map') {
+		$enabled: setter(map-get($map, enabled), true);
+
+		$base: map-merge(
+			$map,
+			(
+				background-color:
+					setter(map-get($map, bg), map-get($map, background-color)),
+			)
+		);
+
+		$alert-indicator: setter(map-get($map, alert-indicator), ());
+
+		$close: setter(map-get($map, close), ());
+		$close: map-deep-merge(
+			$close,
+			(
+				color:
+					setter(map-get($map, close-color), map-get($close, color)),
+				hover: (
+					color:
+						setter(
+							map-get($map, close-hover-color),
+							map-deep-get($close, hover, color)
+						),
+				),
+			)
+		);
+
+		$lead: setter(map-get($map, lead), ());
+		$lead: map-deep-merge(
+			$lead,
+			(
+				color: setter(map-get($map, lead-color), map-get($lead, color)),
+			)
+		);
+
+		$alert-link: setter(map-get($map, alert-link), ());
+		$alert-link: map-deep-merge(
+			$alert-link,
+			(
+				color:
+					setter(
+						map-get($map, link-color),
+						map-get($alert-link, color)
+					),
+				hover: (
+					color:
+						setter(
+							map-get($map, link-hover-color),
+							map-deep-get($alert-link, hover, color)
+						),
+				),
+			)
+		);
+
+		@if ($enabled) {
+			@include clay-css($base);
+
+			&:first-child {
+				@include clay-css(map-get($map, first-child));
+			}
+
+			&:last-child {
+				@include clay-css(map-get($map, last-child));
+			}
+
+			hr {
+				@include clay-css(map-get($map, hr));
+			}
+
+			&.alert-dismissible {
+				@include clay-css(setter(map-get($map, alert-dismissible), ()));
+
+				.container,
+				.container-fluid {
+					@include clay-css(
+						setter(
+							map-deep-get(
+								$map,
+								alert-dismissible,
+								container-fluid
+							),
+							()
+						)
+					);
+				}
+			}
+
+			.alert-indicator {
+				@include clay-css($alert-indicator);
+
+				.lexicon-icon {
+					@include clay-css(map-get($alert-indicator, lexicon-icon));
+				}
+
+				+ .lead {
+					@include clay-css(map-get($alert-indicator, lead));
+				}
+			}
+
+			.alert-btn {
+				@include clay-button-variant(map-get($map, alert-btn));
+			}
+
+			.btn-group {
+				@include clay-container(map-get($map, btn-group));
+			}
+
+			.btn-group-item {
+				@include clay-container(map-get($map, btn-group-item));
+			}
+
+			.close {
+				@include clay-close($close);
+			}
+
+			.container,
+			.container-fluid {
+				@include clay-css(setter(map-get($map, container-fluid), ()));
+			}
+
+			.lead {
+				@include clay-css($lead);
+			}
+
+			.alert-link {
+				@include clay-link($alert-link);
+			}
+
+			.component-title {
+				@include clay-text-typography(map-get($map, component-title));
+			}
+
+			.component-subtitle {
+				@include clay-text-typography(
+					map-get($map, component-subtitle)
+				);
+			}
+
+			@each $key, $properties in map-get($map, custom-selectors) {
+				@if ($key) {
+					$selector: if(
+						starts-with($key, '.') or starts-with($key, '#'),
+						$key,
+						str-insert($key, '.', 1)
+					);
+
+					#{$selector} {
+						@include clay-button-variant($properties);
+					}
+				}
+			}
+		}
+	}
+}

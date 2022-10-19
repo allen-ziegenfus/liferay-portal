@@ -1,0 +1,41 @@
+// ---------- Dynamic data list display/Journal portlet ----------
+
+.portlet-dynamic-data-lists-display,
+.portlet-dynamic-data-lists {
+	.lfr-ddm-field-group {
+		margin-bottom: 10px;
+		margin-top: 10px;
+		padding: 28px 24px;
+	}
+}
+
+// ---------- Breadcrumb taglib ----------
+
+.breadcrumb.breadcrumb-vertical {
+	display: inline-block;
+	text-align: center;
+
+	li {
+		display: block;
+
+		&.last,
+		&.only {
+			background: none;
+		}
+	}
+
+	.divider {
+		background: url(../images/arrows/07_down.png) no-repeat 50% 100%;
+		display: block;
+		height: 10px;
+		overflow: hidden;
+		text-indent: 101%;
+		white-space: nowrap;
+	}
+}
+
+// ---------- Navbar form search ----------
+
+.navbar form {
+	margin: 0;
+}

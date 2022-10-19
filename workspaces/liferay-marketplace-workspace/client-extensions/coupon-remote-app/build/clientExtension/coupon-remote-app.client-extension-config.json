@@ -1,0 +1,11 @@
+{
+  "com.liferay.client.extension.type.configuration.CETConfiguration~coupon-remote-app" : {
+    "baseURL" : "${portalURL}/o/coupon-remote-app",
+    "description" : "",
+    "dxp.lxc.liferay.com.virtualInstanceId" : "default",
+    "name" : "Coupon Remote App",
+    "sourceCodeURL" : "",
+    "type" : "customElement",
+    "typeSettings" : [ "friendlyURLMapping=coupon-remote-app", "instanceable=false", "urls=static/js/main.7196797f.js", "useESM=false", "htmlElementName=coupon-remote-app", "cssURLs=static/css/main.6773c492.css", "portletCategoryName=category.remote-apps" ]
+  }
+}

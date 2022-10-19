@@ -1,0 +1,11 @@
+{
+  "com.liferay.client.extension.type.configuration.CETConfiguration~city-search" : {
+    "baseURL" : "${portalURL}/o/city-search",
+    "description" : "",
+    "dxp.lxc.liferay.com.virtualInstanceId" : "default",
+    "name" : "City Search",
+    "sourceCodeURL" : "",
+    "type" : "customElement",
+    "typeSettings" : [ "friendlyURLMapping=city-search", "instanceable=false", "urls=static/js/main.*.js", "useESM=false", "htmlElementName=city-search", "cssURLs=static/css/main.*.css", "portletCategoryName=category.remote-apps" ]
+  }
+}
