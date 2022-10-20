@@ -1,0 +1,17 @@
+[
+	{
+		"dataType": 20,
+		"modelResource": "com.liferay.site.navigation.model.SiteNavigationMenu",
+		"name": "Test Expando Column 1",
+		"properties": {
+			"displayType": "text-box",
+			"height": "150",
+			"hidden": false,
+			"indexType": 2,
+			"localizeField": true,
+			"localizeFieldName": true,
+			"visibleWithUpdatePermission": false,
+			"width": "0"
+		}
+	}
+]
