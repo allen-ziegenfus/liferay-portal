@@ -1,0 +1,36 @@
+[
+	{
+		"accountBriefs": [
+			{
+				"externalReferenceCode": "TESTACC0001"
+			}
+		],
+		"alternateName": "testAlternateName1",
+		"emailAddress": "smc.admin@liferay.com",
+		"familyName": "User",
+		"givenName": "SMC Admin",
+		"name": "SMC Admin",
+		"organizationBriefs": [
+			{
+				"name": "SMC"
+			}
+		]
+	},
+	{
+		"accountBriefs": [
+			{
+				"externalReferenceCode": "TESTACC0002"
+			}
+		],
+		"alternateName": "testAlternateName2",
+		"emailAddress": "liferay.admin@liferay.com",
+		"familyName": "User",
+		"givenName": "Liferay Admin",
+		"name": "Liferay Admin",
+		"organizationBriefs": [
+			{
+				"name": "Liferay"
+			}
+		]
+	}
+]

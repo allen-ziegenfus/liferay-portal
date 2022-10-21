@@ -1,0 +1,52 @@
+[
+	{
+		"availabilityEstimate": "3-5 days",
+		"backOrders": true,
+		"categories": [
+			"Business"
+		],
+		"description": "Calendar Connector for Exchange enabled a two-way...",
+		"displayAvailability": true,
+		"displayStockQuantity": true,
+		"externalReferenceCode": "MKT001",
+		"height": 2,
+		"images": [
+		],
+		"length": 7,
+		"minStockQuantity": 5,
+		"name": "Calendar Connector for Exchange",
+		"price": 29.0,
+		"promoPrice": 18.0,
+		"shippable": false,
+		"sku": "MKT001",
+		"specificationOptions": [
+		],
+		"taxCategory": "Normal Product",
+		"warehouse1": 60
+	},
+	{
+		"availabilityEstimate": "3-5 days",
+		"backOrders": true,
+		"categories": [
+			"Business"
+		],
+		"description": "This application is a useful calendar...",
+		"displayAvailability": true,
+		"displayStockQuantity": true,
+		"externalReferenceCode": "MKT002",
+		"height": 2,
+		"images": [
+		],
+		"length": 7,
+		"minStockQuantity": 5,
+		"name": "Calendar Events Enhancement",
+		"price": 29.0,
+		"promoPrice": 18.0,
+		"shippable": false,
+		"sku": "MKT001",
+		"specificationOptions": [
+		],
+		"taxCategory": "Normal Product",
+		"warehouse1": 60
+	}
+]

@@ -1,0 +1,12 @@
+[
+	{
+		"externalReferenceCode": "TESTACC0001",
+		"name": "SMC",
+		"type": "business"
+	},
+	{
+		"externalReferenceCode": "TESTACC0002",
+		"name": "Liferay",
+		"type": "business"
+	}
+]
