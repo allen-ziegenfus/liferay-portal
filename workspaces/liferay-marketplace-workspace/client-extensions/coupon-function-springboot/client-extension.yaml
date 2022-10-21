@@ -9,7 +9,6 @@ coupon-function-springboot:
   oauth2Application: coupon-function-springboot-user-agent
 
 runtime:
-  deps: ['coupon-definition']
   type: springboot
   workload: deployment
   cpu: 500m

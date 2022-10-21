@@ -17,4 +17,3 @@ assemble:
     into: dockerRoot/
 
 runtime:
-  deps: ['coupon-definition']
