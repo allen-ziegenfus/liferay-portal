@@ -35,6 +35,34 @@ nav.public-sites-navigation {
 
 		.primary-nav {
 			background-color: var(--color-brand-primary-darken-5);
+
+			.nav-items-wrapper {
+				background-color: var(--color-brand-primary-darken-5);
+
+				.adt-nav-item {
+					&:hover {
+						.adt-nav-text {
+							background-color: var(--color-action-primary-inverted-hover);
+						}
+
+						.adt-nav-caret-bottom-icon {
+							color: var(--white);
+						}
+					}
+
+					.adt-nav-text {
+						.adt-nav-title {
+							color: var(--white);
+						}
+					}
+
+					&.dropdown-open {
+						.adt-nav-caret-top-icon {
+							color: var(--white);
+						}
+					}
+				}
+			}
 		}
 
 		.liferay-logo {
@@ -345,49 +373,61 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 
 
 @media (min-width: 1200px) {
-	.nav-items-wrapper {
-		align-items: center;
-		display: flex;
-		padding: 0;
-
-		.adt-nav-item {
-			&.dropdown-open .adt-nav-text::after {
-				left: 0;
-				width: 100%;
+	nav.public-sites-navigation {
+		&.dark-nav {
+			.nav-items-wrapper {
+				.adt-nav-item {
+					.adt-nav-text::after {
+						background: var(--white);
+					}
+				}
 			}
+		}
 
-			.adt-nav-text {
-				border-radius: var(--border-radius-xs);
-				padding: 0;
+		.nav-items-wrapper {
+			align-items: center;
+			display: flex;
+			padding: 0;
 
-				.adt-nav-title {
-					cursor: pointer;
-					font-size: 1rem;
-					padding: 0.875rem 0.25rem 0.875rem 1.125rem;
-					position: relative;
+			.adt-nav-item {
+				&.dropdown-open .adt-nav-text::after {
+					left: 0;
+					width: 100%;
+				}
 
-					.adt-angle-down-svg {
-						display: none;
+				.adt-nav-text {
+					border-radius: var(--border-radius-xs);
+					padding: 0;
+
+					.adt-nav-title {
+						cursor: pointer;
+						font-size: 1rem;
+						padding: 0.875rem 0.25rem 0.875rem 1.125rem;
+						position: relative;
+
+						.adt-angle-down-svg {
+							display: none;
+						}
+					}
+
+					&::after {
+						background: #004ad7;
+						border-radius: 2px;
+						bottom: -5px;
+						content: '';
+						height: 3px;
+						left: 50%;
+						position: absolute;
+						transition: left ease-in 0.3s,
+							width ease-in 0.3s;
+						width: 0%;
 					}
 				}
 
-				&::after {
-					background: #004ad7;
-					border-radius: 2px;
-					bottom: -5px;
-					content: '';
-					height: 3px;
-					left: 50%;
-					position: absolute;
-					transition: left ease-in 0.3s,
-						width ease-in 0.3s;
-					width: 0%;
+				.adt-submenu {
+					border-radius: 0 0 0.5rem 0.5rem;
+					padding-bottom: 1rem;
 				}
-			}
-
-			.adt-submenu {
-				border-radius: 0 0 0.5rem 0.5rem;
-				padding-bottom: 1rem;
 			}
 		}
 	}
@@ -794,7 +834,6 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 			position: absolute;
 			right: 1.5rem;
 		}
-	}
 	}
 }
 

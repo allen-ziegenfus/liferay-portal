@@ -1,7 +1,7 @@
 <ul class="adt-navigation">
 	<#if entries?has_content>
 		<#list entries as navPrimaryItem>
-			<li class="adt-nav-item dropdown-open w-100">
+			<li class="adt-nav-item w-100">
 				<div class="adt-nav-text d-flex focusable" tabindex="3">
 					<span class="adt-nav-title text-truncate">
 						${navPrimaryItem.getName()}
