@@ -1,14 +1,16 @@
 <ul class="adt-navigation">
 	<#if entries?has_content>
 		<#list entries as navPrimaryItem>
-			<li class="adt-nav-item dropdown-open">
-				<div class="adt-nav-text focusable" tabindex="3">
+			<li class="adt-nav-item dropdown-open w-100">
+				<div class="adt-nav-text d-flex focusable" tabindex="3">
 					<span class="adt-nav-title text-truncate">
 						${navPrimaryItem.getName()}
-
-						<span class="adt-angle-down-svg">
-							<svg aria-hidden="true" class="lexicon-icon lexicon-icon-angle-down" focusable="false"><use href="/o/osb-www-theme/images/clay/icons.svg#angle-down"></use></svg>
-						</span>
+					</span>
+					<span class="adt-nav-caret-bottom-icon align-self-center">
+						<svg class="lexicon-icon lexicon-icon-caret-bottom" role="presentation" viewBox="0 0 512 512"><use xlink:href="/o/admin-theme/images/clay/icons.svg#caret-bottom"></use></svg>
+					</span>
+					<span class="adt-nav-caret-top-icon align-self-center">
+						<svg class="lexicon-icon lexicon-icon-caret-top" role="presentation" viewBox="0 0 512 512"><use xlink:href="/o/admin-theme/images/clay/icons.svg#caret-top"></use></svg>
 					</span>
 				</div>
 				<@render_navigation_dropdown navPrimaryItem />
@@ -40,7 +42,7 @@
 					</#if>
 
 					<ul class="adt-submenu-section ${backgroundColor} ${columnSpan}">
-						<li class="adt-submenu-header color-neutral-3 font-size-small-caps">${navSecondaryItem.getName()}</li>
+						<li class="adt-submenu-header color-neutral-8 font-size-small-caps">${navSecondaryItem.getName()}</li>
 
 						<#list navSecondaryItem.getChildren() as navTertiaryItem>
 							<#assign
@@ -63,9 +65,9 @@
 										</#if>
 
 										<#if stringUtil.equals(menuItemType, "Image")>
-											<div class="adt-submenu-item-title color-accent-10 font-size-paragraph-small font-weight-semi-bold">${navTertiaryItem.getName()}</div>
+											<div class="adt-submenu-item-title font-size-paragraph-small font-weight-semi-bold">${navTertiaryItem.getName()}</div>
 										<#else>
-											<div class="adt-submenu-item-title color-accent-10 font-size-paragraph-base font-weight-semi-bold">${navTertiaryItem.getName()}</div>
+											<div class="adt-submenu-item-title font-size-paragraph-base font-weight-semi-bold">${navTertiaryItem.getName()}</div>
 										</#if>
 
 										<#if (menuItemType == '' || stringUtil.equals(menuItemType, "Text")) && descriptionText?has_content>
