@@ -27,10 +27,10 @@
 			<div class="adt-submenu-inner-wrapper">
 				<#list navPrimaryItem.getChildren() as navSecondaryItem>
 					<#assign
-						secondaryCustomFields = (expandoHelper.getLocalizedExpandoValues(navSecondaryItem.getExpandoAttributes(), locale))!{}
-						backgroundColor = secondaryCustomFields["Submenu Background"]!""
-						childColumns = secondaryCustomFields["Submenu Child Columns"]!""
-						columnSpan = secondaryCustomFields["Submenu Column Span"]!""
+						secondaryCustomFields = navSecondaryItem.getExpandoAttributes()!{}
+						backgroundColor = secondaryCustomFields["Submenu Background"]?first!""
+						childColumns = secondaryCustomFields["Submenu Child Columns"]?first!""
+						columnSpan = secondaryCustomFields["Submenu Column Span"]!?first!""
 					/>
 
 					<#if childColumns?has_content>
@@ -46,11 +46,11 @@
 
 						<#list navSecondaryItem.getChildren() as navTertiaryItem>
 							<#assign
-								values = (expandoHelper.getLocalizedExpandoValues(navTertiaryItem.getExpandoAttributes(), locale))!{}
-								descriptionText = values["Menu Item Description"]!""
-								imageURL = values["Menu Item Image URL"]!""
-								menuItemType = values["Menu Item Type"]!""
-								preheaderText = values["Menu Item Preheader"]!""
+								tertiaryCustomFields = navTertiaryItem.getExpandoAttributes()
+								descriptionText = getLocalizedExpandoValue(tertiaryCustomFields["Menu Item Description"])!""
+								imageURL = getLocalizedExpandoValue(tertiaryCustomFields["Menu Item Image Url"])!""
+								menuItemType = tertiaryCustomFields["Menu Item Type"]?first!""
+								preheaderText = getLocalizedExpandoValue(tertiaryCustomFields["Menu Item Preheader"])!""
 							/>
 
 							<li class="adt-submenu-item-content ${menuItemType?lower_case}-type grid-column-span-${childColumns}">
@@ -83,3 +83,11 @@
 		</div>
 	</div>
 </#macro>
+
+<#function getLocalizedExpandoValue expandoField>
+	<#list expandoField as language, expandoValue>
+		<#if language == locale>
+			<#return expandoValue />
+		</#if>
+	</#list>
+</#function>
