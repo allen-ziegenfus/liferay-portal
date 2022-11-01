@@ -39,26 +39,28 @@ nav.public-sites-navigation {
 			.nav-items-wrapper {
 				background-color: var(--color-brand-primary-darken-5);
 
-				.adt-nav-item {
-					&:hover {
+				@media (min-width: 1200px) {
+					.adt-nav-item {
+						&:hover {
+							.adt-nav-text {
+								background-color: var(--color-action-primary-inverted-hover);
+							}
+
+							.adt-nav-caret-bottom-icon {
+								color: var(--white);
+							}
+						}
+
 						.adt-nav-text {
-							background-color: var(--color-action-primary-inverted-hover);
+							.adt-nav-title {
+								color: var(--white);
+							}
 						}
 
-						.adt-nav-caret-bottom-icon {
-							color: var(--white);
-						}
-					}
-
-					.adt-nav-text {
-						.adt-nav-title {
-							color: var(--white);
-						}
-					}
-
-					&.dropdown-open {
-						.adt-nav-caret-top-icon {
-							color: var(--white);
+						&.dropdown-open {
+							.adt-nav-caret-top-icon {
+								color: var(--white);
+							}
 						}
 					}
 				}
@@ -261,6 +263,10 @@ nav.public-sites-navigation {
 				visibility: visible;
 				z-index: 2;
 			}
+
+			.adt-nav-text {
+				padding: 0.875rem 0.5rem !important;
+			}
 		}
 
 		.nav-items-wrapper .cta-container-mobile {
@@ -323,7 +329,6 @@ nav.public-sites-navigation {
 		}
 
 		.nav-items-wrapper {
-			border-radius: var(--border-radius-sm);
 			position: absolute;
 			transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 
@@ -601,8 +606,9 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 				}
 			}
 
-			.adt-submenu-item-title {
-				padding-bottom: 0.5rem;
+			.adt-submenu-item-description {
+				color: var(--color-neutral-8);
+				font-weight: 400;
 			}
 		}
 	}
@@ -638,10 +644,10 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 		padding: 2rem 0;
 		width: 100%;
 
-		&.light-blue {
-			background-color: #edf3fe;
+		&.grey {
+			background-color: var(--color-neutral-1);
 			border-radius: var(--border-radius-sm);
-			padding: 2rem;
+			padding: 2rem 4rem;
 		}
 
 		&._3-section-span {
@@ -783,7 +789,7 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 
 		.adt-submenu-section {
 			grid-template-rows: none;
-			padding: 2rem;
+			padding: 2rem 4rem;
 
 			.adt-submenu-item-content {
 				&.grid-column-span-1,

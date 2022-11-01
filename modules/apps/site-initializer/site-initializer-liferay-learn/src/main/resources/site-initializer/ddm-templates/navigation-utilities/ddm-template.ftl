@@ -64,14 +64,10 @@
 											<div class="adt-submenu-item-preheader color-neutral-3 font-weight-semi-bold">${preheaderText}</div>
 										</#if>
 
-										<#if stringUtil.equals(menuItemType, "Image")>
-											<div class="adt-submenu-item-title font-size-paragraph-small font-weight-semi-bold">${navTertiaryItem.getName()}</div>
-										<#else>
-											<div class="adt-submenu-item-title font-size-paragraph-base font-weight-semi-bold">${navTertiaryItem.getName()}</div>
-										</#if>
+										<h5 class="adt-submenu-item-title">${navTertiaryItem.getName()}</h5>
 
 										<#if (menuItemType == '' || stringUtil.equals(menuItemType, "Text")) && descriptionText?has_content>
-											<div class="adt-submenu-item-description color-neutral-2 font-size-paragraph-xsmall">${descriptionText}</div>
+											<div class="adt-submenu-item-description">${descriptionText}</div>
 										</#if>
 									</div>
 								</a>
