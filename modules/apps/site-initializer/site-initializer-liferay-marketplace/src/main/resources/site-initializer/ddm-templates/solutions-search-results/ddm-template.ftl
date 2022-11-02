@@ -69,8 +69,6 @@
 </style>
 
 <#assign
-	assetCategoryLocalService = serviceLocator.findService("com.liferay.asset.kernel.service.AssetCategoryLocalService")
-	expandoValueLocalService = serviceLocator.findService("com.liferay.expando.kernel.service.ExpandoValueLocalService")
 	searchContainer = cpSearchResultsDisplayContext.getSearchContainer()
 
 	ACCOUNT_ID_GUEST = -1
@@ -90,14 +88,14 @@
 		<#if entries?has_content>
 			<#list entries as curCPCatalogEntry>
 				<#assign
-					categories = assetCategoryLocalService.getCategories(COMMERCE_PRODUCT_CLASS_NAME, curCPCatalogEntry.getCPDefinitionId())
+					categories = assetCategoryLocalService?has_content?then(assetCategoryLocalService.getCategories(COMMERCE_PRODUCT_CLASS_NAME, curCPCatalogEntry.getCPDefinitionId()), ["Experience Management", "Personalization and Segmentation", "Analytics and Optimization"])
 					cpDefinitionId = curCPCatalogEntry.getCPDefinitionId()
 					developerName = expandoValueLocalService.getData(companyId, COMMERCE_PRODUCT_CLASS_NAME, "CUSTOM_FIELDS", "Developer Name", curCPCatalogEntry.getCPDefinitionId(), "")!""
 					productImageURL = cpContentHelper.getDefaultImageFileURL(ACCOUNT_ID_GUEST, cpDefinitionId)
 					productName = curCPCatalogEntry.getName()
 					productDescription = (stringUtil.shorten(htmlUtil.stripHtml(curCPCatalogEntry.getDescription()), 150,"..."))
 					friendlyURL = cpContentHelper.getFriendlyURL(curCPCatalogEntry, themeDisplay)
-					solutionsCategories = categories?filter(category -> category.getVocabularyId() == MARKETPLACE_SOLUTIONS_CATEGORIES_VOCABULARY_ID)
+					solutionsCategories = assetCategoryLocalService?has_content?then(categories?filter(category -> category.getVocabularyId() == MARKETPLACE_SOLUTIONS_CATEGORIES_VOCABULARY_ID), ["Experience Management", "Personalization and Segmentation", "Analytics and Optimization"])
 				/>
 
 				<a class="solutions-search-results-card bg-white border-radius-medium color-black flex flex-column mb-0 text-decoration-none" href=${friendlyURL}>
@@ -133,7 +131,7 @@
 						<#if solutionsCategories?has_content>
 							<div class="align-center flex labels">
 								<div class="bg-neutral-8 border-radius-small category-label color-neutral-3 font-size-paragraph-small font-weight-semi-bold px-1">
-									${solutionsCategories[0].getName()}
+									${solutionsCategories[0]}
 								</div>
 
 								<#if (solutionsCategories?size > 1)>
@@ -141,9 +139,9 @@
 										+${solutionsCategories?size - 1}
 
 										<div class="bg-neutral-1 border-radius-medium category-names color-white font-size-paragraph-base p-4 position-absolute">
-											<#list solutionsCategories as category>
+											<#list categories as category>
 												<#if !category?is_first>
-													${category.getName()}<#sep>, </#sep>
+													${category}<#sep>, </#sep>
 												</#if>
 											</#list>
 										</div>
