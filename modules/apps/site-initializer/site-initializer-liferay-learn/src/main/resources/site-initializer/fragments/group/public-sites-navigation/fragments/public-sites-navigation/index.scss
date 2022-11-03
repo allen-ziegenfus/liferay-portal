@@ -40,30 +40,24 @@ nav.public-sites-navigation {
 				background-color: var(--color-brand-primary-darken-5);
 
 				@media (min-width: 1200px) {
-					.adt-nav-item {
-						&:hover {
-							.adt-nav-text {
-								background-color: var(--color-action-primary-inverted-hover);
-							}
-
-							.adt-nav-caret-bottom-icon {
-								color: var(--white);
-							}
-						}
-
+					.adt-nav-item:hover {
 						.adt-nav-text {
-							.adt-nav-title {
-								color: var(--white);
-							}
+							background-color: var(--color-action-primary-inverted-hover);
 						}
 
-						&.dropdown-open {
-							.adt-nav-caret-top-icon {
-								color: var(--white);
-							}
+						.adt-nav-caret-bottom-icon {
+							color: var(--white);
 						}
 					}
+
+					.adt-nav-item.dropdown-open .adt-nav-caret-bottom-icon, .adt-nav-text .adt-nav-title {
+						color: var(--white);
+					}
 				}
+			}
+
+			&.dropdown-open .adt-nav-caret-bottom-icon {
+				color: var(--white);
 			}
 		}
 
@@ -462,16 +456,12 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 			color: var(--color-neutral-8);
 		}
 
-		.adt-nav-caret-bottom-icon, .adt-nav-caret-top-icon {
+		.adt-nav-caret-bottom-icon {
 			padding-right: 0.625rem;
 		}
 
 		.adt-nav-caret-bottom-icon {
 			color: transparent;
-		}
-
-		.adt-nav-caret-top-icon {
-			display: none;
 		}
 	}
 
@@ -495,20 +485,18 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 	}
 
 	&.dropdown-open {
-		.adt-nav-caret-bottom-icon {
-			display: none;
-		}
-
 		&:hover, &:focus {
-			.adt-nav-caret-top-icon {
+			.adt-nav-caret-bottom-icon {
 				opacity: 1;
 			}
 		}
 
-		.adt-nav-caret-top-icon {
+		.adt-nav-caret-bottom-icon {
 			color: var(--color-action-primary-hover);
-			display: block;
 			opacity: 0.5;
+			transform: translate3d(0px, 0px, 0px) scale3d(1, 1, 1)
+			rotateX(180deg) rotateY(0deg) rotateZ(0deg)
+			skew(0deg, 0deg);
 		}
 
 		.adt-nav-text {
@@ -533,6 +521,7 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 		border-color: #e7e7ed;
 		border-style: solid;
 		border-width: 0;
+		box-shadow: 0px 7.4px 11.4px -7.59px rgb(0 0 0 / 14%), 0px 24px 36px 3.45px rgb(0 0 0 / 8%);
 		display: block;
 		left: 0;
 		list-style: none;
