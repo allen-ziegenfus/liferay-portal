@@ -383,9 +383,14 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 			}
 		}
 
+		.cta-btn-nav {
+			margin-left: var(--spacer-3);
+		}
+
 		.nav-items-wrapper {
 			align-items: center;
 			display: flex;
+			margin-left: auto;
 			padding: 0;
 
 			.adt-nav-item {
