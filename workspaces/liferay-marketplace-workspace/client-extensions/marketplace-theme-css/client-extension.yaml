@@ -1,0 +1,5 @@
+marketplace-theme-css:
+    clayURL: css/clay.css
+    mainURL: css/main.css
+    name: Marketplace Theme CSS
+    type: themeCSS
