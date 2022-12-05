@@ -13,8 +13,8 @@
  */
 
 const ConfigurationLocal = {
-	apiServer: 'https://www-dev.liferay.com',
-	imageURLPrefix: 'https://www-dev.liferay.com',
+	apiServer: '',
+	imageURLPrefix: '',
 };
 
 const ConfigurationCloud = {
