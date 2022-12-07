@@ -1,0 +1,11 @@
+createClientExtensionConfig.doLast {
+	copy {
+		from "."
+		into "build/clientExtension"
+
+		eachFile {
+		file ->
+			println "Copying: " + file.file
+		}
+	}
+}
