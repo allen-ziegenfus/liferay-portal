@@ -15,7 +15,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-	"start": "WDS_SOCKET_HOST=localhost react-scripts start",
+	"start": "BROWSER=none WDS_SOCKET_HOST=localhost react-scripts start",
     "build": "react-scripts build",
     "format": "eslint src --ext js --fix",
     "test": "react-scripts test",
