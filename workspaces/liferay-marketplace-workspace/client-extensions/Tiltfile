@@ -133,3 +133,5 @@ local_resource(
 
 def on_down():
   local("docker container stop %s" % db_container_name)
+
+trigger_mode(TRIGGER_MODE_MANUAL)
