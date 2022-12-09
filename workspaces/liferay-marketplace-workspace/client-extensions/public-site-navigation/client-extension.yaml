@@ -1,0 +1,17 @@
+public-site-navigation:
+    name: Public Site Navigation
+    scopes:
+        - liferay-json-web-services.everything.write
+        - liferay-json-web-services.everything
+    type: oauthApplicationHeadlessServer
+    userAccountEmailAddress: test@$[conf:dxp.lxc.liferay.com.virtualInstanceId]
+runtime:
+    cpu: 2000m
+    env:
+        - name: OAUTH2_JOB_PROFILE
+          value: public-site-navigation
+        - name: CURL_FLAGS
+          value: "-v"
+    memory: 500Mi
+    type: configuration
+    workload: job
