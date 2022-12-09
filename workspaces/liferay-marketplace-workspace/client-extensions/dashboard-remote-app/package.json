@@ -18,7 +18,7 @@
 	"start": "BROWSER=none WDS_SOCKET_HOST=localhost react-scripts start",
     "build": "react-scripts build",
     "format": "eslint src --ext js --fix",
-    "test": "react-scripts test",
+	"test": "react-scripts test --passWithNoTests --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
