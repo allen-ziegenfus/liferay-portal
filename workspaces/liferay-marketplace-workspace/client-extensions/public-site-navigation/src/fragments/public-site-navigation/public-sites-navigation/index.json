@@ -1,0 +1,64 @@
+{
+	"fieldSets": [
+		{
+			"fields": [
+				{
+					"dataType": "string",
+					"defaultValue": true,
+					"description": "Show Site Name",
+					"label": "Show Site Name",
+					"name": "showSiteName",
+					"type": "checkbox"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": true,
+					"description": "Show Account Menu",
+					"label": "Show Account Menu",
+					"name": "showAccountMenu",
+					"type": "checkbox"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": true,
+					"description": "Show Language Menu",
+					"label": "Show Language Menu",
+					"name": "showLanguageMenu",
+					"type": "checkbox"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": true,
+					"description": "Show Search",
+					"label": "Show Search",
+					"name": "showSearch",
+					"type": "checkbox"
+				},
+				{
+					"dataType": "string",
+					"defaultValue": false,
+					"description": "Dark Nav",
+					"label": "Dark Nav",
+					"name": "darkNav",
+					"type": "checkbox"
+				},
+				{
+					"dataType": "int",
+					"defaultValue": "0",
+					"description": "site-navigation-menu-id",
+					"label": "site-navigation-menu-id",
+					"name": "siteNavigationMenuId",
+					"type": "text"
+				},
+				{
+					"dataType": "int",
+					"defaultValue": "0",
+					"description": "account-menu-id",
+					"label": "Account Menu ID",
+					"name": "accountMenuId",
+					"type": "text"
+				}
+			]
+		}
+	]
+}
