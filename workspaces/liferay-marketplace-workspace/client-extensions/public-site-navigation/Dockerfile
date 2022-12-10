@@ -18,9 +18,11 @@ ENV CAROOT=/var/lib/caroot
 COPY rootCA.pem /var/lib/caroot
 
 RUN mkcert -install
+RUN mkdir /resources
 
 COPY *.jar app.jar
-COPY fragments.zip /
+COPY fragments.zip /resources
+COPY main/resources/ /resources/
 
 RUN \
   echo "java -Xmx2048m -agentlib:jdwp=transport=dt_socket,address=*:${DEBUG_PORT:-8001},server=y,suspend=n -jar /app.jar" > /app.sh && \

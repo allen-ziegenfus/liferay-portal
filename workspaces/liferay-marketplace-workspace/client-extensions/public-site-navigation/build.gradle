@@ -47,7 +47,7 @@ task fragmentZip(type: Zip)
 task wrapper
 
 fragmentZip {
-	from 'src/fragments'
+	from 'src/main/resources/fragments'
 	archiveName "fragments.zip"
 	destinationDir(file("build/clientExtension"))
 }
