@@ -7,11 +7,6 @@
 </#function>
 
 <style>
-	.arrow-hover-icon {
-		display: none;
-		transform: rotate(-45deg);
-	}
-
 	.account-menu-item {
 		border-radius: 4px;
 		width: 100%;
@@ -32,12 +27,6 @@
 		background: var(--color-action-primary-hover-lighten);
 		color: var(--color-action-primary-default);
 	}
-
-	.account-menu-item:hover .arrow-hover-icon,
-	.account-menu-item:active .arrow-hover-icon,
-	.account-menu-item:focus .arrow-hover-icon {
-		display: block;
-	}
 </style>
 
 <div class="primary-navigation-account-menu">
@@ -45,7 +34,7 @@
 		<#list entries as menuItem>
 			<#assign
 				menuItemCustomFields = menuItem.getExpandoAttributes()!{}
-				iconURL = getLocalizedExpandoValue(menuItemCustomFields["Menu Item Image Url"])!""
+				iconURL = getLocalizedExpandoValue(menuItemCustomFields["Menu Item Image Url"]!{})!""
 			/>
 
 			<a class="account-menu-item d-flex justify-content-between p-3 text-decoration-none" href="${menuItem.getURL()}">
