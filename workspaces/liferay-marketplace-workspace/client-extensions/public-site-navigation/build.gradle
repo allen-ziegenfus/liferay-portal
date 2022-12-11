@@ -13,8 +13,13 @@ buildscript {
 }
 
 apply plugin: "application"
+apply plugin: "com.liferay.css.builder"
 apply plugin: "com.liferay.source.formatter"
 apply plugin: "java"
+
+buildCSS {
+	outputDirName = "."
+}
 
 dependencies {
 	compile group: "com.liferay", name: "com.liferay.petra.io", version: "latest.release"
@@ -47,7 +52,7 @@ task fragmentZip(type: Zip)
 task wrapper
 
 fragmentZip {
-	from 'src/main/resources/fragments'
+	from 'build/resources/main/fragments'
 	archiveName "fragments.zip"
 	destinationDir(file("build/clientExtension"))
 }
