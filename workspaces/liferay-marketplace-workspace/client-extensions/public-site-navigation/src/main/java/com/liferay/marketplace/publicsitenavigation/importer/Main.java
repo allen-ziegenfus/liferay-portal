@@ -15,6 +15,7 @@
 package com.liferay.marketplace.publicsitenavigation.importer;
 
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -73,9 +74,6 @@ public class Main {
 	public static final String MAINDOMAIN_FILE_NAME =
 		"com.liferay.lxc.dxp.mainDomain";
 
-	public static final String OAUTH2_TOKEN_URI_FILE_NAME =
-		"public-site-navigation.oauth2.token.uri";
-
 	public static void main(String[] arguments) throws Exception {
 		System.out.println("Starting public site navigation import");
 
@@ -89,7 +87,16 @@ public class Main {
 				Path.of(EXTENSION_METADATA_PATH + CLIENT_SECRET_FILE_NAME)),
 			new URL("https://" + liferayTargetURL));
 
-		main.uploadToLiferay();
+		long groupId = GetterUtil.getLong(System.getenv("GROUP_ID"));
+
+		if (groupId == 0) {
+			System.out.println(
+				"No groupId specified in GROUP_ID environment variable, " +
+					"exiting.");
+		}
+		else {
+			main.uploadToLiferay(groupId);
+		}
 
 		System.out.println("Ending public site navigation import");
 	}
@@ -421,59 +428,10 @@ public class Main {
 		}
 	}
 
-	public JSONObject uploadFragments() throws Exception {
-		HttpPost httpPost = new HttpPost(
-			_liferayTargetURL + "/c/portal/fragment/import_fragment_entries");
+	public void uploadToLiferay(long groupId) throws Exception {
+		_importFragments(groupId);
 
-		File zipFile = new File("/resources/fragments.zip");
-
-		FileBody fileBody = new FileBody(zipFile, ContentType.DEFAULT_BINARY);
-
-		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
-
-		builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
-		builder.addPart("file", fileBody);
-		builder.addPart(
-			"groupId",
-			new StringBody("20121", ContentType.MULTIPART_FORM_DATA));
-		builder.addPart(
-			"auth", new StringBody("oauth", ContentType.MULTIPART_FORM_DATA));
-
-		httpPost.setEntity(builder.build());
-
-		httpPost.setHeader("Authorization", _getTargetOAuthAuthorization());
-
-		HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-
-		try (CloseableHttpClient closeableHttpClient =
-				httpClientBuilder.build()) {
-
-			CloseableHttpResponse closeableHttpResponse =
-				closeableHttpClient.execute(httpPost);
-
-			StatusLine statusLine = closeableHttpResponse.getStatusLine();
-
-			if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
-				return new JSONObject(
-					EntityUtils.toString(
-						closeableHttpResponse.getEntity(),
-						Charset.defaultCharset()));
-			}
-
-			throw new Exception(
-				"Could not import fragments: " + statusLine.getStatusCode() +
-					statusLine.getReasonPhrase());
-		}
-	}
-
-	public void uploadToLiferay() throws Exception {
-		uploadFragments();
-
-		Stream<Path> stream = Files.walk(Path.of("/resources"));
-
-		stream.forEach(file -> System.out.println(file));
-
-		_addOrUpdateDDMTemplates(20121);
+		_addOrUpdateDDMTemplates(groupId);
 	}
 
 	private void _addOrUpdateDDMTemplates(long groupId) throws Exception {
@@ -545,8 +503,7 @@ public class Main {
 			String liferayOAuthClientSecret)
 		throws Exception {
 
-		System.out.println(liferayOAuthClientId);
-		System.out.println(liferayOAuthClientSecret);
+		System.out.println("Obtaining OAuth token");
 
 		HttpPost httpPost = new HttpPost(liferayURL + "/o/oauth2/token");
 
@@ -606,6 +563,54 @@ public class Main {
 				targetOAuthorizationJSONObject.getString("access_token");
 
 		return _liferayTargetOAuthAuthorization;
+	}
+
+	private JSONObject _importFragments(long groupId) throws Exception {
+		System.out.println("Importing fragments for groupId " + groupId);
+
+		HttpPost httpPost = new HttpPost(
+			_liferayTargetURL + "/c/portal/fragment/import_fragment_entries");
+
+		File zipFile = new File("/resources/fragments.zip");
+
+		FileBody fileBody = new FileBody(zipFile, ContentType.DEFAULT_BINARY);
+
+		MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+
+		builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+		builder.addPart("file", fileBody);
+		builder.addPart(
+			"groupId",
+			new StringBody(
+				String.valueOf(groupId), ContentType.MULTIPART_FORM_DATA));
+		builder.addPart(
+			"auth", new StringBody("oauth", ContentType.MULTIPART_FORM_DATA));
+
+		httpPost.setEntity(builder.build());
+
+		httpPost.setHeader("Authorization", _getTargetOAuthAuthorization());
+
+		HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+
+		try (CloseableHttpClient closeableHttpClient =
+				httpClientBuilder.build()) {
+
+			CloseableHttpResponse closeableHttpResponse =
+				closeableHttpClient.execute(httpPost);
+
+			StatusLine statusLine = closeableHttpResponse.getStatusLine();
+
+			if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
+				return new JSONObject(
+					EntityUtils.toString(
+						closeableHttpResponse.getEntity(),
+						Charset.defaultCharset()));
+			}
+
+			throw new Exception(
+				"Could not import fragments: " + statusLine.getStatusCode() +
+					statusLine.getReasonPhrase());
+		}
 	}
 
 	private String _liferayTargetOAuthAuthorization;
