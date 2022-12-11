@@ -10,8 +10,6 @@ runtime:
     env:
         - name: OAUTH2_JOB_PROFILE
           value: public-site-navigation
-        - name: CURL_FLAGS
-          value: "-v"
     memory: 500Mi
     type: configuration
     workload: job
