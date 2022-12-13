@@ -197,7 +197,7 @@ public class Main {
 				if (responseJSONObject.has("error")) {
 					throw new Exception(
 						"Error while adding DDM template: " +
-							responseJSONObject.getString("error"));
+							responseJSONObject.get("error"));
 				}
 
 				return responseJSONObject;

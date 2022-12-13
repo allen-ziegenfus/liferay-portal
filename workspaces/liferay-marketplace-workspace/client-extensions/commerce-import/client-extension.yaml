@@ -3,6 +3,10 @@ commerce-import:
     scopes:
         - Liferay.Headless.Commerce.Admin.Catalog.everything
         - Liferay.Headless.Batch.Engine.everything
+        - Liferay.Headless.Admin.User.everything
+        - liferay-json-web-services.everything.write
+        - liferay-json-web-services.everything
+        - liferay-json-web-services.everything.read
     type: oauthApplicationHeadlessServer
     userAccountEmailAddress: test@$[conf:dxp.lxc.liferay.com.virtualInstanceId]
 runtime:
@@ -12,6 +16,6 @@ runtime:
           value: commerce-import
         - name: CURL_FLAGS
           value: "-v"
-    memory: 500Mi
+    memory: 3000Mi
     type: configuration
     workload: job

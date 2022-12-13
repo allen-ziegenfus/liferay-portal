@@ -17,6 +17,7 @@ apply plugin: "com.liferay.source.formatter"
 apply plugin: "java"
 
 dependencies {
+	compile group: "com.liferay", name: "com.liferay.headless.admin.user.client", version: "latest.release"
 	compile group: "com.liferay", name: "com.liferay.headless.batch.engine.client", version: "latest.release"
 	compile group: "com.liferay", name: "com.liferay.headless.delivery.client", version: "latest.release"
 	compile group: "com.liferay", name: "com.liferay.petra.lang", version: "latest.release"
