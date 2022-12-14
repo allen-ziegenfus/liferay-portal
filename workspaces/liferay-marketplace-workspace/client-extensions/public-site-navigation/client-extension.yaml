@@ -3,13 +3,15 @@ public-site-navigation:
     scopes:
         - liferay-json-web-services.everything.write
         - liferay-json-web-services.everything
-    type: oauthApplicationHeadlessServer
+    type: oAuthApplicationHeadlessServer
     userAccountEmailAddress: test@$[conf:dxp.lxc.liferay.com.virtualInstanceId]
 runtime:
     cpu: 2000m
     env:
         - name: OAUTH2_JOB_PROFILE
           value: public-site-navigation
+        - name: GROUP_ID
+          value: 20121
     memory: 500Mi
     type: configuration
     workload: job
