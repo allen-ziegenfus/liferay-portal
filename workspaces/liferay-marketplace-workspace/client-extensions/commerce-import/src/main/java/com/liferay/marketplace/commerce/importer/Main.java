@@ -17,7 +17,6 @@ package com.liferay.marketplace.commerce.importer;
 import com.liferay.headless.admin.user.client.dto.v1_0.Account;
 import com.liferay.headless.admin.user.client.dto.v1_0.AccountRole;
 import com.liferay.headless.admin.user.client.dto.v1_0.Role;
-import com.liferay.headless.admin.user.client.problem.Problem;
 import com.liferay.headless.admin.user.client.resource.v1_0.AccountResource;
 import com.liferay.headless.admin.user.client.resource.v1_0.AccountRoleResource;
 import com.liferay.headless.admin.user.client.resource.v1_0.RoleResource;
@@ -204,30 +203,23 @@ public class Main {
 			"Found " + catalogsPage.getTotalCount() +
 				" Liferay catalogs in target system.");
 
-		if (catalogsPage.getTotalCount() > 0) {
-			System.out.println("Exiting since Liferay catalog exists.");
-
-			return;
-		}
-
 		JSONObject companyJSONObject = _getCompanyByWebIdJSONObject(
 			_liferayTargetMainDomain);
 
 		long companyId = companyJSONObject.getLong("companyId");
 
-		Page<Catalog> sourceCatalogsPage =
-			_sourceCatalogResource.getCatalogsPage(
-				null, null, Pagination.of(1, 1000), null);
-
-		Collection<Catalog> sourceCatalogs = sourceCatalogsPage.getItems();
+		List<Catalog> sourceCatalogs = _getCatalogs(_sourceCatalogResource);
 
 		System.out.println(
-			"Found " + sourceCatalogsPage.getTotalCount() +
-				" catalogs in source system.");
+			"Found " + sourceCatalogs.size() + " catalogs in source system.");
 
-		for (Catalog catalog : sourceCatalogs) {
-			if (Validator.isNull(catalog.getExternalReferenceCode())) {
-				catalog.setExternalReferenceCode("LRDCOM-" + catalog.getId());
+		sourceCatalogs.removeIf(
+			catalog -> Objects.equals(catalog.getName(), "Master"));
+
+		for (Catalog sourceCatalog : sourceCatalogs) {
+			if (Validator.isNull(sourceCatalog.getExternalReferenceCode())) {
+				sourceCatalog.setExternalReferenceCode(
+					"LRDCOM-" + sourceCatalog.getId());
 			}
 		}
 
@@ -237,15 +229,16 @@ public class Main {
 			_targetCatalogResource.postCatalogBatchHttpResponse(
 				null, sourceCatalogs));
 
-		Page<Catalog> targetCatalogsPage =
-			_targetCatalogResource.getCatalogsPage(
-				null, null, Pagination.of(1, 1000), null);
+		List<Catalog> targetCatalogs = _getCatalogs(_targetCatalogResource);
 
-		Map<Long, String> catalogIdToERCLookup = new HashMap<>();
+		targetCatalogs.removeIf(
+			catalog -> Objects.equals(catalog.getName(), "Master"));
 
-		for (Catalog catalog : sourceCatalogsPage.getItems()) {
+		Map<Long, String> catalogExternalReferenceCodes = new HashMap<>();
+
+		for (Catalog catalog : sourceCatalogs) {
 			if (Validator.isNotNull(catalog.getExternalReferenceCode())) {
-				catalogIdToERCLookup.put(
+				catalogExternalReferenceCodes.put(
 					catalog.getId(), catalog.getExternalReferenceCode());
 			}
 		}
@@ -263,19 +256,27 @@ public class Main {
 			rolesMap.put(role.getName(), role);
 		}
 
-		Map<String, Long> catalogERCToIdLookup = new HashMap<>();
+		List<Account> accounts = _getAccounts();
+		Map<String, Account> accountsMap = new HashMap<>();
 
-		for (Catalog catalog : targetCatalogsPage.getItems()) {
-			if (Validator.isNotNull(catalog.getExternalReferenceCode())) {
-				catalogERCToIdLookup.put(
-					catalog.getExternalReferenceCode(), catalog.getId());
+		for (Account account : accounts) {
+			accountsMap.put(account.getExternalReferenceCode(), account);
+		}
 
-				_createCatalogRole(companyId, catalog, rolesMap);
-				_createCatalogAccount(catalog);
+		Map<String, Long> catalogIds = new HashMap<>();
+
+		for (Catalog targetCatalog : targetCatalogs) {
+			if (Validator.isNotNull(targetCatalog.getExternalReferenceCode())) {
+				catalogIds.put(
+					targetCatalog.getExternalReferenceCode(),
+					targetCatalog.getId());
+
+				_createCatalogRole(companyId, targetCatalog, rolesMap);
+				_createCatalogAccount(targetCatalog, accountsMap);
 			}
 		}
 
-		_importProducts(catalogERCToIdLookup, catalogIdToERCLookup);
+		_importProducts(catalogIds, catalogExternalReferenceCodes);
 	}
 
 	private JSONObject _addRole(
@@ -404,23 +405,17 @@ public class Main {
 		return true;
 	}
 
-	private void _createCatalogAccount(Catalog catalog) throws Exception {
-		boolean accountExists = true;
+	private void _createCatalogAccount(
+			Catalog catalog, Map<String, Account> accountsMap)
+		throws Exception {
 
-		try {
-			_targetAccountResource.getAccountByExternalReferenceCode(
-				catalog.getExternalReferenceCode());
-		}
-		catch (Problem.ProblemException problemException) {
-			System.out.println(
-				"Account for catalog does not exist, creating..." +
-					catalog.getName() + problemException.getMessage());
-			accountExists = false;
-		}
-
-		if (accountExists) {
+		if (accountsMap.containsKey(catalog.getExternalReferenceCode())) {
 			return;
 		}
+
+		System.out.println(
+			"Account for catalog does not exist, creating... " +
+				catalog.getName());
 
 		Account account = new Account();
 
@@ -477,6 +472,55 @@ public class Main {
 			0, companyId, "com.liferay.commerce.product.model.CommerceCatalog",
 			String.valueOf(catalog.getId()), roleId,
 			new String[] {"DELETE", "PERMISSIONS", "UPDATE", "VIEW"});
+	}
+
+	private List<Account> _getAccounts() throws Exception {
+		int page = 1;
+		List<Account> accounts = new ArrayList<>();
+		boolean fetchedAllItems = false;
+
+		while (!fetchedAllItems) {
+			com.liferay.headless.admin.user.client.pagination.Page<Account>
+				accountsPage = _targetAccountResource.getAccountsPage(
+					StringPool.BLANK, StringPool.BLANK,
+					com.liferay.headless.admin.user.client.pagination.
+						Pagination.of(page, 100),
+					StringPool.BLANK);
+
+			accounts.addAll(accountsPage.getItems());
+
+			if (accountsPage.getLastPage() == page) {
+				fetchedAllItems = true;
+			}
+
+			page++;
+		}
+
+		return accounts;
+	}
+
+	private List<Catalog> _getCatalogs(CatalogResource catalogResource)
+		throws Exception {
+
+		int page = 1;
+		List<Catalog> catalogs = new ArrayList<>();
+		boolean fetchedAllItems = false;
+
+		while (!fetchedAllItems) {
+			Page<Catalog> catalogsPage = catalogResource.getCatalogsPage(
+				StringPool.BLANK, StringPool.BLANK, Pagination.of(page, 100),
+				StringPool.BLANK);
+
+			catalogs.addAll(catalogsPage.getItems());
+
+			if (catalogsPage.getLastPage() == page) {
+				fetchedAllItems = true;
+			}
+
+			page++;
+		}
+
+		return catalogs;
 	}
 
 	private JSONObject _getCompanyByWebIdJSONObject(String webId)
@@ -588,8 +632,8 @@ public class Main {
 	}
 
 	private void _importProducts(
-			Map<String, Long> catalogERCToIdLookup,
-			Map<Long, String> catalogIdToERCLookup)
+			Map<String, Long> catalogIds,
+			Map<Long, String> catalogExternalReferenceCodes)
 		throws Exception {
 
 		System.out.println("Querying products from source system.");
@@ -619,8 +663,8 @@ public class Main {
 
 			newProduct.setName(product.getName());
 			newProduct.setCatalogId(
-				catalogERCToIdLookup.get(
-					catalogIdToERCLookup.get(product.getCatalogId())));
+				catalogIds.get(
+					catalogExternalReferenceCodes.get(product.getCatalogId())));
 			newProduct.setProductType(product.getProductType());
 			newProduct.setExternalReferenceCode(
 				product.getExternalReferenceCode());
