@@ -77,24 +77,39 @@ public class Main {
 	public static void main(String[] arguments) throws Exception {
 		System.out.println("Starting public site navigation import");
 
-		String liferayTargetURL = Files.readString(
-			Path.of(DXP_METADATA_PATH, MAINDOMAIN_FILE_NAME));
+		String liferayURL;
+		String liferayOAuthClientId;
+		String liferayOAuthClientSecret;
 
-		Main main = new Main(
-			Files.readString(
-				Path.of(EXTENSION_METADATA_PATH + CLIENT_ID_FILE_NAME)),
-			Files.readString(
-				Path.of(EXTENSION_METADATA_PATH + CLIENT_SECRET_FILE_NAME)),
-			new URL("https://" + liferayTargetURL));
+		Path path = Path.of("/etc/liferay");
+
+		if (Files.exists(path)) {
+			liferayURL = Files.readString(
+				Path.of(DXP_METADATA_PATH, MAINDOMAIN_FILE_NAME));
+
+			liferayOAuthClientId = Files.readString(
+				Path.of(EXTENSION_METADATA_PATH + CLIENT_ID_FILE_NAME));
+			liferayOAuthClientSecret = Files.readString(
+				Path.of(EXTENSION_METADATA_PATH + CLIENT_SECRET_FILE_NAME));
+		}
+		else {
+			liferayURL = System.getenv("LIFERAY_URL");
+			liferayOAuthClientId = System.getenv("LIFERAY_OAUTH_CLIENT_ID");
+			liferayOAuthClientSecret = System.getenv(
+				"LIFERAY_OAUTH_CLIENT_SECRET");
+		}
 
 		long groupId = GetterUtil.getLong(System.getenv("GROUP_ID"));
 
 		if (groupId == 0) {
 			System.out.println(
-				"No groupId specified in GROUP_ID environment variable, " +
-					"exiting.");
+				"No groupId specified in GROUP_ID environment variable.");
 		}
 		else {
+			Main main = new Main(
+				liferayOAuthClientId, liferayOAuthClientSecret,
+				new URL("https://" + liferayURL));
+
 			main.uploadToLiferay(groupId);
 		}
 
@@ -102,13 +117,13 @@ public class Main {
 	}
 
 	public Main(
-			String liferayTargetOAuthClientId,
-			String liferayTargetOAuthClientSecret, URL liferayTargetURL)
+			String liferayOAuthClientId, String liferayOAuthClientSecret,
+			URL liferayURL)
 		throws Exception {
 
-		_liferayTargetOAuthClientId = liferayTargetOAuthClientId;
-		_liferayTargetOAuthClientSecret = liferayTargetOAuthClientSecret;
-		_liferayTargetURL = liferayTargetURL;
+		_liferayOAuthClientId = liferayOAuthClientId;
+		_liferayOAuthClientSecret = liferayOAuthClientSecret;
+		_liferayURL = liferayURL;
 
 		_getTargetOAuthAuthorization();
 	}
@@ -120,7 +135,7 @@ public class Main {
 		throws Exception {
 
 		HttpPost httpPost = new HttpPost(
-			_liferayTargetURL + "/api/jsonws/ddm.ddmtemplate");
+			_liferayURL + "/api/jsonws/ddm.ddmtemplate");
 
 		httpPost.setHeader("Authorization", _getTargetOAuthAuthorization());
 		httpPost.setHeader("Accept", "application/json");
@@ -214,7 +229,7 @@ public class Main {
 		throws Exception {
 
 		HttpGet httpGet = new HttpGet(
-			_liferayTargetURL + "/api/jsonws/ddm.ddmstructure/fetch-structure");
+			_liferayURL + "/api/jsonws/ddm.ddmstructure/fetch-structure");
 
 		httpGet.setHeader("Authorization", _getTargetOAuthAuthorization());
 		httpGet.setHeader("Accept", "application/json");
@@ -261,7 +276,7 @@ public class Main {
 		throws Exception {
 
 		HttpGet httpGet = new HttpGet(
-			_liferayTargetURL + "/api/jsonws/ddm.ddmtemplate/fetch-template");
+			_liferayURL + "/api/jsonws/ddm.ddmtemplate/fetch-template");
 
 		httpGet.setHeader("Authorization", _getTargetOAuthAuthorization());
 		httpGet.setHeader("Accept", "application/json");
@@ -305,7 +320,7 @@ public class Main {
 
 	public long getClassNameId(String className) throws Exception {
 		HttpGet httpGet = new HttpGet(
-			_liferayTargetURL + "/api/jsonws/classname/fetch-class-name");
+			_liferayURL + "/api/jsonws/classname/fetch-class-name");
 
 		httpGet.setHeader("Authorization", _getTargetOAuthAuthorization());
 		httpGet.setHeader("Accept", "application/json");
@@ -351,7 +366,7 @@ public class Main {
 		throws Exception {
 
 		HttpPost httpPost = new HttpPost(
-			_liferayTargetURL + "/api/jsonws/ddm.ddmtemplate");
+			_liferayURL + "/api/jsonws/ddm.ddmtemplate");
 
 		httpPost.setHeader("Authorization", _getTargetOAuthAuthorization());
 		httpPost.setHeader("Accept", "application/json");
@@ -540,36 +555,34 @@ public class Main {
 
 	private String _getTargetOAuthAuthorization() throws Exception {
 		long expirationDelta =
-			_liferayTargetOAuthExpirationTimeMillis -
-				System.currentTimeMillis();
+			_liferayOAuthExpirationTimeMillis - System.currentTimeMillis();
 
-		if (Validator.isNotNull(_liferayTargetOAuthAuthorization) &&
+		if (Validator.isNotNull(_liferayOAuthAuthorization) &&
 			((expirationDelta - 10000) > 0)) {
 
-			return _liferayTargetOAuthAuthorization;
+			return _liferayOAuthAuthorization;
 		}
 
 		JSONObject targetOAuthorizationJSONObject =
 			_getOAuthAuthorizationJSONObject(
-				_liferayTargetURL, _liferayTargetOAuthClientId,
-				_liferayTargetOAuthClientSecret);
+				_liferayURL, _liferayOAuthClientId, _liferayOAuthClientSecret);
 
-		_liferayTargetOAuthExpirationTimeMillis =
+		_liferayOAuthExpirationTimeMillis =
 			System.currentTimeMillis() +
 				(targetOAuthorizationJSONObject.getLong("expires_in") * 1000);
 
-		_liferayTargetOAuthAuthorization =
+		_liferayOAuthAuthorization =
 			targetOAuthorizationJSONObject.getString("token_type") + " " +
 				targetOAuthorizationJSONObject.getString("access_token");
 
-		return _liferayTargetOAuthAuthorization;
+		return _liferayOAuthAuthorization;
 	}
 
 	private JSONObject _importFragments(long groupId) throws Exception {
 		System.out.println("Importing fragments for groupId " + groupId);
 
 		HttpPost httpPost = new HttpPost(
-			_liferayTargetURL + "/c/portal/fragment/import_fragment_entries");
+			_liferayURL + "/c/portal/fragment/import_fragment_entries");
 
 		File zipFile = new File("/resources/fragments.zip");
 
@@ -613,10 +626,10 @@ public class Main {
 		}
 	}
 
-	private String _liferayTargetOAuthAuthorization;
-	private final String _liferayTargetOAuthClientId;
-	private final String _liferayTargetOAuthClientSecret;
-	private long _liferayTargetOAuthExpirationTimeMillis;
-	private final URL _liferayTargetURL;
+	private String _liferayOAuthAuthorization;
+	private final String _liferayOAuthClientId;
+	private final String _liferayOAuthClientSecret;
+	private long _liferayOAuthExpirationTimeMillis;
+	private final URL _liferayURL;
 
 }
