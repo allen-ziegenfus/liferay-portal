@@ -12,26 +12,18 @@
  * details.
  */
 
-import './Dashboard.css';
-import {useState} from 'react';
-import useProducts from './hooks/useProducts';
-
-function Dashboard(props) {
-	const [languageId] = useState(Liferay.ThemeDisplay.getLanguageId());
-
-	const {data, isFetching, status} = useProducts(languageId);
-
-	return (
-		<div>
-			<h1>Dashboard</h1>
-			{status == 'success' &&
-				data &&
-				data.items &&
-				data.items.map((product) => (
-					<div key={product.id}>{product.name[languageId]}</div>
-				))}
-		</div>
-	);
-}
-
-export default Dashboard;
+ import './Dashboard.css';
+ import Table from "./components/Table";
+ 
+ function Dashboard(props) {
+	 return (
+		 <div>
+			<h1>Apps</h1>
+			<div>Manage and publish apps on the Marketplace</div>
+			<Table />
+		 </div>
+	 );
+ }
+ 
+ export default Dashboard;
+ 
