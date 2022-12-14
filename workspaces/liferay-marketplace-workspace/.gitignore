@@ -6,3 +6,4 @@ node_modules_cache
 main.prod.properties
 config.json
 build.source.gradle
+dist
