@@ -1,19 +1,17 @@
-become-a-publisher-remote-app:
-  cssURLs:
-    - static/css/main.*.css
-  friendlyURLMapping: become-a-publisher-remote-app
-  htmlElementName: become-a-publisher-remote-app
-  instanceable: false
-  name: Become A Publisher Remote App
-  portletCategoryName: category.remote-apps
-  type: customElement
-  urls:
-    - static/js/main.*.js
-  useESM: false
-
 assemble:
-  - from: build/
-    include: "static/**/*"
-    into: dockerRoot/
-
+    - from: build/
+      include: "static/**/*"
+      into: dockerRoot/
+become-a-publisher-remote-app:
+    cssURLs:
+        - static/css/main.*.css
+    friendlyURLMapping: become-a-publisher-remote-app
+    htmlElementName: become-a-publisher-remote-app
+    instanceable: false
+    name: Become A Publisher Remote App
+    portletCategoryName: category.remote-apps
+    type: customElement
+    urls:
+        - static/js/main.*.js
+    useESM: false
 runtime:
