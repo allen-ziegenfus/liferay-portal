@@ -1,11 +1,11 @@
 {
-    "private": true,
-    "workspaces": {
-        "packages": [
-            "client-extensions/navigation-js",
-            "client-extensions/become-a-publisher-remote-app",
-            "client-extensions/dashboard-remote-app",
-            "client-extensions/marketplace-theme-css"
-        ]
-    }
+	"private": true,
+	"workspaces": {
+		"packages": [
+			"client-extensions/navigation-js",
+			"client-extensions/become-a-publisher-remote-app",
+			"client-extensions/dashboard-remote-app",
+			"client-extensions/marketplace-theme-css"
+		]
+	}
 }
