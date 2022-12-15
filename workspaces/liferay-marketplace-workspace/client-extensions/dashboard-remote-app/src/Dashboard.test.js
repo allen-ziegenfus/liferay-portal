@@ -25,6 +25,6 @@ window.Liferay = {
 
 test('renders learn react link', () => {
 	render(<Dashboard />);
-	const linkElement = screen.getByText(/dashboard/i);
+	const linkElement = screen.getByText(/Manage and publish apps on the Marketplace/i);
 	expect(linkElement).toBeInTheDocument();
 });
