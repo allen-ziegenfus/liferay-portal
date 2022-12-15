@@ -19,8 +19,8 @@ window.Liferay = {
 	ThemeDisplay: {
 		getLanguageId() {
 			return 'en_US';
-		}
-	}
+		},
+	},
 };
 
 test('renders learn react link', () => {

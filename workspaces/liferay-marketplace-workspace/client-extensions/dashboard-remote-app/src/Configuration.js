@@ -34,8 +34,7 @@ if (
 	window.location.hostname === '0.0.0.0'
 ) {
 	Configuration = ConfigurationLocal;
-}
-else if (window && window.location.hostname === 'www.liferay.com') {
+} else if (window && window.location.hostname === 'www.liferay.com') {
 	Configuration = ConfigurationProd;
 }
 

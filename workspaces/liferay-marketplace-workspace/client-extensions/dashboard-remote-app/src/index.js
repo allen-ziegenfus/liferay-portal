@@ -18,13 +18,13 @@ import './index.css';
 import Dashboard from './Dashboard';
 
 class WebComponent extends HTMLElement {
-  connectedCallback() {
-    ReactDOM.render(<Dashboard />,this);
-  }
+	connectedCallback() {
+		ReactDOM.render(<Dashboard />, this);
+	}
 }
 
 const ELEMENT_ID = 'dashboard-remote-app';
 
 if (!customElements.get(ELEMENT_ID)) {
-  customElements.define(ELEMENT_ID, WebComponent);
+	customElements.define(ELEMENT_ID, WebComponent);
 }

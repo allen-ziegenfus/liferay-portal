@@ -12,18 +12,17 @@
  * details.
  */
 
- import './Dashboard.css';
- import Table from "./components/Table";
- 
- function Dashboard(props) {
-	 return (
-		 <div>
+import './Dashboard.css';
+import Table from './components/Table';
+
+function Dashboard(props) {
+	return (
+		<div>
 			<h1>Apps</h1>
 			<div>Manage and publish apps on the Marketplace</div>
 			<Table />
-		 </div>
-	 );
- }
- 
- export default Dashboard;
- 
+		</div>
+	);
+}
+
+export default Dashboard;
