@@ -23,9 +23,11 @@ window.addEventListener('load', () => {
 
 	new navigation.default.DropdownProvider(
 		'.sites',
-		'.sites',
-		'show'
+		'.liferay-sites-dropdown',
+		'show',
+		true
 	);
+
 
 	new navigation.default.DropdownProvider(
 		'.menu-button-group',
@@ -49,13 +51,6 @@ window.addEventListener('load', () => {
 	new navigation.default.DropdownProvider(
 		'.language',
 		'.language-selector',
-		'list-open',
-		true
-	);
-
-	new navigation.default.DropdownProvider(
-		'.language',
-		'.language-dropdown-list-container',
 		'list-open',
 		true
 	);
