@@ -19,7 +19,7 @@ const Table = () => {
 	
 	const { data, status } = useProducts(languageId, page);
 
-	if (status == "success" && data.totalCount == 0) {
+	if (status === "success" && data.totalCount === 0) {
 		return (
 			<div className="align-items-center d-flex flex-column justify-items-center no-apps">
 				<svg width="144" height="80" viewBox="0 0 144 80" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,12 +36,12 @@ const Table = () => {
 
 				<h4 className="font-weight-bold">No apps yet</h4>
 
-				<div>Create new apps and they will show up here. Click on “New App” to start creating apps</div>
+				<div>Create new apps and they will show up here. Click on "New App" to start creating apps</div>
 			</div>
 		)
 	}
 
-	if (status == "success" && data.totalCount != 0) {
+	if (status === "success" && data.totalCount !== 0) {
 		return (
 			<>
 				<table className="table">

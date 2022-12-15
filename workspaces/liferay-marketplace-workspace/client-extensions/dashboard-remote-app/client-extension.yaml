@@ -1,17 +1,16 @@
-dashboard-remote-app:
-  cssURLs:
-    - static/css/main.*.css
-  friendlyURLMapping: dashboard-remote-app
-  htmlElementName: dashboard-remote-app
-  instanceable: false
-  name: Dashboard Remote App
-  portletCategoryName: category.remote-apps
-  type: customElement
-  urls:
-    - static/js/main.*.js
-  useESM: false
-
 assemble:
-  - from: build/
-    include: "static/**/*"
-    into: dockerRoot/
+    - from: build/
+      include: "static/**/*"
+      into: dockerRoot/
+dashboard-remote-app:
+    cssURLs:
+        - static/css/main.*.css
+    friendlyURLMapping: dashboard-remote-app
+    htmlElementName: dashboard-remote-app
+    instanceable: false
+    name: Dashboard Remote App
+    portletCategoryName: category.remote-apps
+    type: customElement
+    urls:
+        - static/js/main.*.js
+    useESM: false

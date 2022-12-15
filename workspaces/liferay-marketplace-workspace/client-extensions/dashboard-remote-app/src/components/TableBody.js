@@ -1,7 +1,7 @@
 const TableBody = ({ columns, data, languageId, status }) => {
   	return (
 		<tbody>
-			{status == "success" &&
+			{status === "success" &&
 				data &&
 				data.items &&
 				data.items.map((product) => {
@@ -9,7 +9,7 @@ const TableBody = ({ columns, data, languageId, status }) => {
 					<tr key={product.id}>
 						{columns.map(({ accessor }) => {
 							const productValue =
-							accessor == "name"
+							accessor === "name"
 								? product[accessor][languageId]
 								: product[accessor];
 							return <td key={accessor}>{productValue}</td>;
