@@ -5,23 +5,19 @@ import '../Dashboard.css';
 import getIconSpriteMap from './getIconSpriteMap';
 
 function Pagination(props) {
-	var {
-		page,
-        setPage,
-		totalCount
-	} = props;
+	var {page, setPage, totalCount} = props;
 
 	return (
-        <ClayPaginationBarWithBasicItems
-            activeDelta={10}
-            activePage={page}
-            ellipsisBuffer={1}
-            ellipsisProps={{ "aria-label": "More", title: "More" }}
-            onPageChange={setPage}
-            showDeltasDropDown={false}
-            spritemap={getIconSpriteMap()}
-            totalItems={totalCount}
-        />
+		<ClayPaginationBarWithBasicItems
+			activeDelta={10}
+			activePage={page}
+			ellipsisBuffer={1}
+			ellipsisProps={{'aria-label': 'More', 'title': 'More'}}
+			onPageChange={setPage}
+			showDeltasDropDown={false}
+			spritemap={getIconSpriteMap()}
+			totalItems={totalCount}
+		/>
 	);
 }
 

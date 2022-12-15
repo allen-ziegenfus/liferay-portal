@@ -30,9 +30,7 @@ const getProducts = (_, languageId, page) => {
 };
 
 export default function useProducts(languageId, page) {
-	return useQuery(
-		['Products', languageId, page, 10],
-		getProducts,
-		{ keepPreviousData: true }
-	);
+	return useQuery(['Products', languageId, page, 10], getProducts, {
+		keepPreviousData: true,
+	});
 }
