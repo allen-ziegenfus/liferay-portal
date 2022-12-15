@@ -1,5 +1,7 @@
-import groovy.json.JsonSlurper
 import groovy.json.JsonBuilder
+import groovy.json.JsonSlurper
+
+apply plugin: "com.liferay.source.formatter"
 
 createClientExtensionConfig.doLast {
 	if (project.hasProperty("react.hotload")) {
