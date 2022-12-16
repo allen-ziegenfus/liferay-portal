@@ -72,9 +72,6 @@ window.addEventListener('load', () => {
 
 const searchSuggestionsInput = fragmentElement.querySelector(".search-suggestions-input");
 const searchSuggestionsResult = fragmentElement.querySelector(".search-suggestions");
-const suggestedText = fragmentElement.querySelector('.suggested-text');
-const noResultsMessage = fragmentElement.querySelector('.no-results-message');
-
 
 searchSuggestionsInput.oninput = function() {
 	searchSuggestionsResult.innerHTML = "";
@@ -103,6 +100,10 @@ function navSearch(query) {
 
 		const searchSuggestions = fragmentElement.querySelector(".search-suggestions");
 		const searchSuggestionsSeeAllResults = fragmentElement.querySelector(".search-suggestions-see-all-results")
+		const suggestionsPopular = fragmentElement.querySelector(".suggestions-popular");
+		const suggestedText = fragmentElement.querySelector('.suggested-text');
+		const noResultsMessage = fragmentElement.querySelector('.no-results-message');
+
 
 		if (data.items[0] !== void(0)) {
 			const myjson = JSON.parse(JSON.stringify(data.items[0]));
@@ -136,6 +137,7 @@ function navSearch(query) {
 					searchSuggestionsSeeAllResults.classList.remove('d-none');
 					suggestedText.classList.remove('d-none');
 					noResultsMessage.classList.add('d-none');
+					suggestionsPopular.classList.add('d-none');
 				}
 
 				// search highlighting
@@ -154,6 +156,7 @@ function navSearch(query) {
 			searchSuggestionsSeeAllResults.classList.add('d-none');
 			suggestedText.classList.add('d-none');
 			noResultsMessage.classList.remove('d-none');
+			suggestionsPopular.classList.remove('d-none');
 		}
 	});
 }

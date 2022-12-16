@@ -1403,10 +1403,13 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 
 			.search-suggestion-item-content {
 				color: var(--white);
+				display: -webkit-box;
 				font-size: var(--text-paragraph-font-size);
 				font-weight: 400;
 				opacity: 0.9;
-				padding-bottom: 12px;
+				-webkit-line-clamp: 2;
+				-webkit-box-orient: vertical;
+				overflow: hidden;
 
 				b {
 					font-weight: var(--font-weight-bold);
