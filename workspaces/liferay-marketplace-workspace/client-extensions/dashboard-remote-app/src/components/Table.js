@@ -16,8 +16,9 @@ const Table = () => {
 	const publisherName = 'Acme Co';
 	const [languageId] = useState(Liferay.ThemeDisplay.getLanguageId());
 	const [page, setPage] = useState(1);
+	const [delta, setDelta] = useState(10);
 
-	const {data, status} = useProducts(languageId, page);
+	const {data, status} = useProducts(languageId, page, delta);
 
 	if (status === 'success' && data.totalCount === 0) {
 		return (
@@ -104,7 +105,9 @@ const Table = () => {
 				</table>
 
 				<Pagination
+					delta={delta}
 					page={page}
+					setDelta={setDelta}
 					setPage={setPage}
 					totalCount={data.totalCount}
 				/>
@@ -114,8 +117,8 @@ const Table = () => {
 
 	return (
 		<div className="align-items-center d-flex flex-column justify-items-center">
-			<div class="spinner-border text-primary" role="status">
-				<span class="sr-only">Loading...</span>
+			<div className="spinner-border text-primary" role="status">
+				<span className="sr-only">Loading...</span>
 			</div>
 
 			<div>
