@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import ClayLoadingIndicator from '@clayui/loading-indicator';
 
 import Pagination from './Pagination';
 import TableBody from './TableBody';
@@ -117,9 +118,7 @@ const Table = () => {
 
 	return (
 		<div className="align-items-center d-flex flex-column justify-items-center">
-			<div className="spinner-border text-primary" role="status">
-				<span className="sr-only">Loading...</span>
-			</div>
+			<ClayLoadingIndicator displayType="primary" shape="squares" size="lg" />
 
 			<div>
 				Hang tight, we are preparing your arrival as publisher and
