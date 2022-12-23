@@ -16,21 +16,22 @@ import {useQuery} from 'react-query';
 
 import fetchProducts from '../queries/fetchProducts';
 
-const getProducts = (_, languageId, page, pageSize) => {
+const getProducts = (_, languageId, page, pageSize, sort) => {
 	const queryValues = {
 		params: {
 			_,
 			languageId,
 			page,
 			pageSize,
+			sort
 		},
 	};
 
 	return fetchProducts(queryValues, languageId);
 };
 
-export default function useProducts(languageId, page, pageSize) {
-	return useQuery(['Products', languageId, page, pageSize], getProducts, {
+export default function useProducts(languageId, page, pageSize, sort) {
+	return useQuery(['Products', languageId, page, pageSize, sort], getProducts, {
 		keepPreviousData: true,
 	});
 }

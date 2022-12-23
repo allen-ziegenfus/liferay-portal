@@ -18,8 +18,28 @@ const Table = () => {
 	const [languageId] = useState(Liferay.ThemeDisplay.getLanguageId());
 	const [page, setPage] = useState(1);
 	const [delta, setDelta] = useState(10);
+	const [sort, setSort] = useState('');
+	const [order, setOrder] = useState(true);
 
-	const {data, status} = useProducts(languageId, page, delta);
+	const {data, refetch, status} = useProducts(languageId, page, delta, sort);
+
+	function handleSortClick(event) {
+		const sortCategory = event.target.dataset.category;
+
+		if (sortCategory === 'name' || sortCategory === 'modifiedDate') {
+			if (sort.includes(sortCategory)) {
+				const currentOrder = order ? ':asc' : ':desc';
+
+				setSort(sortCategory + currentOrder);
+				setOrder(!order);
+			} else {
+				setSort(sortCategory + ':asc');
+				setOrder(true);
+			}
+
+			refetch();
+		}
+	}
 
 	if (status === 'success' && data.totalCount === 0) {
 		return (
@@ -96,7 +116,7 @@ const Table = () => {
 		return (
 			<>
 				<table className="table">
-					<TableHead columns={columns} />
+					<TableHead columns={columns} handleSortClick={handleSortClick} order={order} sort={sort}/>
 					<TableBody
 						columns={columns}
 						data={data}
