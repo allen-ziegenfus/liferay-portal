@@ -16,6 +16,7 @@ import {useState} from 'react';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 
 import Pagination from './Pagination';
+import Search from './Search';
 import TableBody from './TableBody';
 import TableHead from './TableHead';
 import useProducts from '../hooks/useProducts';
@@ -34,8 +35,18 @@ const Table = () => {
 	const [delta, setDelta] = useState(10);
 	const [sort, setSort] = useState('');
 	const [order, setOrder] = useState(true);
+	const [search, setSearch] = useState('');
 
-	const {data, refetch, status} = useProducts(languageId, page, delta, sort);
+	const {data, refetch, status} = useProducts(languageId, page, delta, sort, search);
+
+	function handleClearSearch() {
+		setSearch('');
+		document.getElementById('searchInput').value = '';
+	}
+
+	function handleKeyPress(event) {
+		setSearch(event.target.value);
+	}
 
 	function handleSortClick(event) {
 		const sortCategory = event.target.dataset.category;
@@ -57,78 +68,84 @@ const Table = () => {
 
 	if (status === 'success' && data.totalCount === 0) {
 		return (
-			<div className="align-items-center d-flex flex-column justify-items-center no-apps">
-				<svg
-					width="144"
-					height="80"
-					viewBox="0 0 144 80"
-					fill="none"
-					xmlns="http://www.w3.org/2000/svg"
-				>
-					<rect width="144" height="80" rx="8" fill="#EDF3FE" />
-					<path
-						opacity="0.2"
-						d="M86 44H76V54H86V44Z"
-						fill="#0B5FFF"
-					/>
-					<path
-						d="M86 44H76V54H86V44Z"
-						stroke="#004AD7"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-					<path
-						opacity="0.2"
-						d="M68 44H58V54H68V44Z"
-						fill="#0B5FFF"
-					/>
-					<path
-						d="M68 44H58V54H68V44Z"
-						stroke="#004AD7"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-					<path
-						opacity="0.2"
-						d="M86 26H76V36H86V26Z"
-						fill="#0B5FFF"
-					/>
-					<path
-						d="M86 26H76V36H86V26Z"
-						stroke="#004AD7"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-					<path
-						opacity="0.2"
-						d="M68 26H58V36H68V26Z"
-						fill="#0B5FFF"
-					/>
-					<path
-						d="M68 26H58V36H68V26Z"
-						stroke="#004AD7"
-						stroke-width="3"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
+			<>
+				<Search handleClearSearch={handleClearSearch} handleKeyPress={handleKeyPress} searchTerm={search} totalCount={data.totalCount}/>
 
-				<h4 className="font-weight-bold">No apps yet</h4>
+				<div className="align-items-center d-flex flex-column justify-items-center no-apps">
+					<svg
+						width="144"
+						height="80"
+						viewBox="0 0 144 80"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<rect width="144" height="80" rx="8" fill="#EDF3FE" />
+						<path
+							opacity="0.2"
+							d="M86 44H76V54H86V44Z"
+							fill="#0B5FFF"
+						/>
+						<path
+							d="M86 44H76V54H86V44Z"
+							stroke="#004AD7"
+							stroke-width="3"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+						<path
+							opacity="0.2"
+							d="M68 44H58V54H68V44Z"
+							fill="#0B5FFF"
+						/>
+						<path
+							d="M68 44H58V54H68V44Z"
+							stroke="#004AD7"
+							stroke-width="3"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+						<path
+							opacity="0.2"
+							d="M86 26H76V36H86V26Z"
+							fill="#0B5FFF"
+						/>
+						<path
+							d="M86 26H76V36H86V26Z"
+							stroke="#004AD7"
+							stroke-width="3"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+						<path
+							opacity="0.2"
+							d="M68 26H58V36H68V26Z"
+							fill="#0B5FFF"
+						/>
+						<path
+							d="M68 26H58V36H68V26Z"
+							stroke="#004AD7"
+							stroke-width="3"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
 
-				<div>
-					Create new apps and they will show up here. Click on "New
-					App" to start creating apps
+					<h4 className="font-weight-bold">No apps yet</h4>
+
+					<div>
+						Create new apps and they will show up here. Click on "New
+						App" to start creating apps
+					</div>
 				</div>
-			</div>
+			</>
 		);
 	}
 
 	if (status === 'success' && data.totalCount !== 0) {
 		return (
 			<>
+				<Search handleClearSearch={handleClearSearch} handleKeyPress={handleKeyPress} searchTerm={search} totalCount={data.totalCount}/>
+
 				<table className="table">
 					<TableHead columns={columns} handleSortClick={handleSortClick} order={order} sort={sort}/>
 					<TableBody
@@ -156,7 +173,7 @@ const Table = () => {
 
 			<div>
 				Hang tight, we are preparing your arrival as publisher and
-				member of{' '}
+				member of&nbsp;
 				<span className="font-weight-bold">{publisherName}</span>
 			</div>
 		</div>
