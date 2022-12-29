@@ -1238,7 +1238,7 @@ public class Main {
 		Matcher matcher = _sphinxBadgePattern.matcher(line);
 
 		if (matcher.find()) {
-			line = matcher.replaceFirst("<span class=\"bdg-$1\">$2</span>");
+			line = matcher.replaceFirst("<span class=\"bdg bdg-$1\">$2</span>");
 		}
 
 		return line;
