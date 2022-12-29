@@ -1,0 +1,71 @@
+$semantic-colors: (
+  "primary": #007bff,
+  "secondary": #6c757d,
+  "warning": #f0b37e,
+  "link-primary": #007bff,
+  "link-secondary": #6c757d,
+  "link-warning": #f0b37e
+) !default;
+
+:root {
+  @each $color, $value in $semantic-colors {
+    --bdg-color-#{$color}: #{$value};
+    --bdg-color-#{$color}-highlight: #{mix(black, $value, 15%)};
+  }
+
+  --bdg-color-white: #FFF;
+  --bdg-color-white-highlight: #{mix(black, #FFF, 15%)};
+}
+
+@each $color, $value in $semantic-colors {
+  .bdg-#{$color} {
+    background-color: var(--bdg-color-#{$color}) !important;
+    color: var(--bdg-color-white) !important;
+    border-color: var(--bdg-color-#{$color}) !important;
+    border-style: solid !important;
+    border-width: 1px !important;
+
+    & > p {
+      color: var(--bdg-color-white) !important;
+    }
+  }
+  button {
+    &.bdg-#{$color}:focus,
+    &.bdg-#{$color}:hover {
+      background-color: var(--bdg-color-#{$color}-highlight) !important;
+    }
+  }
+  a {
+    &.bdg-#{$color}:focus,
+    &.bdg-#{$color}:hover {
+      background-color: var(--bdg-color-#{$color}-highlight) !important;
+      border-color: var(--bdg-color-#{$color}-highlight) !important;
+      color: var(--bdg-color-white-highlight) !important;
+    }
+  }
+}
+
+.bdg {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+  
+    &:empty {
+      display: none;
+    }
+  }
+  
+  a.bdg {
+    text-decoration: none;
+  }
+  
+  .sd-btn .bdg {
+    position: relative;
+    top: -1px;
+  }
