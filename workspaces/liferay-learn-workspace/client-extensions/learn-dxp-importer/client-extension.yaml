@@ -1,0 +1,21 @@
+learn-dxp-importer:
+    name: Learn DXP Importer
+    scopes:
+        - Liferay.Headless.Batch.Engine.everything
+        - liferay-json-web-services.everything.write
+        - liferay-json-web-services.everything
+        - liferay-json-web-services.everything.read
+    type: oAuthApplicationHeadlessServer
+    userAccountEmailAddress: test@$[conf:dxp.lxc.liferay.com.virtualInstanceId]
+runtime:
+    cpu: 2000m
+    env:
+        - name: OAUTH2_JOB_PROFILE
+          value: learn-dxp-importer
+        - name: GITHUB_DEPLOY_KEY
+          value:
+        - name: GITHUB_REPO
+          value: git@github.com:liferay/liferay-learn.git
+    memory: 3000Mi
+    type: configuration
+    workload: job
