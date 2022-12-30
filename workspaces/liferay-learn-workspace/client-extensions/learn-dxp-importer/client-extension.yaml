@@ -12,10 +12,8 @@ runtime:
     env:
         - name: OAUTH2_JOB_PROFILE
           value: learn-dxp-importer
-        - name: GITHUB_DEPLOY_KEY
-          value:
-        - name: GITHUB_REPO
-          value: git@github.com:liferay/liferay-learn.git
+        - name: SKIP_UPDATE_EXAMPLES
+          value: true
     memory: 3000Mi
     type: configuration
     workload: job
