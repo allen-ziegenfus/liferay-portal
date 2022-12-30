@@ -94,11 +94,11 @@ public class Main {
 				"LIFERAY_OAUTH_CLIENT_SECRET");
 		}
 
-		long groupId = GetterUtil.getLong(System.getenv("GROUP_ID"));
+		long groupId = GetterUtil.getLong(System.getenv("LIFERAY_GROUP_ID"));
 
 		if (groupId == 0) {
 			System.out.println(
-				"No groupId specified in GROUP_ID environment variable.");
+				"No groupId specified in LIFERAY_GROUP_ID environment variable.");
 		}
 		else {
 			Main main = new Main(

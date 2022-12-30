@@ -11,7 +11,7 @@ runtime:
     env:
         - name: OAUTH2_JOB_PROFILE
           value: liferay-learn-web
-        - name: GROUP_ID
+        - name: LIFERAY_GROUP_ID
           value: 20121
     memory: 500Mi
     type: configuration
