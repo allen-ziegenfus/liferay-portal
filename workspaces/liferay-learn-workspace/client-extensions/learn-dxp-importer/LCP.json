@@ -1,11 +1,11 @@
 {
-	"cpu": 0.2,
+	"cpu": 4,
 	"environments": {
 		"infra": {
 			"deploy": false
 		}
 	},
-	"id": "learn-dxp-importer",
+	"id": "learndxpimporter",
 	"kind": "Job",
 	"memory": 3000,
 	"scale": 1
