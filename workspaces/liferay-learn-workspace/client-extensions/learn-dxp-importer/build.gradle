@@ -43,7 +43,7 @@ jar {
 	}
 }
 
-createClientExtensionConfig {
+assembleClientExtension {
 	doLast {
 		copy {
 			from "."
