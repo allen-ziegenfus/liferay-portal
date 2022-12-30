@@ -54,59 +54,16 @@ import org.json.JSONObject;
  */
 public class Main {
 
-	public static final String CLIENT_ID_FILE_NAME =
-		"liferay-learn-web.oauth2.headless.server.client.id";
-
-	public static final String CLIENT_SECRET_FILE_NAME =
-		"liferay-learn-web.oauth2.headless.server.client.secret";
-
-	public static final String DXP_METADATA_PATH =
-		"/etc/liferay/lxc/dxp-metadata/";
-
-	public static final String EXTENSION_METADATA_PATH =
-		"/etc/liferay/lxc/ext-init-metadata/";
-
-	public static final String MAINDOMAIN_FILE_NAME =
-		"com.liferay.lxc.dxp.mainDomain";
-
 	public static void main(String[] arguments) throws Exception {
 		System.out.println("Starting import");
 
-		String liferayURL;
-		String liferayOAuthClientId;
-		String liferayOAuthClientSecret;
+		Main main = new Main(
+			System.getenv("LIFERAY_OAUTH_CLIENT_ID"),
+			System.getenv("LIFERAY_OAUTH_CLIENT_SECRET"),
+			new URL(System.getenv("LIFERAY_URL")));
 
-		Path path = Path.of("/etc/liferay");
-
-		if (Files.exists(path)) {
-			liferayURL = Files.readString(
-				Path.of(DXP_METADATA_PATH, MAINDOMAIN_FILE_NAME));
-
-			liferayOAuthClientId = Files.readString(
-				Path.of(EXTENSION_METADATA_PATH + CLIENT_ID_FILE_NAME));
-			liferayOAuthClientSecret = Files.readString(
-				Path.of(EXTENSION_METADATA_PATH + CLIENT_SECRET_FILE_NAME));
-		}
-		else {
-			liferayURL = System.getenv("LIFERAY_URL");
-			liferayOAuthClientId = System.getenv("LIFERAY_OAUTH_CLIENT_ID");
-			liferayOAuthClientSecret = System.getenv(
-				"LIFERAY_OAUTH_CLIENT_SECRET");
-		}
-
-		long groupId = GetterUtil.getLong(System.getenv("LIFERAY_GROUP_ID"));
-
-		if (groupId == 0) {
-			System.out.println(
-				"No groupId specified in LIFERAY_GROUP_ID environment variable.");
-		}
-		else {
-			Main main = new Main(
-				liferayOAuthClientId, liferayOAuthClientSecret,
-				new URL("https://" + liferayURL));
-
-			main.uploadToLiferay(groupId);
-		}
+		main.uploadToLiferay(
+			GetterUtil.getLong(System.getenv("LIFERAY_GROUP_ID")));
 
 		System.out.println("Ending import");
 	}
@@ -443,6 +400,11 @@ public class Main {
 	}
 
 	public void uploadToLiferay(long groupId) throws Exception {
+		if (groupId == 0) {
+			System.out.println("A valid groupId must be specified.");
+			System.exit(1);
+		}
+
 		_addOrUpdateDDMStructures(groupId);
 		_addOrUpdateDDMTemplates(groupId);
 	}

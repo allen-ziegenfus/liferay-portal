@@ -49,6 +49,16 @@ jar {
 	}
 }
 
+assembleClientExtension {
+	doLast {
+		copy {
+			from "."
+			into "build/clientExtension"
+			include "app.sh"
+		}
+	}
+}
+
 task wrapper
 
 repositories {

@@ -22,9 +22,8 @@ RUN mkdir /resources
 
 COPY *.jar app.jar
 COPY main/resources/ /resources/
+COPY app.sh /
 
-RUN \
-  echo "java -Xmx2048m -agentlib:jdwp=transport=dt_socket,address=*:${DEBUG_PORT:-8001},server=y,suspend=n -jar /app.jar" > /app.sh && \
-    chmod +x /app.sh
+RUN chmod +x /app.sh
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/app.sh"]
