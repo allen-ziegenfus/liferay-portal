@@ -21,15 +21,16 @@ import com.liferay.headless.delivery.client.dto.v1_0.DocumentFolder;
 import com.liferay.headless.delivery.client.dto.v1_0.StructuredContent;
 import com.liferay.headless.delivery.client.dto.v1_0.StructuredContentFolder;
 import com.liferay.headless.delivery.client.pagination.Page;
+import com.liferay.headless.delivery.client.pagination.Pagination;
 import com.liferay.headless.delivery.client.resource.v1_0.DocumentFolderResource;
 import com.liferay.headless.delivery.client.resource.v1_0.DocumentResource;
 import com.liferay.headless.delivery.client.resource.v1_0.StructuredContentFolderResource;
 import com.liferay.headless.delivery.client.resource.v1_0.StructuredContentResource;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
-import com.liferay.petra.string.StringUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Tuple;
 
 import com.vladsch.flexmark.ast.BulletList;
@@ -151,7 +152,12 @@ public class Main {
 			GetterUtil.getBoolean(mainProperties.getProperty("offline")),
 			tokenProperties);
 
-		main.uploadToLiferay();
+		try {
+			main.uploadToLiferay();
+		}
+		catch (Exception exception) {
+			System.out.println(exception.getMessage());
+		}
 	}
 
 	public Main(
@@ -198,6 +204,12 @@ public class Main {
 	public void uploadToLiferay() throws Exception {
 		long start = System.currentTimeMillis();
 
+		int count = 0;
+		List<String> errorMessages = new ArrayList<>();
+
+		Map<String, StructuredContent> siteStructuredContents =
+			_getSiteStructuredContents(_liferayGroupId);
+
 		for (String fileName : _fileNames) {
 			if (!fileName.contains("/en/") || !fileName.endsWith(".md")) {
 				continue;
@@ -224,13 +236,60 @@ public class Main {
 				start = System.currentTimeMillis();
 			}
 
-			_structuredContentResource.
-				postStructuredContentFolderStructuredContent(
-					_getStructuredContentFolderId(
-						FilenameUtils.getPathNoEndSeparator(
-							fileName.substring(
-								_markdownImportDirName.length()))),
-					_toStructuredContent(fileName));
+			try {
+				StructuredContent structuredContent = _toStructuredContent(
+					fileName);
+
+				String friendlyUrlPath = structuredContent.getFriendlyUrlPath();
+
+				StructuredContent importedStructuredContent;
+
+				if (siteStructuredContents.containsKey(friendlyUrlPath)) {
+					StructuredContent siteStructuredContent =
+						siteStructuredContents.get(friendlyUrlPath);
+
+					importedStructuredContent =
+						_structuredContentResource.putStructuredContent(
+							siteStructuredContent.getId(), structuredContent);
+				}
+				else {
+					importedStructuredContent =
+						_structuredContentResource.
+							postStructuredContentFolderStructuredContent(
+								_getStructuredContentFolderId(
+									FilenameUtils.getPathNoEndSeparator(
+										fileName.substring(
+											_markdownImportDirName.length()))),
+								structuredContent);
+				}
+
+				if (!Objects.equals(
+						importedStructuredContent.getFriendlyUrlPath(),
+						structuredContent.getFriendlyUrlPath())) {
+
+					throw new Exception(
+						"Friendly Url Path was modified to " +
+							importedStructuredContent.getFriendlyUrlPath());
+				}
+			}
+			catch (Exception exception) {
+				String errorMessage =
+					fileName + " could not be imported correctly: " +
+						exception.getMessage();
+
+				System.out.println(errorMessage);
+				errorMessages.add(errorMessage);
+			}
+
+			count++;
+		}
+
+		System.out.println(count + " articles were imported.");
+		System.out.println(
+			errorMessages.size() + " articles had import errors.");
+
+		for (String errorMessage : errorMessages) {
+			System.out.println(errorMessage);
 		}
 	}
 
@@ -288,15 +347,15 @@ public class Main {
 
 		BulletList bulletList = new BulletList();
 
-		MutableAttributes attributes = new MutableAttributes();
+		MutableAttributes mutableAttributes = new MutableAttributes();
 
-		attributes.addValue("aria-label", "breadcrumb navigation");
-		attributes.addValue("class", "breadcrumb");
-		attributes.addValue("role", "navigation");
+		mutableAttributes.addValue("aria-label", "breadcrumb navigation");
+		mutableAttributes.addValue("class", "breadcrumb");
+		mutableAttributes.addValue("role", "navigation");
 
 		bulletList.appendChild(
 			new EmbeddedAttributeProvider.EmbeddedNodeAttributes(
-				bulletList, attributes));
+				bulletList, mutableAttributes));
 
 		breadcrumbDocument.appendChild(bulletList);
 
@@ -322,7 +381,8 @@ public class Main {
 
 			link.setUrl(
 				_toBasedSequence(
-					parentMarkdownFilePathString.replace(".md", ".html")));
+					StringUtil.removeSubstring(
+						parentMarkdownFilePathString, ".md")));
 
 			bulletListItem.appendChild(link);
 
@@ -358,6 +418,38 @@ public class Main {
 		}
 
 		return dirNames.toArray(new String[0]);
+	}
+
+	private Map<String, Document> _getDocumentFolderDocuments(
+			long documentFolderId)
+		throws Exception {
+
+		int page = 1;
+		List<Document> documentFolderDocuments = new ArrayList<>();
+		boolean fetchedAllItems = false;
+
+		while (!fetchedAllItems) {
+			Page<Document> documentsPage =
+				_documentResource.getDocumentFolderDocumentsPage(
+					documentFolderId, false, null, null, null,
+					Pagination.of(page, 100), null);
+
+			documentFolderDocuments.addAll(documentsPage.getItems());
+
+			if (documentsPage.getLastPage() == page) {
+				fetchedAllItems = true;
+			}
+
+			page++;
+		}
+
+		Map<String, Document> documents = new HashMap<>();
+
+		for (Document document : documentFolderDocuments) {
+			documents.put(document.getTitle(), document);
+		}
+
+		return documents;
 	}
 
 	private Long _getDocumentFolderId(String fileName) throws Exception {
@@ -558,7 +650,7 @@ public class Main {
 		String parentMarkdownFilePathString = String.valueOf(
 			filePath.relativize(parentMarkdownFilePath));
 
-		return parentMarkdownFilePathString.replace(".md", ".html");
+		return StringUtil.removeSubstring(parentMarkdownFilePathString, ".md");
 	}
 
 	private String _getProduct(File file) {
@@ -570,6 +662,39 @@ public class Main {
 		String[] dirNames = _getDirNames(relativeFilePathString);
 
 		return dirNames[0];
+	}
+
+	private Map<String, StructuredContent> _getSiteStructuredContents(
+			long groupId)
+		throws Exception {
+
+		int page = 1;
+		List<StructuredContent> structuredContents = new ArrayList<>();
+		boolean fetchedAllItems = false;
+
+		while (!fetchedAllItems) {
+			Page<StructuredContent> structuredContentsPage =
+				_structuredContentResource.getSiteStructuredContentsPage(
+					groupId, true, null, null, null, Pagination.of(page, 100),
+					null);
+
+			structuredContents.addAll(structuredContentsPage.getItems());
+
+			if (structuredContentsPage.getLastPage() == page) {
+				fetchedAllItems = true;
+			}
+
+			page++;
+		}
+
+		Map<String, StructuredContent> siteStructuredContents = new HashMap<>();
+
+		for (StructuredContent structuredContent : structuredContents) {
+			siteStructuredContents.put(
+				structuredContent.getFriendlyUrlPath(), structuredContent);
+		}
+
+		return siteStructuredContents;
 	}
 
 	private Long _getStructuredContentFolderId(String fileName)
@@ -755,8 +880,9 @@ public class Main {
 			String dirName = markdownFileName.substring(
 				_markdownImportDirName.length());
 
-			List<String> dirNameParts = StringUtil.split(
-				dirName, File.separatorChar);
+			List<String> dirNameParts =
+				com.liferay.petra.string.StringUtil.split(
+					dirName, File.separatorChar);
 
 			if (dirNameParts.size() < 3) {
 				throw new Exception("Invalid directory " + dirName);
@@ -853,14 +979,16 @@ public class Main {
 			String value = matcher.group(2);
 
 			if (name.equals("lines")) {
-				List<String> lineRanges = StringUtil.split(
-					value, CharPool.COMMA);
+				List<String> lineRanges =
+					com.liferay.petra.string.StringUtil.split(
+						value, CharPool.COMMA);
 
 				for (String lineRange : lineRanges) {
 					Tuple tuple = null;
 
-					List<String> lineRangeParts = StringUtil.split(
-						lineRange, CharPool.DASH);
+					List<String> lineRangeParts =
+						com.liferay.petra.string.StringUtil.split(
+							lineRange, CharPool.DASH);
 
 					if (lineRangeParts.size() == 1) {
 						tuple = new Tuple(
@@ -1082,10 +1210,10 @@ public class Main {
 		String relativeFilePathString = filePathString.substring(
 			_markdownImportDirName.length() + 1);
 
-		String friendlyURLPathString = String.join(
-			StringPool.FORWARD_SLASH, _getDirNames(relativeFilePathString));
+		String friendlyURLPathString = StringUtil.merge(
+			_getDirNames(relativeFilePathString), StringPool.FORWARD_SLASH);
 
-		return FilenameUtils.removeExtension(friendlyURLPathString) + ".html";
+		return FilenameUtils.removeExtension(friendlyURLPathString);
 	}
 
 	private String _toHTML(File file, String text) throws Exception {
@@ -1138,13 +1266,13 @@ public class Main {
 
 		BulletList bulletList = new BulletList();
 
-		MutableAttributes attributes = new MutableAttributes();
+		MutableAttributes mutableAttributes = new MutableAttributes();
 
-		attributes.addValue("class", "side-nav");
+		mutableAttributes.addValue("class", "side-nav");
 
 		bulletList.appendChild(
 			new EmbeddedAttributeProvider.EmbeddedNodeAttributes(
-				bulletList, attributes));
+				bulletList, mutableAttributes));
 
 		navigationDocument.appendChild(bulletList);
 
@@ -1203,8 +1331,7 @@ public class Main {
 
 			link.setUrl(
 				_toBasedSequence(
-					FilenameUtils.removeExtension(relativeTOCFilePathString) +
-						".html"));
+					FilenameUtils.removeExtension(relativeTOCFilePathString)));
 
 			bulletListItem.appendChild(link);
 
@@ -1276,7 +1403,8 @@ public class Main {
 
 		String englishTitle = _getTitle(englishText);
 
-		File japaneseFile = new File(fileName.replace("/en/", "/ja/"));
+		File japaneseFile = new File(
+			StringUtil.replace(fileName, "/en/", "/ja/"));
 
 		if (japaneseFile.exists()) {
 			String japaneseText = _processMarkdown(
@@ -1515,24 +1643,39 @@ public class Main {
 		String imageURL = _imageURLs.get(filePathString);
 
 		if (imageURL == null) {
-			Document document = _documentResource.postDocumentFolderDocument(
-				_getDocumentFolderId(
-					FilenameUtils.getPathNoEndSeparator(
-						filePathString.substring(
-							_markdownImportDirName.length()))),
-				new Document() {
-					{
-						title = finalFile.getName();
-						viewableBy = Document.ViewableBy.ANYONE;
-					}
-				},
-				new HashMap<>() {
-					{
-						put("file", finalFile);
-					}
-				});
+			Document document = new Document() {
+				{
+					title = finalFile.getName();
+					viewableBy = Document.ViewableBy.ANYONE;
+				}
+			};
 
-			imageURL = document.getContentUrl();
+			Map<String, File> multipartFiles = HashMapBuilder.<String, File>put(
+				"file", finalFile
+			).build();
+
+			long documentFolderId = _getDocumentFolderId(
+				FilenameUtils.getPathNoEndSeparator(
+					filePathString.substring(_markdownImportDirName.length())));
+
+			Map<String, Document> documentFolderDocuments =
+				_getDocumentFolderDocuments(documentFolderId);
+
+			Document importedDocument;
+
+			if (documentFolderDocuments.containsKey(document.getTitle())) {
+				Document documentFolderDocument = documentFolderDocuments.get(
+					document.getTitle());
+
+				importedDocument = _documentResource.putDocument(
+					documentFolderDocument.getId(), document, multipartFiles);
+			}
+			else {
+				importedDocument = _documentResource.postDocumentFolderDocument(
+					documentFolderId, document, multipartFiles);
+			}
+
+			imageURL = importedDocument.getContentUrl();
 
 			_imageURLs.put(filePathString, imageURL);
 		}
@@ -1545,7 +1688,7 @@ public class Main {
 	private void _visit(Link link) throws Exception {
 		BasedSequence basedSequence = link.getUrl();
 
-		link.setUrl(basedSequence.replace(".md", ".html"));
+		link.setUrl(basedSequence.replace(".md", StringPool.BLANK));
 	}
 
 	private void _write(String content, String dirName, File markdownFile)
