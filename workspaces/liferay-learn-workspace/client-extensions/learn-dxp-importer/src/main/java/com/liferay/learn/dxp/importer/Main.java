@@ -276,7 +276,7 @@ public class Main {
 						structuredContent.getFriendlyUrlPath())) {
 
 					_structuredContentResource.deleteStructuredContent(
-						importedStructuredContent.getContentStructureId());
+						importedStructuredContent.getId());
 
 					throw new Exception(
 						"Friendly Url path was modified to " +
