@@ -210,6 +210,10 @@ public class Main {
 		Map<String, StructuredContent> siteStructuredContents =
 			_getSiteStructuredContents(_liferayGroupId);
 
+		System.out.println(
+			siteStructuredContents.size() +
+				" existing articles were found in group " + _liferayGroupId);
+
 		for (String fileName : _fileNames) {
 			if (!fileName.contains("/en/") || !fileName.endsWith(".md")) {
 				continue;
@@ -230,7 +234,7 @@ public class Main {
 
 			long delta = System.currentTimeMillis() - start;
 
-			if (delta > (_oauthExpirationMillis - 10000)) {
+			if (delta > (_oauthExpirationMillis - 100000)) {
 				_initResourceBuilders(_getOAuthAuthorization());
 
 				start = System.currentTimeMillis();
@@ -248,11 +252,15 @@ public class Main {
 					StructuredContent siteStructuredContent =
 						siteStructuredContents.get(friendlyUrlPath);
 
+					System.out.println(
+						"Updating existing article for " + friendlyUrlPath);
 					importedStructuredContent =
 						_structuredContentResource.putStructuredContent(
 							siteStructuredContent.getId(), structuredContent);
 				}
 				else {
+					System.out.println(
+						"Posting new article for " + friendlyUrlPath);
 					importedStructuredContent =
 						_structuredContentResource.
 							postStructuredContentFolderStructuredContent(
@@ -267,8 +275,11 @@ public class Main {
 						importedStructuredContent.getFriendlyUrlPath(),
 						structuredContent.getFriendlyUrlPath())) {
 
+					_structuredContentResource.deleteStructuredContent(
+						importedStructuredContent.getContentStructureId());
+
 					throw new Exception(
-						"Friendly Url Path was modified to " +
+						"Friendly Url path was modified to " +
 							importedStructuredContent.getFriendlyUrlPath());
 				}
 			}
