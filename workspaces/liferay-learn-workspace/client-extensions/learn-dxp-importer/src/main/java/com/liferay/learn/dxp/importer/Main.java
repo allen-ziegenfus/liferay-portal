@@ -152,12 +152,7 @@ public class Main {
 			GetterUtil.getBoolean(mainProperties.getProperty("offline")),
 			tokenProperties);
 
-		try {
-			main.uploadToLiferay();
-		}
-		catch (Exception exception) {
-			System.out.println(exception.getMessage());
-		}
+		main.uploadToLiferay();
 	}
 
 	public Main(
@@ -296,11 +291,16 @@ public class Main {
 		}
 
 		System.out.println(count + " articles were imported.");
-		System.out.println(
-			errorMessages.size() + " articles had import errors.");
 
-		for (String errorMessage : errorMessages) {
-			System.out.println(errorMessage);
+		if (!errorMessages.isEmpty()) {
+			System.out.println(
+				errorMessages.size() + " articles had import errors.");
+
+			for (String errorMessage : errorMessages) {
+				System.out.println(errorMessage);
+			}
+
+			System.exit(1);
 		}
 	}
 
