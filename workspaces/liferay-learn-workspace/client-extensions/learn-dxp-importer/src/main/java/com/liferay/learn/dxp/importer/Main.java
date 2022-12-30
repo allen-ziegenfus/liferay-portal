@@ -122,14 +122,6 @@ public class Main {
 		"https://github.com/liferay/liferay-learn/edit/master/docs";
 
 	public static void main(String[] arguments) throws Exception {
-		Properties mainProperties = new Properties();
-
-		try (InputStream inputStream = Main.class.getResourceAsStream(
-				"dependencies/main.properties")) {
-
-			mainProperties.load(inputStream);
-		}
-
 		Properties tokenProperties = new Properties();
 
 		try (InputStream inputStream = Main.class.getResourceAsStream(
@@ -139,18 +131,16 @@ public class Main {
 		}
 
 		File markdownImportDirFile = new File(
-			mainProperties.getProperty("markdown.import.dir"));
+			System.getenv("MARKDOWN_IMPORT_DIR"));
 
 		Main main = new Main(
-			GetterUtil.getLong(
-				mainProperties.getProperty("liferay.content.structure.id")),
-			GetterUtil.getLong(mainProperties.getProperty("liferay.group.id")),
-			mainProperties.getProperty("liferay.oauth.client.id"),
-			mainProperties.getProperty("liferay.oauth.client.secret"),
-			new URL(mainProperties.getProperty("liferay.url")),
+			GetterUtil.getLong(System.getenv("LIFERAY_CONTENT_STRUCTURE_ID")),
+			GetterUtil.getLong(System.getenv("LIFERAY_GROUP_ID")),
+			System.getenv("LIFERAY_OAUTH_CLIENT_ID"),
+			System.getenv("LIFERAY_OAUTH_CLIENT_SECRET"),
+			new URL(System.getenv("LIFERAY_URL")),
 			markdownImportDirFile.getCanonicalPath(),
-			GetterUtil.getBoolean(mainProperties.getProperty("offline")),
-			tokenProperties);
+			GetterUtil.getBoolean(System.getenv("OFFLINE")), tokenProperties);
 
 		main.uploadToLiferay();
 	}
@@ -162,6 +152,13 @@ public class Main {
 			Properties tokenProperties)
 		throws Exception {
 
+		if ((liferayContentStructureId == 0) || (liferayGroupId == 0)) {
+			System.out.println(
+				"Liferay Group ID and Liferay Content Structure ID must be " +
+					"set.");
+			System.exit(1);
+		}
+
 		_liferayContentStructureId = liferayContentStructureId;
 		_liferayGroupId = liferayGroupId;
 		_liferayOAuthClientId = liferayOAuthClientId;
@@ -169,6 +166,8 @@ public class Main {
 		_liferayURL = liferayURL;
 		_markdownImportDirName = markdownImportDirName;
 		_offline = offline;
+
+		System.out.println("Importing into " + _liferayURL);
 
 		_yaml = new Yaml();
 
