@@ -20,23 +20,23 @@
 				<div class="info-bar">
 					<label for="productDocumentationSelector">
 						<select class="form-control" id="productDocumentationSelector">
-							<option data-href="${groupFriendlyURL}/w/analytics-cloud/index.html" ${(product.getData() == "analytics-cloud")?then("selected", "")} value="analytics-cloud">
+							<option data-href="${groupFriendlyURL}/w/analytics-cloud/index" ${(product.getData() == "analytics-cloud")?then("selected", "")} value="analytics-cloud">
 								${languageUtil.get(locale, "analytics-cloud", "Analytics Cloud")}
 							</option>
 
-							<option data-href="${groupFriendlyURL}/w/commerce/index.html" ${(product.getData() == "commerce")?then("selected", "")} value="commerce">
+							<option data-href="${groupFriendlyURL}/w/commerce/index" ${(product.getData() == "commerce")?then("selected", "")} value="commerce">
 								${languageUtil.get(locale, "commerce", "Commerce")}
 							</option>
 
-							<option data-href="${groupFriendlyURL}/w/dxp/index.html" ${(product.getData() == "dxp")?then("selected", "")} value="dxp">
+							<option data-href="${groupFriendlyURL}/w/dxp/index" ${(product.getData() == "dxp")?then("selected", "")} value="dxp">
 								${languageUtil.get(locale, "dxp-portal", "DXP / Portal")}
 							</option>
 
-							<option data-href="${groupFriendlyURL}/w/dxp-cloud/index.html" ${(product.getData() == "dxp-cloud")?then("selected", "")} value="dxp-cloud">
-								${languageUtil.get(locale, "dxp-cloud", "DXP Cloud")}
+							<option data-href="${groupFriendlyURL}/w/liferay-cloud/index" ${(product.getData() == "dxp-cloud")?then("selected", "")} value="dxp-cloud">
+								${languageUtil.get(locale, "liferay-cloud", "Liferay Cloud")}
 							</option>
 
-							<option data-href="${groupFriendlyURL}/w/reference/index.html" ${(product.getData() == "reference")?then("selected", "")} value="reference">
+							<option data-href="${groupFriendlyURL}/w/reference/index" ${(product.getData() == "reference")?then("selected", "")} value="reference">
 								${languageUtil.get(locale, "reference", "Reference")}
 							</option>
 						</select>
