@@ -199,7 +199,6 @@ public class Main {
 		long start = System.currentTimeMillis();
 
 		int count = 0;
-		List<String> errorMessages = new ArrayList<>();
 
 		Map<String, StructuredContent> siteStructuredContents =
 			_getSiteStructuredContents(_liferayGroupId);
@@ -212,8 +211,6 @@ public class Main {
 			if (!fileName.contains("/en/") || !fileName.endsWith(".md")) {
 				continue;
 			}
-
-			System.out.println(fileName);
 
 			if (_offline) {
 				JSONObject jsonObject = new JSONObject(
@@ -278,12 +275,9 @@ public class Main {
 				}
 			}
 			catch (Exception exception) {
-				String errorMessage =
+				_errorMessages.add(
 					fileName + " could not be imported correctly: " +
-						exception.getMessage();
-
-				System.out.println(errorMessage);
-				errorMessages.add(errorMessage);
+						exception.getMessage());
 			}
 
 			count++;
@@ -291,11 +285,20 @@ public class Main {
 
 		System.out.println(count + " articles were imported.");
 
-		if (!errorMessages.isEmpty()) {
+		if (!_warningMessages.isEmpty()) {
 			System.out.println(
-				errorMessages.size() + " articles had import errors.");
+				_warningMessages.size() + " articles had import warnings.");
 
-			for (String errorMessage : errorMessages) {
+			for (String warningMessage : _warningMessages) {
+				System.out.println(warningMessage);
+			}
+		}
+
+		if (!_errorMessages.isEmpty()) {
+			System.out.println(
+				_errorMessages.size() + " articles had import errors.");
+
+			for (String errorMessage : _errorMessages) {
 				System.out.println(errorMessage);
 			}
 
@@ -558,7 +561,7 @@ public class Main {
 		}
 
 		if (navigationHTML.isEmpty()) {
-			System.out.println(
+			_warningMessages.add(
 				"Nonexistent navigation for markdown file " + file.getPath());
 		}
 
@@ -632,7 +635,7 @@ public class Main {
 		}
 
 		if (!parentMarkdownFile.exists()) {
-			System.out.println(
+			_warningMessages.add(
 				"Nonexistent parent markdown file " +
 					parentMarkdownFile.getPath());
 
@@ -646,7 +649,7 @@ public class Main {
 		File parentMarkdownFile = _getParentMarkdownFile(file);
 
 		if (parentMarkdownFile == null) {
-			System.out.println(
+			_warningMessages.add(
 				"Nonexistent parent markdown file for markdown file " +
 					file.getCanonicalPath());
 
@@ -942,7 +945,7 @@ public class Main {
 		}
 
 		if (!file.exists()) {
-			System.out.println("Nonexistent literal include " + file);
+			_warningMessages.add("Nonexistent literal include " + file);
 
 			return StringPool.BLANK;
 		}
@@ -1110,7 +1113,7 @@ public class Main {
 			String mySTDirectiveLine = bufferedReader.readLine();
 
 			if (mySTDirectiveLine == null) {
-				System.out.println(
+				_warningMessages.add(
 					"Unclosed MyST directive block found in " +
 						markdownFile.getCanonicalPath());
 
@@ -1163,7 +1166,7 @@ public class Main {
 				}
 			}
 
-			System.out.println(
+			_warningMessages.add(
 				"Invalid parameters found for raw directive block in " +
 					"markdown file " + markdownFile.getCanonicalPath());
 
@@ -1317,7 +1320,7 @@ public class Main {
 			File tocFile = new File(filePathString);
 
 			if (!tocFile.exists() || tocFile.isDirectory()) {
-				System.out.println(
+				_warningMessages.add(
 					"Nonexistent or invalid toc file path " +
 						tocFile.getPath());
 
@@ -1634,7 +1637,7 @@ public class Main {
 		}
 
 		if (!file.exists()) {
-			System.out.println(
+			_warningMessages.add(
 				_markdownFile.getCanonicalPath() +
 					" references nonexistent image file " +
 						file.getCanonicalPath());
@@ -1695,7 +1698,7 @@ public class Main {
 		_nodeVisitor.visitChildren(image);
 	}
 
-	private void _visit(Link link) throws Exception {
+	private void _visit(Link link) {
 		BasedSequence basedSequence = link.getUrl();
 
 		link.setUrl(basedSequence.replace(".md", StringPool.BLANK));
@@ -1726,6 +1729,7 @@ public class Main {
 	private final Map<String, Long> _documentFolderIds = new HashMap<>();
 	private DocumentFolderResource _documentFolderResource;
 	private DocumentResource _documentResource;
+	private final List<String> _errorMessages = new ArrayList<>();
 	private final Set<String> _fileNames = new TreeSet<>();
 	private final Map<String, String> _imageURLs = new HashMap<>();
 	private final Set<File> _landingPageFiles = new HashSet<>();
@@ -1748,7 +1752,13 @@ public class Main {
 						_visit(image);
 					}
 					catch (Exception exception) {
-						exception.printStackTrace();
+						String errorMessage =
+							_markdownFile.getPath() +
+								" could not be imported correctly: " +
+									exception.getMessage();
+
+						System.out.println(errorMessage);
+						_errorMessages.add(errorMessage);
 					}
 				}
 
@@ -1759,12 +1769,7 @@ public class Main {
 
 				@Override
 				public void visit(Link link) {
-					try {
-						_visit(link);
-					}
-					catch (Exception exception) {
-						exception.printStackTrace();
-					}
+					_visit(link);
 				}
 
 			}));
@@ -1778,6 +1783,7 @@ public class Main {
 	private StructuredContentFolderResource _structuredContentFolderResource;
 	private StructuredContentResource _structuredContentResource;
 	private final Map<String, String> _tokens = new HashMap<>();
+	private final List<String> _warningMessages = new ArrayList<>();
 	private final Yaml _yaml;
 
 	private class SnakeYamlFrontMatterVisitor
