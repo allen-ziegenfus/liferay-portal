@@ -9,7 +9,7 @@
 				</div>
 
 				<div class="autofit-col autofit-col-expand">
-					<a :href="card.sectionURL">
+					<a :href="removeRelativeHTMLExtensions(card.sectionURL)">
 						<h4 class="title" v-if="card.icon">{{ card.sectionName }}</h4>
 
 						<h4 class="sidebar title" v-else>{{ card.sectionName }}</h4>
@@ -18,13 +18,13 @@
 					<div class="subsection-wrapper" v-if="card.subsections">
 						<ul class="subsection" v-show="card.subsections.length <= 3 || card.showAll">
 							<li v-for="subsection in card.subsections">
-								<a :href="subsection.url">{{ subsection.name}}</a>
+								<a :href="removeRelativeHTMLExtensions(subsection.url)">{{ subsection.name}}</a>
 							</li>
 						</ul>
 
 						<ul class="subsection" v-show="card.subsections.length > 3 && !card.showAll">
 							<li v-for="(subsection, index) in card.subsections" v-show="index < 3">
-								<a :href="subsection.url">{{ subsection.name}}</a>
+								<a :href="removeRelativeHTMLExtensions(subsection.url)">{{ subsection.name}}</a>
 							</li>
 							<li>
 								<button class="btn btn-monospaced show-more" role="button" type="button" v-on:click="card.showAll = true">
@@ -41,6 +41,10 @@
 	</div>
 
 	<script>
+		function removeRelativeHTMLExtensions(url) {
+			return url.replace(/(^(?!http).+).html$/, "$1");
+		}
+
 		const docContent = document.getElementById('docContent');
 
 		if (docContent) {
