@@ -1,6 +1,8 @@
 learn-dxp-importer:
     name: Learn DXP Importer
     scopes:
+        - Liferay.Data.Engine.REST.everything
+        - Liferay.Headless.Admin.User.everything.read
         - Liferay.Headless.Batch.Engine.everything
         - Liferay.Headless.Delivery.everything
         - liferay-json-web-services.everything.write
@@ -13,10 +15,10 @@ runtime:
     env:
         - name: OAUTH2_JOB_PROFILE
           value: learn-dxp-importer
-        - name: LIFERAY_CONTENT_STRUCTURE_ID
-          value: 50027
-        - name: LIFERAY_GROUP_ID
-          value: 20121
+        - name: LIFERAY_DATA_DEFINITION_KEY
+          value: LEARN-ARTICLE
+        - name: LIFERAY_GROUP_FRIENDLY_URL_PATH
+          value: guest
         - name: MARKDOWN_IMPORT_DIR
           value: ../docs
         - name: SKIP_UPDATE_EXAMPLES
