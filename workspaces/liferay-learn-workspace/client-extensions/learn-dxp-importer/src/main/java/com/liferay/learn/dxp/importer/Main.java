@@ -14,6 +14,10 @@
 
 package com.liferay.learn.dxp.importer;
 
+import com.liferay.data.engine.rest.client.dto.v2_0.DataDefinition;
+import com.liferay.data.engine.rest.client.resource.v2_0.DataDefinitionResource;
+import com.liferay.headless.admin.user.client.dto.v1_0.Site;
+import com.liferay.headless.admin.user.client.resource.v1_0.SiteResource;
 import com.liferay.headless.delivery.client.dto.v1_0.ContentField;
 import com.liferay.headless.delivery.client.dto.v1_0.ContentFieldValue;
 import com.liferay.headless.delivery.client.dto.v1_0.Document;
@@ -134,8 +138,8 @@ public class Main {
 			System.getenv("MARKDOWN_IMPORT_DIR"));
 
 		Main main = new Main(
-			GetterUtil.getLong(System.getenv("LIFERAY_CONTENT_STRUCTURE_ID")),
-			GetterUtil.getLong(System.getenv("LIFERAY_GROUP_ID")),
+			System.getenv("LIFERAY_DATA_DEFINITION_KEY"),
+			System.getenv("LIFERAY_GROUP_FRIENDLY_URL_PATH"),
 			System.getenv("LIFERAY_OAUTH_CLIENT_ID"),
 			System.getenv("LIFERAY_OAUTH_CLIENT_SECRET"),
 			new URL(System.getenv("LIFERAY_URL")),
@@ -146,21 +150,12 @@ public class Main {
 	}
 
 	public Main(
-			long liferayContentStructureId, long liferayGroupId,
+			String liferayDataDefinitionKey, String liferayGroupFriendlyUrlPath,
 			String liferayOAuthClientId, String liferayOAuthClientSecret,
 			URL liferayURL, String markdownImportDirName, boolean offline,
 			Properties tokenProperties)
 		throws Exception {
 
-		if ((liferayContentStructureId == 0) || (liferayGroupId == 0)) {
-			System.out.println(
-				"Liferay Group ID and Liferay Content Structure ID must be " +
-					"set.");
-			System.exit(1);
-		}
-
-		_liferayContentStructureId = liferayContentStructureId;
-		_liferayGroupId = liferayGroupId;
 		_liferayOAuthClientId = liferayOAuthClientId;
 		_liferayOAuthClientSecret = liferayOAuthClientSecret;
 		_liferayURL = liferayURL;
@@ -189,10 +184,27 @@ public class Main {
 		_initFlexmark();
 
 		if (_offline) {
+			_liferayContentStructureId = 0;
+			_liferayGroupId = 0;
+
 			return;
 		}
 
 		_initResourceBuilders(_getOAuthAuthorization());
+
+		Site site = _siteResource.getSiteByFriendlyUrlPath(
+			liferayGroupFriendlyUrlPath);
+
+		_liferayGroupId = site.getId();
+
+		System.out.println("Importing into " + site.getName() + " site.");
+
+		DataDefinition dataDefinition =
+			_dataDefinitionResource.
+				getSiteDataDefinitionByContentTypeByDataDefinitionKey(
+					site.getId(), "journal", liferayDataDefinitionKey);
+
+		_liferayContentStructureId = dataDefinition.getId();
 	}
 
 	public void uploadToLiferay() throws Exception {
@@ -880,6 +892,25 @@ public class Main {
 				_liferayURL.getHost(), _liferayURL.getPort(),
 				_liferayURL.getProtocol()
 			).build();
+
+		SiteResource.Builder siteResourceBuilder = SiteResource.builder();
+
+		_siteResource = siteResourceBuilder.header(
+			"Authorization", authorization
+		).endpoint(
+			_liferayURL.getHost(), _liferayURL.getPort(),
+			_liferayURL.getProtocol()
+		).build();
+
+		DataDefinitionResource.Builder dataDefinitionResourceBuilder =
+			DataDefinitionResource.builder();
+
+		_dataDefinitionResource = dataDefinitionResourceBuilder.header(
+			"Authorization", authorization
+		).endpoint(
+			_liferayURL.getHost(), _liferayURL.getPort(),
+			_liferayURL.getProtocol()
+		).build();
 	}
 
 	private String _processInclude(String includeFileName, File markdownFile)
@@ -1726,6 +1757,7 @@ public class Main {
 	private static final Pattern _sphinxBadgePattern = Pattern.compile(
 		"\\{bdg-(.*)\\}`(.*)`");
 
+	private DataDefinitionResource _dataDefinitionResource;
 	private final Map<String, Long> _documentFolderIds = new HashMap<>();
 	private DocumentFolderResource _documentFolderResource;
 	private DocumentResource _documentResource;
@@ -1778,6 +1810,7 @@ public class Main {
 	private final boolean _offline;
 	private Parser _parser;
 	private HtmlRenderer _renderer;
+	private SiteResource _siteResource;
 	private final Map<String, Long> _structuredContentFolderIds =
 		new HashMap<>();
 	private StructuredContentFolderResource _structuredContentFolderResource;
