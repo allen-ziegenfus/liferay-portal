@@ -2,7 +2,7 @@
 
 <#assign groupFriendlyURL = "/web" + themeDisplay.getScopeGroup().getFriendlyURL() />
 
-<div class="container-fluid documentations main-content mt-6" role="main">
+<div class="container-fluid documentations main-content" role="main">
 	<div class="row">
 		<div class="col-12 p-0 page-alert" id="pageAlertContainer">
 			<div class="page-alert-hidden" id="pageAlert" role="alert">
