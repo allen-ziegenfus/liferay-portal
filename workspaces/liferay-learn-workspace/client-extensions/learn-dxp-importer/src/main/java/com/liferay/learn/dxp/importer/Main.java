@@ -224,6 +224,8 @@ public class Main {
 				continue;
 			}
 
+			System.out.println(fileName);
+
 			if (_offline) {
 				JSONObject jsonObject = new JSONObject(
 					_toStructuredContent(fileName));
@@ -287,9 +289,12 @@ public class Main {
 				}
 			}
 			catch (Exception exception) {
-				_errorMessages.add(
+				String errorMessage =
 					fileName + " could not be imported correctly: " +
-						exception.getMessage());
+						exception.getMessage();
+
+				System.out.println(errorMessage);
+				_errorMessages.add(errorMessage);
 			}
 
 			count++;
@@ -573,8 +578,7 @@ public class Main {
 		}
 
 		if (navigationHTML.isEmpty()) {
-			_warningMessages.add(
-				"Nonexistent navigation for markdown file " + file.getPath());
+			_warn("Nonexistent navigation for markdown file " + file.getPath());
 		}
 
 		return navigationHTML;
@@ -647,7 +651,7 @@ public class Main {
 		}
 
 		if (!parentMarkdownFile.exists()) {
-			_warningMessages.add(
+			_warn(
 				"Nonexistent parent markdown file " +
 					parentMarkdownFile.getPath());
 
@@ -661,7 +665,7 @@ public class Main {
 		File parentMarkdownFile = _getParentMarkdownFile(file);
 
 		if (parentMarkdownFile == null) {
-			_warningMessages.add(
+			_warn(
 				"Nonexistent parent markdown file for markdown file " +
 					file.getCanonicalPath());
 
@@ -976,7 +980,7 @@ public class Main {
 		}
 
 		if (!file.exists()) {
-			_warningMessages.add("Nonexistent literal include " + file);
+			_warn("Nonexistent literal include " + file);
 
 			return StringPool.BLANK;
 		}
@@ -1144,7 +1148,7 @@ public class Main {
 			String mySTDirectiveLine = bufferedReader.readLine();
 
 			if (mySTDirectiveLine == null) {
-				_warningMessages.add(
+				_warn(
 					"Unclosed MyST directive block found in " +
 						markdownFile.getCanonicalPath());
 
@@ -1197,7 +1201,7 @@ public class Main {
 				}
 			}
 
-			_warningMessages.add(
+			_warn(
 				"Invalid parameters found for raw directive block in " +
 					"markdown file " + markdownFile.getCanonicalPath());
 
@@ -1351,7 +1355,7 @@ public class Main {
 			File tocFile = new File(filePathString);
 
 			if (!tocFile.exists() || tocFile.isDirectory()) {
-				_warningMessages.add(
+				_warn(
 					"Nonexistent or invalid toc file path " +
 						tocFile.getPath());
 
@@ -1668,7 +1672,7 @@ public class Main {
 		}
 
 		if (!file.exists()) {
-			_warningMessages.add(
+			_warn(
 				_markdownFile.getCanonicalPath() +
 					" references nonexistent image file " +
 						file.getCanonicalPath());
@@ -1733,6 +1737,11 @@ public class Main {
 		BasedSequence basedSequence = link.getUrl();
 
 		link.setUrl(basedSequence.replace(".md", StringPool.BLANK));
+	}
+
+	private void _warn(String warningMessage) {
+		System.out.println(warningMessage);
+		_warningMessages.add(warningMessage);
 	}
 
 	private void _write(String content, String dirName, File markdownFile)
