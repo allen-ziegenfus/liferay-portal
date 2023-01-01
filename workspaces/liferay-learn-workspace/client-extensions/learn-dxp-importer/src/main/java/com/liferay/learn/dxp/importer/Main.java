@@ -697,6 +697,10 @@ public class Main {
 			long groupId)
 		throws Exception {
 
+		if (_offline) {
+			return new HashMap<String,StructuredContent>();
+		}
+
 		int page = 1;
 		List<StructuredContent> structuredContents = new ArrayList<>();
 		boolean fetchedAllItems = false;
