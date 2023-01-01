@@ -42,7 +42,11 @@
 
 	<script>
 		function removeRelativeURLHTMLExtensions(url) {
-			return url.replace(/(^(?!http).+).html$/, "$1");
+			if (url) {
+				return url.replace(/(^(?!http).+).html$/, "$1");
+			}
+
+			return url;
 		}
 
 		const docContent = document.getElementById('docContent');
