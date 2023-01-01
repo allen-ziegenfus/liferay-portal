@@ -698,7 +698,7 @@ public class Main {
 		throws Exception {
 
 		if (_offline) {
-			return new HashMap<String,StructuredContent>();
+			return new HashMap<>();
 		}
 
 		int page = 1;
