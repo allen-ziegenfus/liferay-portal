@@ -1,4 +1,4 @@
-learn-dxp-importer:
+liferay-learn-dxp-importer:
     name: Learn DXP Importer
     scopes:
         - Liferay.Data.Engine.REST.everything
@@ -14,7 +14,7 @@ runtime:
     cpu: 2000m
     env:
         - name: OAUTH2_JOB_PROFILE
-          value: learn-dxp-importer
+          value: liferay-learn-dxp-importer
         - name: LIFERAY_DATA_DEFINITION_KEY
           value: LEARN-ARTICLE
         - name: LIFERAY_GROUP_FRIENDLY_URL_PATH
