@@ -384,6 +384,9 @@ export default class Blogs {
 
 				const bodyData = addNamespace(
 					{
+						addEntryResources: this._getElementById(
+							'addEntryResources'
+						).value,
 						allowPingbacks: allowPingbacks?.value,
 						allowTrackbacks: allowTrackbacks?.value,
 						assetCategoryIds: this._getValuesByName(
@@ -418,8 +421,6 @@ export default class Blogs {
 						referringPortletResource: this._getElementById(
 							'referringPortletResource'
 						).value,
-						showPermissions: this._getElementById('showPermissions')
-							.value,
 						subtitle,
 						title,
 						urlTitle,

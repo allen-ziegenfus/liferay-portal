@@ -337,7 +337,7 @@ renderResponse.setTitle(blogsEditEntryDisplayContext.getPageTitle(resourceBundle
 							/>
 						</aui:fieldset>
 
-						<aui:input name="showPermissions" type="hidden" value="<%= true %>" />
+						<aui:input name="addEntryResources" type="hidden" value="<%= true %>" />
 					</c:if>
 
 					<%
