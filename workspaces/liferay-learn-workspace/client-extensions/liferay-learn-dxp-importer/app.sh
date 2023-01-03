@@ -5,17 +5,12 @@ function send_slack_message() {
 
 	if [ -z "$SLACK_ENDPOINT" ] ; then return 0; fi
 
-	CHANNEL=#is-sites-learn-devops
-	if [ "${LCP_PROJECT_ENVIRONMENT}" = "extprd" ]; then
-		CHANNEL=#is-sites-learn-devops-prd
-	fi
-
 	TIMESTAMP=$(date)
 	LOG_URL="https://console.${LCP_INFRASTRUCTURE_DOMAIN}/projects/${LCP_PROJECT_ID}/services/${LCP_SERVICE_ID}/logs?instanceId=${HOSTNAME}&logServiceId=${LCP_SERVICE_ID}"
 
 	SLACK_MESSAGE_TEXT="${TIMESTAMP} *${LCP_PROJECT_ID}*->*${LCP_SERVICE_ID}* <${LOG_URL}|${HOSTNAME}> \n>$SLACK_MESSAGE"
 
-	curl -X POST --data-urlencode "payload={'channel': '${CHANNEL}', 'username': 'devopsbot', 'text': '${SLACK_MESSAGE_TEXT}', 'icon_emoji': ':robot_face:'}" ${SLACK_ENDPOINT}
+	curl -X POST --data-urlencode "payload={'channel': '${SLACK_CHANNEL}', 'username': 'devopsbot', 'text': '${SLACK_MESSAGE_TEXT}', 'icon_emoji': ':robot_face:'}" ${SLACK_ENDPOINT}
 }
 
 send_slack_message "Import job starting"
@@ -32,7 +27,7 @@ chmod 600 ~/.ssh/id_rsa
 
 ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
-git clone --depth 1 "${LIFERAY_LEARN_GITHUB_REPO}" /opt/liferay-learn
+git clone -b ${LIFERAY_LEARN_GITHUB_BRANCH} --depth 1 --single-branch "${LIFERAY_LEARN_GITHUB_REPO}" /opt/liferay-learn
 
 git -C /opt/liferay-learn log
 

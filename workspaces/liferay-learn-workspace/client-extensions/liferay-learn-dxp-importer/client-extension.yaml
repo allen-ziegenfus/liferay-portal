@@ -19,6 +19,8 @@ runtime:
           value: LEARN-ARTICLE
         - name: LIFERAY_GROUP_FRIENDLY_URL_PATH
           value: guest
+        - name: LIFERAY_LEARN_GITHUB_BRANCH
+          value: master
         - name: MARKDOWN_IMPORT_DIR
           value: ../docs
         - name: SKIP_UPDATE_EXAMPLES
