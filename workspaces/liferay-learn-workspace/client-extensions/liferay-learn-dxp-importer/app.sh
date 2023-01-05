@@ -29,15 +29,17 @@ chmod 600 ~/.ssh/id_rsa
 
 ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
-git clone -b ${LIFERAY_LEARN_GITHUB_BRANCH} --depth 1 --single-branch "${LIFERAY_LEARN_GITHUB_REPO}" /opt/liferay-learn
+REPO_FOLDER=~/liferay-learn
 
-git -C /opt/liferay-learn log
+git clone -b ${LIFERAY_LEARN_GITHUB_BRANCH} --depth 1 --single-branch "${LIFERAY_LEARN_GITHUB_REPO}" $REPO_FOLDER
 
-GIT_COMMIT=$(git -C /opt/liferay-learn log -1 --pretty=%B)
+git -C $REPO_FOLDER log
+
+GIT_COMMIT=$(git -C $REPO_FOLDER log -1 --pretty=%B)
 
 send_slack_message "Cloned repo *${LIFERAY_LEARN_GITHUB_REPO}* commit: *${GIT_COMMIT//$'\n'/}*"
 
-cd /opt/liferay-learn/docs || exit
+cd $REPO_FOLDER/docs || exit
 
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 export PATH=$JAVA_HOME/bin:$PATH
