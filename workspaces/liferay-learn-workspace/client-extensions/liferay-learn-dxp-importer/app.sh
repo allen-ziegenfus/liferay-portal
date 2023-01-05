@@ -3,6 +3,8 @@
 function send_slack_message() {
 	SLACK_MESSAGE=$1
 
+	echo "$SLACK_MESSAGE"
+
 	if [ -z "$SLACK_ENDPOINT" ] ; then return 0; fi
 
 	TIMESTAMP=$(date)
@@ -37,15 +39,32 @@ send_slack_message "Cloned repo *${LIFERAY_LEARN_GITHUB_REPO}* commit: *${GIT_CO
 
 cd /opt/liferay-learn/docs || exit
 
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
+export PATH=$JAVA_HOME/bin:$PATH
+
+java -version
+
 if [ -z "$SKIP_UPDATE_EXAMPLES" ] ; then
 	echo "Running update_examples.sh"
 
 	./update_examples.sh prod
 
-	send_slack_message "update_examples.sh finished with return code $?"
+	UPDATE_EXAMPLES_RC=$?
+
+	if [ $UPDATE_EXAMPLES_RC -ne 0 ]; then
+		send_slack_message ":red-alert: update_examples.sh finished with return code ${UPDATE_EXAMPLES_RC}"
+		exit 0
+	else
+		send_slack_message ":sunflower: update_examples.sh finished with return code ${UPDATE_EXAMPLES_RC}"
+	fi
 fi
 
 echo "Starting java import"
+
+export JAVA_HOME=/opt/java/openjdk
+export PATH=$JAVA_HOME/bin:$PATH
+
+java -version
 
 if [ -z "$LIFERAY_OAUTH_CLIENT_ID" ] ; then
 	export LIFERAY_OAUTH_CLIENT_ID
