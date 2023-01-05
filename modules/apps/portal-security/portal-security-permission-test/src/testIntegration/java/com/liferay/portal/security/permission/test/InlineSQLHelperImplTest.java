@@ -315,8 +315,8 @@ public class InlineSQLHelperImplTest {
 				"ResourcePermission.companyId = ? and ResourcePermission.name ",
 				"= ? and ResourcePermission.scope = ? and ",
 				"ResourcePermission.viewActionId = ? and ",
-				"(ResourcePermission.roleId in (?, ?, ?, ?) or Layout.userId ",
-				"= ?)) or Layout.groupId in (?))"),
+				"(ResourcePermission.roleId in (?, ?, ?, ?) or ",
+				"ResourcePermission.ownerId = ?)) or Layout.groupId in (?))"),
 			dslQuery.toString());
 
 		_assertValidSql(dslQuery);
@@ -347,8 +347,8 @@ public class InlineSQLHelperImplTest {
 				"ResourcePermission.companyId = ? and ResourcePermission.name ",
 				"= ? and ResourcePermission.scope = ? and ",
 				"ResourcePermission.viewActionId = ? and ",
-				"(ResourcePermission.roleId in (?, ?, ?, ?) or Layout.userId ",
-				"= ?)) or Layout.groupId in (?))"),
+				"(ResourcePermission.roleId in (?, ?, ?, ?) or ",
+				"ResourcePermission.ownerId = ?)) or Layout.groupId in (?))"),
 			dslQuery.toString());
 
 		_assertValidSql(dslQuery);
@@ -365,7 +365,8 @@ public class InlineSQLHelperImplTest {
 				"ResourcePermission.companyId = ? and ResourcePermission.name ",
 				"= ? and ResourcePermission.scope = ? and ",
 				"ResourcePermission.viewActionId = ? and ",
-				"(ResourcePermission.roleId in (?, ?) or Layout.userId = ?))"),
+				"(ResourcePermission.roleId in (?, ?) or ",
+				"ResourcePermission.ownerId = ?))"),
 			dslQuery.toString());
 
 		_assertValidSql(dslQuery);
