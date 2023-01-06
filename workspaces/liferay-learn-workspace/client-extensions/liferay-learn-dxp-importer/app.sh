@@ -35,7 +35,7 @@ git clone -b ${LIFERAY_LEARN_GITHUB_BRANCH} --depth 1 --single-branch "${LIFERAY
 
 git -C $REPO_FOLDER log
 
-GIT_COMMIT=$(git -C $REPO_FOLDER log -1 --pretty=%B)
+GIT_COMMIT=$(git -C $REPO_FOLDER log -1 --pretty="%B %H %aN")
 
 send_slack_message "Cloned repo *${LIFERAY_LEARN_GITHUB_REPO}* commit: *${GIT_COMMIT//$'\n'/}*"
 
