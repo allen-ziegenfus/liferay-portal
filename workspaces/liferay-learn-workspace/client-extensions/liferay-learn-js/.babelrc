@@ -1,0 +1,35 @@
+{
+    "plugins": [
+        [
+            "prismjs",
+            {
+                "languages": [
+                    "apacheconf",
+                    "bash",
+                    "css",
+                    "docker",
+                    "graphql",
+                    "groovy",
+                    "html",
+                    "ini",
+                    "java",
+                    "javascript",
+                    "js",
+                    "json",
+                    "log",
+                    "markdown",
+                    "markup",
+                    "properties",
+                    "sh",
+                    "shell",
+                    "sql",
+                    "xml",
+                    "yaml"
+                ],
+                "plugins": ["copy-to-clipboard"],
+                "theme": "okaidia",
+                "css": true
+            }
+        ]
+    ]
+}
