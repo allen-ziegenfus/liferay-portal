@@ -1,0 +1,8 @@
+assemble:
+    - from: build/
+      include: "static/**/*"
+      into: dockerRoot/
+liferay-learn-js:
+    name: Liferay Learn JS
+    type: globalJS
+    url: index.js
