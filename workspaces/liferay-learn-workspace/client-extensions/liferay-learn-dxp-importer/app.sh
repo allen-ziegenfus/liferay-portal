@@ -49,16 +49,18 @@ java -version
 if [ -z "$SKIP_UPDATE_EXAMPLES" ] ; then
 	echo "Running update_examples.sh"
 
-	./update_examples.sh prod
+	UPDATE_EXAMPLES_LOG_FILE=~/update_examples.log
+
+	./update_examples.sh prod 2> $UPDATE_EXAMPLES_LOG_FILE
 
 	UPDATE_EXAMPLES_RC=$?
 
-	if [ $UPDATE_EXAMPLES_RC -ne 0 ]; then
-		send_slack_message ":red-alert: update_examples.sh finished with return code ${UPDATE_EXAMPLES_RC}"
-		exit 0
-	else
-		send_slack_message ":sunflower: update_examples.sh finished with return code ${UPDATE_EXAMPLES_RC}"
-	fi
+	echo "update_examples.sh error log:"
+	cat $UPDATE_EXAMPLES_LOG_FILE
+
+	ERROR_COUNT=$(wc -l < $UPDATE_EXAMPLES_LOG_FILE)
+
+	send_slack_message "update_examples.sh finished with return code $UPDATE_EXAMPLES_RC. $ERROR_COUNT entries in error log file."
 fi
 
 echo "Starting java import"
