@@ -33,7 +33,7 @@ dependencies {
 	compile group: "org.json", name: "json", version: "20220320"
 }
 
-mainClassName = "com.liferay.liferay.learn.web.importer.Main"
+mainClassName = "com.liferay.learn.ddm.importer.Main"
 
 jar {
 	manifest {
