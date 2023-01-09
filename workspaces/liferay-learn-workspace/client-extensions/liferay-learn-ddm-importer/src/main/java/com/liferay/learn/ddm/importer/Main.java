@@ -26,14 +26,16 @@ import java.net.URI;
 import java.net.URL;
 
 import java.nio.charset.Charset;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
@@ -414,17 +416,24 @@ public class Main {
 	private void _addOrUpdateDDMStructures(long groupId) throws Exception {
 		System.out.println("Checking for DDM structures");
 
-		List<Path> paths;
+		List<Path> paths = new ArrayList<>();
 
-		try (Stream<Path> walk = Files.walk(
-				Path.of("/resources/ddm-structures"))) {
+		Files.walkFileTree(
+			Path.of("/resources/ddm-structures"),
+			new SimpleFileVisitor<Path>() {
 
-			paths = walk.filter(
-				Files::isRegularFile
-			).collect(
-				Collectors.toList()
-			);
-		}
+				@Override
+				public FileVisitResult visitFile(
+					Path path, BasicFileAttributes basicFileAttributes) {
+
+					if (basicFileAttributes.isRegularFile()) {
+						paths.add(path);
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+			});
 
 		for (Path path : paths) {
 			System.out.println("Found DDM structure " + path);
@@ -465,20 +474,28 @@ public class Main {
 	private void _addOrUpdateDDMTemplates(long groupId) throws Exception {
 		System.out.println("Checking for DDM templates");
 
-		List<Path> paths;
+		List<Path> paths = new ArrayList<>();
 
-		try (Stream<Path> walk = Files.walk(Path.of("/resources"))) {
-			paths = walk.filter(
-				Files::isRegularFile
-			).filter(
-				file -> Objects.equals(
-					file.getFileName(
-					).toString(),
-					"ddm-template.json")
-			).collect(
-				Collectors.toList()
-			);
-		}
+		Files.walkFileTree(
+			Path.of("/resources"),
+			new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult visitFile(
+					Path path, BasicFileAttributes basicFileAttributes) {
+
+					if (basicFileAttributes.isRegularFile() &&
+						Objects.equals(
+							String.valueOf(path.getFileName()),
+							"ddm-template.json")) {
+
+						paths.add(path);
+					}
+
+					return FileVisitResult.CONTINUE;
+				}
+
+			});
 
 		for (Path path : paths) {
 			System.out.println("Found DDM template " + path);
