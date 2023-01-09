@@ -16,8 +16,9 @@ package com.liferay.learn.ddm.importer;
 
 import com.liferay.data.engine.rest.client.dto.v2_0.DataDefinition;
 import com.liferay.data.engine.rest.client.resource.v2_0.DataDefinitionResource;
+import com.liferay.headless.admin.user.client.dto.v1_0.Site;
+import com.liferay.headless.admin.user.client.resource.v1_0.SiteResource;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -62,8 +63,7 @@ public class Main {
 			System.getenv("LIFERAY_OAUTH_CLIENT_SECRET"),
 			new URL(System.getenv("LIFERAY_URL")));
 
-		main.uploadToLiferay(
-			GetterUtil.getLong(System.getenv("LIFERAY_GROUP_ID")));
+		main.uploadToLiferay(System.getenv("LIFERAY_GROUP_FRIENDLY_URL_PATH"));
 
 		System.out.println("Ending import");
 	}
@@ -399,11 +399,13 @@ public class Main {
 		}
 	}
 
-	public void uploadToLiferay(long groupId) throws Exception {
-		if (groupId == 0) {
-			System.out.println("A valid groupId must be specified.");
-			System.exit(1);
-		}
+	public void uploadToLiferay(String liferayGroupFriendlyUrlPath)
+		throws Exception {
+
+		Site site = _siteResource.getSiteByFriendlyUrlPath(
+			liferayGroupFriendlyUrlPath);
+
+		long groupId = site.getId();
 
 		_addOrUpdateDDMStructures(groupId);
 		_addOrUpdateDDMTemplates(groupId);
@@ -608,6 +610,15 @@ public class Main {
 			_liferayURL.getHost(), _liferayURL.getPort(),
 			_liferayURL.getProtocol()
 		).build();
+
+		SiteResource.Builder siteResourceBuilder = SiteResource.builder();
+
+		_siteResource = siteResourceBuilder.header(
+			"Authorization", _liferayOAuthAuthorization
+		).endpoint(
+			_liferayURL.getHost(), _liferayURL.getPort(),
+			_liferayURL.getProtocol()
+		).build();
 	}
 
 	private DataDefinitionResource _dataDefinitionResource;
@@ -616,5 +627,6 @@ public class Main {
 	private final String _liferayOAuthClientSecret;
 	private long _liferayOAuthExpirationTimeMillis;
 	private final URL _liferayURL;
+	private SiteResource _siteResource;
 
 }
