@@ -1,4 +1,4 @@
-liferay-learn-web:
+liferay-learn-ddm-importer:
     name: Liferay Learn Web
     scopes:
         - liferay-json-web-services.everything.write
@@ -10,7 +10,7 @@ runtime:
     cpu: 2000m
     env:
         - name: OAUTH2_JOB_PROFILE
-          value: liferay-learn-web
+          value: liferay-learn-ddm-importer
         - name: LIFERAY_GROUP_ID
           value: 20121
     memory: 500Mi
