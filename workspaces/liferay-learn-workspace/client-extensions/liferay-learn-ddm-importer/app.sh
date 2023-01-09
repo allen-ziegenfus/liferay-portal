@@ -2,12 +2,12 @@
 
 if [ -z "$LIFERAY_OAUTH_CLIENT_ID" ] ; then
 	export LIFERAY_OAUTH_CLIENT_ID
-	LIFERAY_OAUTH_CLIENT_ID=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-web.oauth2.headless.server.client.id)
+	LIFERAY_OAUTH_CLIENT_ID=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-ddm-importer.oauth2.headless.server.client.id)
 fi
 
 if [ -z "$LIFERAY_OAUTH_CLIENT_SECRET" ] ; then
 	export LIFERAY_OAUTH_CLIENT_SECRET
-	LIFERAY_OAUTH_CLIENT_SECRET=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-web.oauth2.headless.server.client.secret)
+	LIFERAY_OAUTH_CLIENT_SECRET=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-ddm-importer.oauth2.headless.server.client.secret)
 fi
 
 if [ -z "$LIFERAY_URL" ] ; then
