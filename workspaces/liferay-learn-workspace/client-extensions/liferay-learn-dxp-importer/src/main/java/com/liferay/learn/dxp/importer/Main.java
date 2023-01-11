@@ -64,6 +64,7 @@ import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.ast.NodeVisitor;
+import com.vladsch.flexmark.util.ast.TextCollectingVisitor;
 import com.vladsch.flexmark.util.ast.VisitHandler;
 import com.vladsch.flexmark.util.ast.Visitor;
 import com.vladsch.flexmark.util.data.MutableDataSet;
@@ -427,6 +428,13 @@ public class Main {
 		bulletList.appendChild(bulletListItem);
 
 		return _renderer.render(breadcrumbDocument);
+	}
+
+	private String _getDescription(String text) {
+		TextCollectingVisitor textCollectingVisitor =
+			new TextCollectingVisitor();
+
+		return textCollectingVisitor.collectAndGetText(_parser.parse(text));
 	}
 
 	private String[] _getDirNames(String fileName) {
@@ -1585,6 +1593,13 @@ public class Main {
 					}
 				});
 
+			structuredContent.setDescription_i18n(
+				HashMapBuilder.put(
+					"en-US", _getDescription(englishText)
+				).put(
+					"ja-JP", _getDescription(japaneseText)
+				).build());
+
 			structuredContent.setFriendlyUrlPath_i18n(
 				HashMapBuilder.put(
 					"en-US", _toFriendlyURLPath(englishFile)
@@ -1649,6 +1664,8 @@ public class Main {
 						}
 					}
 				});
+
+			structuredContent.setDescription(_getDescription(englishText));
 		}
 
 		structuredContent.setContentStructureId(_liferayContentStructureId);
