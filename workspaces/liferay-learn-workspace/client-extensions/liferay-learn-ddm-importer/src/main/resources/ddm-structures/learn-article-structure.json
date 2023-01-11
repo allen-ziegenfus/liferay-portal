@@ -201,7 +201,7 @@
 			"defaultValue": {
 			},
 			"fieldType": "text",
-			"indexType": "text",
+			"indexType": "none",
 			"indexable": true,
 			"label": {
 				"en_US": "Github Edit Link"
@@ -250,7 +250,7 @@
 			"defaultValue": {
 			},
 			"fieldType": "text",
-			"indexType": "text",
+			"indexType": "none",
 			"indexable": true,
 			"label": {
 				"en_US": "parentMarkdownFilePath"
@@ -348,7 +348,7 @@
 			"defaultValue": {
 			},
 			"fieldType": "text",
-			"indexType": "text",
+			"indexType": "none",
 			"indexable": true,
 			"label": {
 				"en_US": "landingPage"
