@@ -1,4 +1,5 @@
 liferay-learn-ddm-importer:
+    homePageURL: https://$[conf:ext.lxc.liferay.com.mainDomain]
     name: Liferay Learn Web
     scopes:
         - liferay-json-web-services.everything.write
