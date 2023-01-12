@@ -1,7 +1,7 @@
 assemble:
     - from: build/
-      include: "static/**/*"
-      into: dockerRoot/
+      include: index.js
+      into: static/
 navigation-js:
     name: navigation-js
     type: globalJS
