@@ -76,15 +76,21 @@
 						</a>
 					</div>
 
-					<a class="back-link btn btn-link btn-monospaced d-flex flex-row justify-content-start" href="${parentMarkdownFilePath.getData()}" id="backLink">
-						<svg class="lexicon-icon lexicon-icon-angle-left" role="presentation" viewBox="0 0 512 512">
-							<use xlink:href="#angle-left" />
-						</svg>
-						${languageUtil.get(locale, "go-back", "Go Back")}
-					</a>
+					<#if (parentMarkdownFilePath.getData())?has_content>
+						<a class="back-link btn btn-link btn-monospaced d-flex flex-row justify-content-start" href="${parentMarkdownFilePath.getData()}" id="backLink">
+							<svg class="lexicon-icon lexicon-icon-angle-left" role="presentation" viewBox="0 0 512 512">
+								<use xlink:href="#angle-left" />
+							</svg>
+							${languageUtil.get(locale, "go-back", "Go Back")}
+						</a>
+					</#if>
 
 					<#if (navigationHTML.getData())??>
-						${navigationHTML.getData()}
+						<#if !(parentMarkdownFilePath.getData())?has_content>
+							${(navigationHTML.getData())?replace("<li>", "<li class='doc-nav-top-level-item'>")}
+						<#else>
+							${navigationHTML.getData()}
+						</#if>
 					</#if>
 				</div>
 
