@@ -75,9 +75,7 @@ const searchSuggestionsInput = fragmentElement.querySelector(
 const searchSuggestionsResult = fragmentElement.querySelector(
 	'.search-suggestions'
 );
-const noResultsMessage = fragmentElement.querySelector(
-	'.no-results-message'
-);
+const noResultsMessage = fragmentElement.querySelector('.no-results-message');
 
 searchSuggestionsInput.oninput = function () {
 	searchSuggestionsResult.innerHTML = '';
@@ -150,7 +148,9 @@ function navSearch(query) {
 						suggestion.attributes.assetSearchSummary;
 
 					if (!suggestionContentTextValue) {
-						suggestionContentTextValue = Liferay.Language.get('no-preview-available');
+						suggestionContentTextValue = Liferay.Language.get(
+							'no-preview-available'
+						);
 					}
 
 					const suggestionContentText = document.createTextNode(
@@ -226,9 +226,9 @@ async function postData(url = '', data = {}) {
 	return response.json();
 }
 
-String.prototype.replaceAll = function(strReplace, strWith) {
-    const esc = strReplace.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const reg = new RegExp(esc, 'ig');
+String.prototype.replaceAll = function (strReplace, strWith) {
+	const esc = strReplace.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+	const reg = new RegExp(esc, 'ig');
 
-    return this.replace(reg, strWith);
+	return this.replace(reg, strWith);
 };
