@@ -9,6 +9,6 @@ module.exports = {
 			name: 'navigation',
 			type: 'umd'
 		},
-		path: path.resolve(__dirname, 'build/static')
+		path: path.resolve(__dirname, 'build/')
 	}
 };
