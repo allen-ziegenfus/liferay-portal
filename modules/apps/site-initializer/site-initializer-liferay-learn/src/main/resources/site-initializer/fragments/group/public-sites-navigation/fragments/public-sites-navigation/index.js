@@ -227,7 +227,7 @@ async function postData(url = '', data = {}) {
 }
 
 String.prototype.replaceAll = function(strReplace, strWith) {
-    const esc = strReplace.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const esc = strReplace.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const reg = new RegExp(esc, 'ig');
 
     return this.replace(reg, strWith);
