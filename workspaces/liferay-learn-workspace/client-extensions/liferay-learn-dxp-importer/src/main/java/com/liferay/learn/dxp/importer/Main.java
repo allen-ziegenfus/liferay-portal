@@ -423,6 +423,18 @@ public class Main {
 			file = parentMarkdownFile;
 		}
 
+		BulletListItem siteBulletListItem = new BulletListItem();
+
+		Link siteLink = new Link();
+
+		siteLink.appendChild(new Text(_toBasedSequence("Liferay Learn")));
+
+		siteLink.setUrl(_toBasedSequence("/"));
+
+		siteBulletListItem.appendChild(siteLink);
+
+		bulletList.prependChild(siteBulletListItem);
+
 		BulletListItem bulletListItem = new BulletListItem();
 
 		bulletListItem.appendChild(new Text(_toBasedSequence(_getTitle(text))));
