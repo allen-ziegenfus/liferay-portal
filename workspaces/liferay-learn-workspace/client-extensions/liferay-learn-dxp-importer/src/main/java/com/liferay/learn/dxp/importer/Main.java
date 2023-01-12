@@ -31,11 +31,13 @@ import com.liferay.headless.delivery.client.resource.v1_0.DocumentResource;
 import com.liferay.headless.delivery.client.resource.v1_0.StructuredContentFolderResource;
 import com.liferay.headless.delivery.client.resource.v1_0.StructuredContentResource;
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Tuple;
+import com.liferay.portal.kernel.util.Validator;
 
 import com.vladsch.flexmark.ast.BulletList;
 import com.vladsch.flexmark.ast.BulletListItem;
@@ -929,6 +931,91 @@ public class Main {
 		).build();
 	}
 
+	private String _processGridBlock(List<String> gridLines, int columns) {
+		List<GridCard> gridCards = new ArrayList<>();
+
+		GridCard currentGridCard = new GridCard();
+
+		for (String gridLine : gridLines) {
+			if (gridLine.startsWith(":gutter")) {
+			}
+			else if (gridLine.startsWith(":::{grid-item-card}")) {
+				int index = gridLine.indexOf(StringPool.CLOSE_CURLY_BRACE);
+
+				currentGridCard.setTitle(gridLine.substring(index + 2));
+			}
+			else if (gridLine.startsWith(":link:")) {
+				String link = gridLine.substring(7);
+
+				currentGridCard.setLink(
+					StringUtil.removeSubstring(link, ".md"));
+			}
+			else if (gridLine.equals(":::")) {
+				gridCards.add(currentGridCard);
+
+				currentGridCard = new GridCard();
+			}
+			else {
+				currentGridCard.addContentLine(gridLine);
+			}
+		}
+
+		StringBundler sb = new StringBundler(4 + gridCards.size());
+
+		sb.append("<div class=\"landing-page landing-page-grid-");
+		sb.append(String.valueOf(columns));
+		sb.append("\">");
+
+		for (GridCard gridCard : gridCards) {
+			sb.append(gridCard);
+		}
+
+		sb.append("</div>");
+
+		return sb.toString();
+	}
+
+	private String _processGridBlocks(
+			BufferedReader bufferedReader, String line, File markdownFile)
+		throws Exception {
+
+		String trimmedLine = line.trim();
+
+		if (!trimmedLine.startsWith("::::{grid}")) {
+			return line;
+		}
+
+		List<String> gridLines = new ArrayList<>();
+
+		int index = line.indexOf(StringPool.CLOSE_CURLY_BRACE);
+
+		int columns = Integer.valueOf(line.substring(index + 2));
+
+		while (true) {
+			String gridLine = bufferedReader.readLine();
+
+			if (gridLine == null) {
+				_warn(
+					"Unclosed grid block found in " +
+						markdownFile.getCanonicalPath());
+
+				break;
+			}
+
+			gridLine = _processTokens(gridLine);
+
+			String trimmedGridLine = gridLine.trim();
+
+			if (trimmedGridLine.startsWith("::::")) {
+				break;
+			}
+
+			gridLines.add(gridLine);
+		}
+
+		return _processGridBlock(gridLines, columns);
+	}
+
 	private String _processInclude(String includeFileName, File markdownFile)
 		throws Exception {
 
@@ -1126,6 +1213,7 @@ public class Main {
 		String line = null;
 
 		while ((line = bufferedReader.readLine()) != null) {
+			line = _processGridBlocks(bufferedReader, line, markdownFile);
 			line = _processMySTDirectiveBlocks(
 				bufferedReader, line, markdownFile);
 			line = _processSphinxBadges(line);
@@ -1848,6 +1936,76 @@ public class Main {
 	private final Map<String, String> _tokens = new HashMap<>();
 	private final List<String> _warningMessages = new ArrayList<>();
 	private final Yaml _yaml;
+
+	private class GridCard {
+
+		public void addContentLine(String contentLine) {
+			_contentLines.add(contentLine);
+		}
+
+		public String getTitleHTML() {
+			StringBundler sb = new StringBundler(3);
+
+			sb.append("<h4 class=\"sidebar title\">");
+			sb.append(_title);
+			sb.append("</h4>");
+
+			return sb.toString();
+		}
+
+		public void setLink(String link) {
+			_link = link;
+		}
+
+		public void setTitle(String title) {
+			_title = title;
+		}
+
+		public String toString() {
+			StringBundler sb = new StringBundler(16);
+
+			sb.append("<div class=\"section-card\">");
+			sb.append("<div class=\"autofit-row autofit-row-center\">");
+			sb.append("<div class=\"autofit-col autofit-col-expand\">");
+
+			if (Validator.isNotNull(_link)) {
+				sb.append("<a href=\"");
+				sb.append(_link);
+				sb.append("\">");
+
+				if (Validator.isNotNull(_title)) {
+					sb.append(getTitleHTML());
+				}
+
+				sb.append("</a>");
+			}
+			else if (Validator.isNotNull(_title)) {
+				sb.append(getTitleHTML());
+			}
+
+			if (!_contentLines.isEmpty()) {
+				sb.append("<div class=\"subsection-wrapper\">");
+
+				for (String contentLine : _contentLines) {
+					sb.append(contentLine);
+					sb.append(StringPool.NEW_LINE);
+				}
+
+				sb.append("</div>");
+			}
+
+			sb.append("</div>");
+			sb.append("</div>");
+			sb.append("</div>");
+
+			return sb.toString();
+		}
+
+		private List<String> _contentLines = new ArrayList<>();
+		private String _link = StringPool.BLANK;
+		private String _title = StringPool.BLANK;
+
+	}
 
 	private class SnakeYamlFrontMatterVisitor
 		implements YamlFrontMatterVisitor {
