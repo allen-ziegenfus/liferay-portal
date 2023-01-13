@@ -1871,7 +1871,7 @@ public class Main {
 	private static final Pattern _literalIncludeParameterPattern =
 		Pattern.compile(":(.*): (.*)");
 	private static final Pattern _markdownLinkPattern = Pattern.compile(
-		"(.*)<(.*)>");
+		"\\[(.*)\\]\\((.*)\\)");
 	private static final Pattern _sphinxBadgePattern = Pattern.compile(
 		"\\{bdg-(.*)\\}`(.*)`");
 
