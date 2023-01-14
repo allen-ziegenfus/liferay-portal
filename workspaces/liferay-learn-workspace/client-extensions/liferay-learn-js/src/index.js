@@ -12,4 +12,4 @@
  * details.
  */
 
-import Prism from 'prismjs';
+import Prism from 'prismjs'; // eslint-disable-line no-unused-vars
