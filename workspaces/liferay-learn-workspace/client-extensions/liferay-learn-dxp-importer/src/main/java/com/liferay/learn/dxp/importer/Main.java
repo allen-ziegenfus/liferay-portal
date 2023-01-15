@@ -125,9 +125,6 @@ import org.yaml.snakeyaml.Yaml;
  */
 public class Main {
 
-	public static final String GITHUB_EDIT_LINK_BASE_URL =
-		"https://github.com/liferay/liferay-learn/edit/master/docs";
-
 	public static void main(String[] arguments) throws Exception {
 		Properties tokenProperties = new Properties();
 
@@ -575,13 +572,6 @@ public class Main {
 		_documentFolderIds.put(key, documentFolderId);
 
 		return documentFolderId;
-	}
-
-	private String _getGithubEditLink(File file) throws Exception {
-		String canonicalPathString = file.getCanonicalPath();
-
-		return GITHUB_EDIT_LINK_BASE_URL +
-			canonicalPathString.substring(_markdownImportDirName.length());
 	}
 
 	private String _getNavigation(File file, String text) throws Exception {
@@ -1525,13 +1515,6 @@ public class Main {
 				}
 			};
 
-		ContentFieldValue englishGithubEditLinkContentFieldValue =
-			new ContentFieldValue() {
-				{
-					data = _getGithubEditLink(englishFile);
-				}
-			};
-
 		ContentFieldValue englishLandingPageContentFieldValue =
 			new ContentFieldValue() {
 				{
@@ -1607,23 +1590,6 @@ public class Main {
 								}
 							).build();
 							name = "content";
-						}
-					},
-					new ContentField() {
-						{
-							contentFieldValue =
-								englishGithubEditLinkContentFieldValue;
-							contentFieldValue_i18n = HashMapBuilder.put(
-								"en-US", englishGithubEditLinkContentFieldValue
-							).put(
-								"ja-JP",
-								new ContentFieldValue() {
-									{
-										data = _getGithubEditLink(japaneseFile);
-									}
-								}
-							).build();
-							name = "githubEditLink";
 						}
 					},
 					new ContentField() {
@@ -1727,13 +1693,6 @@ public class Main {
 						{
 							contentFieldValue = englishContentFieldValue;
 							name = "content";
-						}
-					},
-					new ContentField() {
-						{
-							contentFieldValue =
-								englishGithubEditLinkContentFieldValue;
-							name = "githubEditLink";
 						}
 					},
 					new ContentField() {
