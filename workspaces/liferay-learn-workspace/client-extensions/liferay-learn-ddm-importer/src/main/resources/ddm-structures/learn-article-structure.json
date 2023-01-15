@@ -79,7 +79,7 @@
 				],
 				"displayStyle": "singleline",
 				"fieldNamespace": "",
-				"fieldReference": "breadcrumbHTML",
+				"fieldReference": "breadcrumbLinks",
 				"hideField": false,
 				"labelAtStructureLevel": true,
 				"nativeField": false,
@@ -100,10 +100,10 @@
 			"indexType": "none",
 			"indexable": true,
 			"label": {
-				"en_US": "breadcrumbHTML"
+				"en_US": "breadcrumbLinks"
 			},
 			"localizable": true,
-			"name": "breadcrumbHTML",
+			"name": "breadcrumbLinks",
 			"nestedDataDefinitionFields": [
 			],
 			"readOnly": false,
@@ -134,7 +134,7 @@
 				],
 				"displayStyle": "singleline",
 				"fieldNamespace": "",
-				"fieldReference": "navigationHTML",
+				"fieldReference": "navigationLinks",
 				"hideField": false,
 				"labelAtStructureLevel": true,
 				"nativeField": false,
@@ -155,10 +155,10 @@
 			"indexType": "none",
 			"indexable": true,
 			"label": {
-				"en_US": "navigationHTML"
+				"en_US": "navigationLinks"
 			},
 			"localizable": true,
-			"name": "navigationHTML",
+			"name": "navigationLinks",
 			"nestedDataDefinitionFields": [
 			],
 			"readOnly": false,
@@ -290,7 +290,7 @@
 							{
 								"columnSize": 12,
 								"fieldNames": [
-									"breadcrumbHTML"
+									"breadcrumbLinks"
 								]
 							}
 						]
@@ -300,7 +300,7 @@
 							{
 								"columnSize": 12,
 								"fieldNames": [
-									"navigationHTML"
+									"navigationLinks"
 								]
 							}
 						]
