@@ -39,11 +39,8 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Tuple;
 import com.liferay.portal.kernel.util.Validator;
 
-import com.vladsch.flexmark.ast.BulletList;
-import com.vladsch.flexmark.ast.BulletListItem;
 import com.vladsch.flexmark.ast.Image;
 import com.vladsch.flexmark.ast.Link;
-import com.vladsch.flexmark.ast.Text;
 import com.vladsch.flexmark.ext.admonition.AdmonitionExtension;
 import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension;
 import com.vladsch.flexmark.ext.aside.AsideExtension;
@@ -61,7 +58,6 @@ import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension;
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterNode;
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterVisitor;
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterVisitorExt;
-import com.vladsch.flexmark.html.EmbeddedAttributeProvider;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
@@ -70,7 +66,6 @@ import com.vladsch.flexmark.util.ast.TextCollectingVisitor;
 import com.vladsch.flexmark.util.ast.VisitHandler;
 import com.vladsch.flexmark.util.ast.Visitor;
 import com.vladsch.flexmark.util.data.MutableDataSet;
-import com.vladsch.flexmark.util.html.MutableAttributes;
 import com.vladsch.flexmark.util.sequence.BasedSequence;
 import com.vladsch.flexmark.util.sequence.CharSubSequence;
 
@@ -114,6 +109,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import org.yaml.snakeyaml.Yaml;
@@ -370,37 +366,19 @@ public class Main {
 		return line;
 	}
 
-	private String _getBreadcrumbHTML(File file, String text) throws Exception {
-		com.vladsch.flexmark.util.ast.Document breadcrumbDocument =
-			new com.vladsch.flexmark.util.ast.Document(
-				new MutableDataSet(), BasedSequence.of(""));
-
-		BulletList bulletList = new BulletList();
-
-		MutableAttributes mutableAttributes = new MutableAttributes();
-
-		mutableAttributes.addValue("aria-label", "breadcrumb navigation");
-		mutableAttributes.addValue("class", "breadcrumb");
-		mutableAttributes.addValue("role", "navigation");
-
-		bulletList.appendChild(
-			new EmbeddedAttributeProvider.EmbeddedNodeAttributes(
-				bulletList, mutableAttributes));
-
-		breadcrumbDocument.appendChild(bulletList);
+	private JSONArray _getBreadcrumbLinksJSONArray(File file) throws Exception {
+		JSONArray breadcrumbLinksJSONArray = new JSONArray();
 
 		File originalFile = file;
 		File parentMarkdownFile;
 
 		while ((parentMarkdownFile = _getParentMarkdownFile(file)) != null) {
-			BulletListItem bulletListItem = new BulletListItem();
-
 			String parentText = FileUtils.readFileToString(
 				parentMarkdownFile, StandardCharsets.UTF_8);
 
-			Link link = new Link();
+			JSONObject linkJSONObject = new JSONObject();
 
-			link.appendChild(new Text(_toBasedSequence(_getTitle(parentText))));
+			linkJSONObject.put("title", _getTitle(parentText));
 
 			Path parentMarkdownFilePath = Paths.get(parentMarkdownFile.toURI());
 
@@ -409,36 +387,17 @@ public class Main {
 			String parentMarkdownFilePathString = String.valueOf(
 				originalFilePath.relativize(parentMarkdownFilePath));
 
-			link.setUrl(
-				_toBasedSequence(
-					StringUtil.removeSubstring(
-						parentMarkdownFilePathString, ".md")));
+			linkJSONObject.put(
+				"url",
+				StringUtil.removeSubstring(
+					parentMarkdownFilePathString, ".md"));
 
-			bulletListItem.appendChild(link);
-
-			bulletList.prependChild(bulletListItem);
 			file = parentMarkdownFile;
+
+			breadcrumbLinksJSONArray.put(linkJSONObject);
 		}
 
-		BulletListItem siteBulletListItem = new BulletListItem();
-
-		Link siteLink = new Link();
-
-		siteLink.appendChild(new Text(_toBasedSequence("Liferay Learn")));
-
-		siteLink.setUrl(_toBasedSequence("/"));
-
-		siteBulletListItem.appendChild(siteLink);
-
-		bulletList.prependChild(siteBulletListItem);
-
-		BulletListItem bulletListItem = new BulletListItem();
-
-		bulletListItem.appendChild(new Text(_toBasedSequence(_getTitle(text))));
-
-		bulletList.appendChild(bulletListItem);
-
-		return _renderer.render(breadcrumbDocument);
+		return breadcrumbLinksJSONArray;
 	}
 
 	private String _getDescription(String text) {
@@ -574,26 +533,29 @@ public class Main {
 		return documentFolderId;
 	}
 
-	private String _getNavigation(File file, String text) throws Exception {
-		String navigationHTML = _toNavigationHTML(file, file, text);
+	private JSONArray _getNavigationLinksJSONArray(File file, String text)
+		throws Exception {
 
-		if (navigationHTML.isEmpty()) {
+		JSONArray navigationLinksJSONArray = _toNavigationLinksJSONArray(
+			file, file, text);
+
+		if (navigationLinksJSONArray.isEmpty()) {
 			File parentMarkdownFile = _getParentMarkdownFile(file);
 
 			if (parentMarkdownFile != null) {
 				String parentText = FileUtils.readFileToString(
 					parentMarkdownFile, StandardCharsets.UTF_8);
 
-				navigationHTML = _toNavigationHTML(
+				navigationLinksJSONArray = _toNavigationLinksJSONArray(
 					parentMarkdownFile, file, parentText);
 			}
 		}
 
-		if (navigationHTML.isEmpty()) {
+		if (navigationLinksJSONArray.isEmpty()) {
 			_warn("Nonexistent navigation for markdown file " + file.getPath());
 		}
 
-		return navigationHTML;
+		return navigationLinksJSONArray;
 	}
 
 	private String _getOAuthAuthorization() throws Exception {
@@ -1387,9 +1349,11 @@ public class Main {
 		return html;
 	}
 
-	private String _toNavigationHTML(
+	private JSONArray _toNavigationLinksJSONArray(
 			File navigationFile, File file, String text)
 		throws Exception {
+
+		JSONArray navigationLinksJSONArray = new JSONArray();
 
 		com.vladsch.flexmark.util.ast.Document document = _parser.parse(text);
 
@@ -1401,30 +1365,14 @@ public class Main {
 		Map<String, Object> data = snakeYamlFrontMatterVisitor.getData();
 
 		if ((data == null) || !data.containsKey("toc")) {
-			return StringPool.BLANK;
+			return navigationLinksJSONArray;
 		}
 
 		Object toc = data.get("toc");
 
 		if (!(toc instanceof ArrayList)) {
-			return StringPool.BLANK;
+			return navigationLinksJSONArray;
 		}
-
-		com.vladsch.flexmark.util.ast.Document navigationDocument =
-			new com.vladsch.flexmark.util.ast.Document(
-				new MutableDataSet(), BasedSequence.of(""));
-
-		BulletList bulletList = new BulletList();
-
-		MutableAttributes mutableAttributes = new MutableAttributes();
-
-		mutableAttributes.addValue("class", "side-nav");
-
-		bulletList.appendChild(
-			new EmbeddedAttributeProvider.EmbeddedNodeAttributes(
-				bulletList, mutableAttributes));
-
-		navigationDocument.appendChild(bulletList);
 
 		for (Object tocEntry : (ArrayList)toc) {
 			if (!(tocEntry instanceof String)) {
@@ -1434,17 +1382,12 @@ public class Main {
 			Matcher matcher = _markdownLinkPattern.matcher((String)tocEntry);
 
 			if (matcher.find()) {
-				BulletListItem bulletListItem = new BulletListItem();
+				JSONObject linkJSONObject = new JSONObject();
 
-				Link link = new Link();
+				linkJSONObject.put("title", matcher.group(1));
+				linkJSONObject.put("url", matcher.group(2));
 
-				link.appendChild(new Text(_toBasedSequence(matcher.group(1))));
-
-				link.setUrl(_toBasedSequence(matcher.group(2)));
-
-				bulletListItem.appendChild(link);
-
-				bulletList.appendChild(bulletListItem);
+				navigationLinksJSONArray.put(linkJSONObject);
 
 				continue;
 			}
@@ -1467,11 +1410,9 @@ public class Main {
 			String tocText = FileUtils.readFileToString(
 				tocFile, StandardCharsets.UTF_8);
 
-			BulletListItem bulletListItem = new BulletListItem();
+			JSONObject linkJSONObject = new JSONObject();
 
-			Link link = new Link();
-
-			link.appendChild(new Text(_toBasedSequence(_getTitle(tocText))));
+			linkJSONObject.put("title", _getTitle(tocText));
 
 			Path tocPath = Paths.get(tocFile.toURI());
 			Path filePath = Paths.get(file.getParent());
@@ -1479,16 +1420,14 @@ public class Main {
 			String relativeTOCFilePathString = String.valueOf(
 				filePath.relativize(tocPath));
 
-			link.setUrl(
-				_toBasedSequence(
-					FilenameUtils.removeExtension(relativeTOCFilePathString)));
+			linkJSONObject.put(
+				"url",
+				FilenameUtils.removeExtension(relativeTOCFilePathString));
 
-			bulletListItem.appendChild(link);
-
-			bulletList.appendChild(bulletListItem);
+			navigationLinksJSONArray.put(linkJSONObject);
 		}
 
-		return _renderer.render(navigationDocument);
+		return navigationLinksJSONArray;
 	}
 
 	private StructuredContent _toStructuredContent(String fileName)
@@ -1508,10 +1447,11 @@ public class Main {
 			}
 		};
 
-		ContentFieldValue englishBreadcrumbHTMLContentFieldValue =
+		ContentFieldValue englishBreadcrumbLinksContentFieldValue =
 			new ContentFieldValue() {
 				{
-					data = _getBreadcrumbHTML(englishFile, englishText);
+					data = String.valueOf(
+						_getBreadcrumbLinksJSONArray(englishFile));
 				}
 			};
 
@@ -1523,17 +1463,11 @@ public class Main {
 				}
 			};
 
-		ContentFieldValue englishNavigationContentFieldValue =
+		ContentFieldValue englishNavigationLinksContentFieldValue =
 			new ContentFieldValue() {
 				{
-					data = _getNavigation(englishFile, englishText);
-				}
-			};
-
-		ContentFieldValue englishParentMarkdownFilePathContentFieldValue =
-			new ContentFieldValue() {
-				{
-					data = _getParentMarkdownFilePath(englishFile);
+					data = String.valueOf(
+						_getNavigationLinksJSONArray(englishFile, englishText));
 				}
 			};
 
@@ -1560,19 +1494,20 @@ public class Main {
 					new ContentField() {
 						{
 							contentFieldValue =
-								englishBreadcrumbHTMLContentFieldValue;
+								englishBreadcrumbLinksContentFieldValue;
 							contentFieldValue_i18n = HashMapBuilder.put(
-								"en-US", englishBreadcrumbHTMLContentFieldValue
+								"en-US", englishBreadcrumbLinksContentFieldValue
 							).put(
 								"ja-JP",
 								new ContentFieldValue() {
 									{
-										data = _getBreadcrumbHTML(
-											japaneseFile, japaneseText);
+										data = String.valueOf(
+											_getBreadcrumbLinksJSONArray(
+												japaneseFile));
 									}
 								}
 							).build();
-							name = "breadcrumbHTML";
+							name = "breadcrumbLinks";
 						}
 					},
 					new ContentField() {
@@ -1607,38 +1542,20 @@ public class Main {
 					new ContentField() {
 						{
 							contentFieldValue =
-								englishNavigationContentFieldValue;
+								englishNavigationLinksContentFieldValue;
 							contentFieldValue_i18n = HashMapBuilder.put(
-								"en-US", englishNavigationContentFieldValue
+								"en-US", englishNavigationLinksContentFieldValue
 							).put(
 								"ja-JP",
 								new ContentFieldValue() {
 									{
-										data = _getNavigation(
-											japaneseFile, japaneseText);
+										data = String.valueOf(
+											_getNavigationLinksJSONArray(
+												japaneseFile, japaneseText));
 									}
 								}
 							).build();
-							name = "navigationHTML";
-						}
-					},
-					new ContentField() {
-						{
-							contentFieldValue =
-								englishParentMarkdownFilePathContentFieldValue;
-							contentFieldValue_i18n = HashMapBuilder.put(
-								"en-US",
-								englishParentMarkdownFilePathContentFieldValue
-							).put(
-								"ja-JP",
-								new ContentFieldValue() {
-									{
-										data = _getParentMarkdownFilePath(
-											japaneseFile);
-									}
-								}
-							).build();
-							name = "parentMarkdownFilePath";
+							name = "navigationLinks";
 						}
 					},
 					new ContentField() {
@@ -1685,8 +1602,8 @@ public class Main {
 					new ContentField() {
 						{
 							contentFieldValue =
-								englishBreadcrumbHTMLContentFieldValue;
-							name = "breadcrumbHTML";
+								englishBreadcrumbLinksContentFieldValue;
+							name = "breadcrumbLinks";
 						}
 					},
 					new ContentField() {
@@ -1705,15 +1622,8 @@ public class Main {
 					new ContentField() {
 						{
 							contentFieldValue =
-								englishNavigationContentFieldValue;
-							name = "navigationHTML";
-						}
-					},
-					new ContentField() {
-						{
-							contentFieldValue =
-								englishParentMarkdownFilePathContentFieldValue;
-							name = "parentMarkdownFilePath";
+								englishNavigationLinksContentFieldValue;
+							name = "navigationLinks";
 						}
 					},
 					new ContentField() {
