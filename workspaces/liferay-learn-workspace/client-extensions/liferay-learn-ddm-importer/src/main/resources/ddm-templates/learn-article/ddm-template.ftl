@@ -87,16 +87,6 @@
 						${navigationHTML.getData()}
 					</#if>
 				</div>
-
-				<div class="d-md-flex d-none doc-nav-footer">
-					<@liferay_ui["language"]
-						ddmTemplateGroupId=groupId
-						ddmTemplateKey="LANGUAGE_MENU"
-						displayCurrentLocale=true
-						languageIds=localeUtil.toLanguageIds(languageUtil.getAvailableLocales(themeDisplay.getSiteGroupId()))
-						useNamespace=false
-					/>
-				</div>
 			</div>
 		</div>
 
@@ -107,17 +97,6 @@
 						<#if (breadcrumbHTML.getData())??>
 							${breadcrumbHTML.getData()}
 						</#if>
-					</div>
-
-					<div class="actions col-md-2 d-md-block d-none offset-md-1">
-						<a
-							aria-label="${languageUtil.get(locale, 'github-icon', 'Github Icon')}"
-							href="<#if (githubEditLink.getData())??> ${githubEditLink.getData()}</#if>"
-							title="${languageUtil.get(locale, 'contribute-on-github', 'Contribute on Github')}">
-							<svg>
-								<use xlink:href="#edit"></use>
-							</svg>
-						</a>
 					</div>
 				</div>
 			</div>
