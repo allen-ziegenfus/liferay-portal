@@ -635,27 +635,6 @@ public class Main {
 		return parentMarkdownFile;
 	}
 
-	private String _getParentMarkdownFilePath(File file) throws Exception {
-		File parentMarkdownFile = _getParentMarkdownFile(file);
-
-		if (parentMarkdownFile == null) {
-			_warn(
-				"Nonexistent parent markdown file for markdown file " +
-					file.getCanonicalPath());
-
-			return StringPool.BLANK;
-		}
-
-		Path parentMarkdownFilePath = Paths.get(parentMarkdownFile.toURI());
-
-		Path filePath = Paths.get(file.getParent());
-
-		String parentMarkdownFilePathString = String.valueOf(
-			filePath.relativize(parentMarkdownFilePath));
-
-		return StringUtil.removeSubstring(parentMarkdownFilePathString, ".md");
-	}
-
 	private String _getProduct(File file) {
 		String filePathString = file.getPath();
 
