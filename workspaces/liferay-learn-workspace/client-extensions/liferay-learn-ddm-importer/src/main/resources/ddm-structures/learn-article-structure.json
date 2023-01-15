@@ -183,104 +183,6 @@
 				],
 				"displayStyle": "singleline",
 				"fieldNamespace": "",
-				"fieldReference": "githubEditLink",
-				"hideField": false,
-				"labelAtStructureLevel": true,
-				"nativeField": false,
-				"options": {
-				},
-				"placeholder": {
-					"en_US": ""
-				},
-				"requireConfirmation": false,
-				"tooltip": {
-					"en_US": ""
-				},
-				"visibilityExpression": ""
-			},
-			"defaultValue": {
-			},
-			"fieldType": "text",
-			"indexType": "none",
-			"indexable": true,
-			"label": {
-				"en_US": "Github Edit Link"
-			},
-			"localizable": true,
-			"name": "githubEditLink",
-			"nestedDataDefinitionFields": [
-			],
-			"readOnly": false,
-			"repeatable": false,
-			"required": false,
-			"showLabel": true,
-			"tip": {
-				"en_US": ""
-			}
-		},
-		{
-			"customProperties": {
-				"confirmationErrorMessage": {
-					"en_US": ""
-				},
-				"confirmationLabel": {
-					"en_US": ""
-				},
-				"dataType": "string",
-				"direction": [
-					"vertical"
-				],
-				"displayStyle": "singleline",
-				"fieldNamespace": "",
-				"fieldReference": "parentMarkdownFilePath",
-				"hideField": false,
-				"labelAtStructureLevel": true,
-				"nativeField": false,
-				"options": {
-				},
-				"placeholder": {
-					"en_US": ""
-				},
-				"requireConfirmation": false,
-				"tooltip": {
-					"en_US": ""
-				},
-				"visibilityExpression": ""
-			},
-			"defaultValue": {
-			},
-			"fieldType": "text",
-			"indexType": "none",
-			"indexable": true,
-			"label": {
-				"en_US": "parentMarkdownFilePath"
-			},
-			"localizable": true,
-			"name": "parentMarkdownFilePath",
-			"nestedDataDefinitionFields": [
-			],
-			"readOnly": false,
-			"repeatable": false,
-			"required": false,
-			"showLabel": true,
-			"tip": {
-				"en_US": ""
-			}
-		},
-		{
-			"customProperties": {
-				"confirmationErrorMessage": {
-					"en_US": ""
-				},
-				"confirmationLabel": {
-					"en_US": ""
-				},
-				"dataType": "string",
-				"direction": [
-					"vertical"
-				],
-				"displayStyle": "singleline",
-				"fieldNamespace": "",
 				"fieldReference": "product",
 				"hideField": false,
 				"labelAtStructureLevel": true,
@@ -399,26 +301,6 @@
 								"columnSize": 12,
 								"fieldNames": [
 									"navigationHTML"
-								]
-							}
-						]
-					},
-					{
-						"dataLayoutColumns": [
-							{
-								"columnSize": 12,
-								"fieldNames": [
-									"githubEditLink"
-								]
-							}
-						]
-					},
-					{
-						"dataLayoutColumns": [
-							{
-								"columnSize": 12,
-								"fieldNames": [
-									"parentMarkdownFilePath"
 								]
 							}
 						]
