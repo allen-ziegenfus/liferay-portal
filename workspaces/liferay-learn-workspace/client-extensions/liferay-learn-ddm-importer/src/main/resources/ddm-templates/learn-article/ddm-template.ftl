@@ -1,6 +1,22 @@
 <#include "${templatesPath}/SVG">
 
-<#assign groupFriendlyURL = "/web" + themeDisplay.getScopeGroup().getFriendlyURL() />
+<#assign
+	groupFriendlyURL = "/web" + themeDisplay.getScopeGroup().getFriendlyURL()
+
+	topLevelArticle = true
+/>
+
+<#if (breadcrumbLinks.getData())??>
+	<#assign breadcrumbLinksJSONArray = jsonFactoryUtil.createJSONArray(breadcrumbLinks.getData()) />
+
+	<#if breadcrumbLinksJSONArray.length() gt 0>
+		<#assign
+			parentLink = breadcrumbLinksJSONArray.getJSONObject(0)?eval
+
+			topLevelArticle = false
+		/>
+	</#if>
+</#if>
 
 <div class="container-fluid documentations main-content" role="main">
 	<div class="row">
@@ -76,15 +92,38 @@
 						</a>
 					</div>
 
-					<a class="back-link btn btn-link btn-monospaced d-flex flex-row justify-content-start" href="${parentMarkdownFilePath.getData()}" id="backLink">
-						<svg class="lexicon-icon lexicon-icon-angle-left" role="presentation" viewBox="0 0 512 512">
-							<use xlink:href="#angle-left" />
-						</svg>
-						${languageUtil.get(locale, "go-back", "Go Back")}
-					</a>
+					<#if !topLevelArticle>
+						<a class="back-link btn btn-link btn-monospaced d-flex flex-row justify-content-start" href="${parentLink.url}" id="backLink">
+							<svg class="lexicon-icon lexicon-icon-angle-left" role="presentation" viewBox="0 0 512 512">
+								<use xlink:href="#angle-left" />
+							</svg>
+							${languageUtil.get(locale, "go-back", "Go Back")}
+						</a>
+					</#if>
 
-					<#if (navigationHTML.getData())??>
-						${navigationHTML.getData()}
+					<#if (navigationLinks.getData())??>
+
+						<#assign urlTitleLastDirectory =.vars['reserved-article-url-title'].getData()?split("/")?last />
+
+						<ul class="current">
+							<#if !topLevelArticle>
+								<li class="current parent-level toctree-l1">
+									<a class="reference internal" href="${parentLink.url}">${parentLink.title}</a>
+								</li>
+							</#if>
+
+							<#assign navigationLinksJSONArray = jsonFactoryUtil.createJSONArray(navigationLinks.getData()) />
+
+							<#if navigationLinksJSONArray.length() gt 0>
+								<#list 0..navigationLinksJSONArray.length()-1 as i>
+									<#assign navigationLink = navigationLinksJSONArray.getJSONObject(i)?eval />
+
+									<li class="${topLevelArticle?then("toctree-l1", "toctree-l2")} ${(urlTitleLastDirectory == navigationLink.url)?then("current", "")}">
+										<a class="reference internal" href="${navigationLink.url}">${navigationLink.title}</a>
+									</li>
+								</#list>
+							</#if>
+						</ul>
 					</#if>
 				</div>
 			</div>
@@ -94,8 +133,24 @@
 			<div class="col-12 general-info p-0">
 				<div class="col-12 info-bar">
 					<div class="breadcrumb-wrapper col-12 col-md-7 offset-md-1">
-						<#if (breadcrumbHTML.getData())??>
-							${breadcrumbHTML.getData()}
+						<#if breadcrumbLinksJSONArray??>
+							<ul "aria-label"="breadcrumb navigation" class="breadcrumb" role="navigation">
+								<li>
+									<a href="${groupFriendlyURL}">Liferay Learn</a>
+								</li>
+								<#if breadcrumbLinksJSONArray.length() gt 0>
+									<#list breadcrumbLinksJSONArray.length()-1..0 as i>
+										<#assign breadcrumbLink = breadcrumbLinksJSONArray.getJSONObject(i)?eval />
+
+										<li>
+											<a href="${breadcrumbLink.url}">${breadcrumbLink.title}</a>
+										</li>
+									</#list>
+								</#if>
+								<li>
+									${.vars['reserved-article-title'].getData()}
+								</li>
+							</ul>
 						</#if>
 					</div>
 				</div>
