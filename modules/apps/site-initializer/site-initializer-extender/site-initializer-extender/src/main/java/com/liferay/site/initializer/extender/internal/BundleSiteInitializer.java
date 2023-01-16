@@ -3388,7 +3388,7 @@ public class BundleSiteInitializer implements SiteInitializer {
 
 		JSONArray jsonArray = jsonObject.getJSONArray("actions");
 
-		if (JSONUtil.isEmpty(jsonArray) && (role == null)) {
+		if (JSONUtil.isEmpty(jsonArray) || (role == null)) {
 			return;
 		}
 
