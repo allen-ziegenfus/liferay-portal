@@ -20,6 +20,7 @@ import com.liferay.adaptive.media.content.transformer.ContentTransformerContentT
 import com.liferay.adaptive.media.content.transformer.constants.ContentTransformerContentTypes;
 import com.liferay.adaptive.media.image.html.AMImageHTMLTagFactory;
 import com.liferay.adaptive.media.image.html.constants.AMImageHTMLConstants;
+import com.liferay.adaptive.media.image.mime.type.AMImageMimeTypeProvider;
 import com.liferay.document.library.kernel.exception.NoSuchFileEntryException;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.petra.string.StringPool;
@@ -143,7 +144,10 @@ public class AMBackwardsCompatibilityHtmlContentTransformer
 	protected String getReplacement(String originalImgTag, FileEntry fileEntry)
 		throws PortalException {
 
-		if (fileEntry == null) {
+		if ((fileEntry == null) ||
+			!_amImageMimeTypeProvider.isMimeTypeSupported(
+				fileEntry.getMimeType())) {
+
 			return originalImgTag;
 		}
 
@@ -273,6 +277,9 @@ public class AMBackwardsCompatibilityHtmlContentTransformer
 
 	@Reference
 	private AMImageHTMLTagFactory _amImageHTMLTagFactory;
+
+	@Reference
+	private AMImageMimeTypeProvider _amImageMimeTypeProvider;
 
 	@Reference
 	private DLAppLocalService _dlAppLocalService;
