@@ -79,11 +79,11 @@
 			}
 
 			> a {
-				background-image: clay-icon(angle-right, $black);
+				background-image: clay-icon(angle-right, #9A9BA3);
 				background-position: right 0.8rem top $spacing-md;
 				background-repeat: no-repeat;
 				background-size: 0.65rem;
-				color: $black;
+				color: var(--color-neutral-6);
 			}
 		}
 
@@ -205,6 +205,12 @@
 			margin-left: $spacing-sm;
 			margin-right: $spacing-sm;
 			width: 100%;
+		}
+
+		.product-documentation-selector {
+			background-image: clay-icon(caret-bottom, #898593);
+			border: 1px solid var(--color-neutral-4);
+			border-radius: 0.5rem;
 		}
 	}
 
