@@ -16,6 +16,7 @@ package com.liferay.adaptive.media.image.content.transformer.backwards.compatibi
 
 import com.liferay.adaptive.media.content.transformer.constants.ContentTransformerContentTypes;
 import com.liferay.adaptive.media.image.html.AMImageHTMLTagFactory;
+import com.liferay.adaptive.media.image.mime.type.AMImageMimeTypeProvider;
 import com.liferay.document.library.kernel.service.DLAppLocalService;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -25,6 +26,7 @@ import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import org.junit.Assert;
@@ -73,12 +75,27 @@ public class AMBackwardsCompatibilityHtmlContentTransformerTest {
 		);
 
 		Mockito.when(
+			_fileEntry.getMimeType()
+		).thenReturn(
+			ContentTypes.IMAGE_JPEG
+		);
+
+		Mockito.when(
+			_amImageMimeTypeProvider.isMimeTypeSupported(Mockito.anyString())
+		).thenReturn(
+			true
+		);
+
+		Mockito.when(
 			_groupLocalService.fetchFriendlyURLGroup(
 				Mockito.anyLong(), Mockito.anyString())
 		).thenReturn(
 			_group
 		);
 
+		ReflectionTestUtil.setFieldValue(
+			_contentTransformer, "_amImageMimeTypeProvider",
+			_amImageMimeTypeProvider);
 		ReflectionTestUtil.setFieldValue(
 			_contentTransformer, "_dlAppLocalService", _dlAppLocalService);
 		ReflectionTestUtil.setFieldValue(
@@ -210,6 +227,8 @@ public class AMBackwardsCompatibilityHtmlContentTransformerTest {
 
 	private final AMImageHTMLTagFactory _amImageHTMLTagFactory = Mockito.mock(
 		AMImageHTMLTagFactory.class);
+	private final AMImageMimeTypeProvider _amImageMimeTypeProvider =
+		Mockito.mock(AMImageMimeTypeProvider.class);
 	private final AMBackwardsCompatibilityHtmlContentTransformer
 		_contentTransformer =
 			new AMBackwardsCompatibilityHtmlContentTransformer();
