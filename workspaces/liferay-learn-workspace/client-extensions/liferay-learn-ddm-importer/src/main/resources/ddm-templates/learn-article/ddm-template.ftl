@@ -41,7 +41,7 @@
 			<div class="doc-nav-wrapper-inner">
 				<div class="info-bar">
 					<label for="productDocumentationSelector">
-						<select class="form-control" id="productDocumentationSelector">
+						<select class="form-control product-documentation-selector" id="productDocumentationSelector">
 							<option data-href="${groupFriendlyURL}/w/analytics-cloud/index" ${(product.getData() == "analytics-cloud")?then("selected", "")} value="analytics-cloud">
 								${languageUtil.get(locale, "analytics-cloud", "Analytics Cloud")}
 							</option>
