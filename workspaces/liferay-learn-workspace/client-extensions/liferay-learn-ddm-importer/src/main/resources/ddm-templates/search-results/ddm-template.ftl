@@ -12,7 +12,7 @@
 
 			<#if searchEntryTitle?has_content>
 				<div class="pb-4 search-results-entry">
-					<a class="font-weight-bold search-results-entry-title" href="${entry.getViewURL()}">
+					<a class="font-weight-bold search-results-entry-title" href="${entry.getViewURL()}&highlight=${searchResultsPortletDisplayContext.getKeywords()?url('ISO-8859-1')}">
 						${searchEntryTitle}
 					</a>
 
