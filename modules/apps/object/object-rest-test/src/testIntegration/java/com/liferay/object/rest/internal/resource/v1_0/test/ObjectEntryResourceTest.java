@@ -153,7 +153,7 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
-	public void testGetRelationshipERCFieldInOneToManyRelationship()
+	public void testGetObjectRelationshipERCFieldInOneToManyRelationship()
 		throws Exception {
 
 		PropsUtil.addProperties(
@@ -184,7 +184,7 @@ public class ObjectEntryResourceTest {
 	}
 
 	@Test
-	public void testGetRelationshipERCFieldInOneToManyRelationshipUsingNestedFields()
+	public void testGetObjectRelationshipERCFieldInOneToManyRelationshipUsingNestedFields()
 		throws Exception {
 
 		PropsUtil.addProperties(
