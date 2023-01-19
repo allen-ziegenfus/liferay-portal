@@ -4,6 +4,7 @@ ENV DEBUG_PORT=""
 
 RUN apt-get update && \
 	apt-get install -y git gnupg jq openjdk-8-jdk tini && \
+	apt-get install -y p7zip-full p7zip-rar && \
 	rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
