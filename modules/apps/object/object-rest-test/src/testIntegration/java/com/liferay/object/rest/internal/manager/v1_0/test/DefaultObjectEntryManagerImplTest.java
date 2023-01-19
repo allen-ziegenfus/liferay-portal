@@ -1045,6 +1045,24 @@ public class DefaultObjectEntryManagerImplTest {
 			},
 			ObjectDefinitionConstants.SCOPE_COMPANY);
 
+		// And/Or with Parentheses
+
+		_testGetObjectEntries(
+			HashMapBuilder.put(
+				"filter",
+				StringBundler.concat(
+					_buildEqualsExpressionFilterString(
+						"picklistObjectFieldName", picklistObjectFieldValue1),
+					" and (",
+					_buildEqualsExpressionFilterString(
+						"picklistObjectFieldName", picklistObjectFieldValue1),
+					" or ",
+					_buildEqualsExpressionFilterString(
+						"picklistObjectFieldName", picklistObjectFieldValue2),
+					")")
+			).build(),
+			childObjectEntry1);
+
 		// Equals expression
 
 		_testGetObjectEntries(
@@ -1237,24 +1255,6 @@ public class DefaultObjectEntryManagerImplTest {
 				"sort", "textObjectFieldName:desc"
 			).build(),
 			childObjectEntry2, childObjectEntry1);
-
-		// And/Or with Parentheses
-
-		_testGetObjectEntries(
-			HashMapBuilder.put(
-				"filter",
-				StringBundler.concat(
-					_buildEqualsExpressionFilterString(
-						"picklistObjectFieldName", picklistObjectFieldValue1),
-					" and (",
-					_buildEqualsExpressionFilterString(
-						"picklistObjectFieldName", picklistObjectFieldValue1),
-					" or ",
-					_buildEqualsExpressionFilterString(
-						"picklistObjectFieldName", picklistObjectFieldValue2),
-					")")
-			).build(),
-			childObjectEntry1);
 	}
 
 	@Test
