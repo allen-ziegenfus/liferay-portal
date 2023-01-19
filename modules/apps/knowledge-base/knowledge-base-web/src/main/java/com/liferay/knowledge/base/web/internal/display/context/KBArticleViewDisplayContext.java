@@ -113,15 +113,6 @@ public class KBArticleViewDisplayContext {
 			return false;
 		}
 
-		ThemeDisplay themeDisplay =
-			(ThemeDisplay)_httpServletRequest.getAttribute(
-				WebKeys.THEME_DISPLAY);
-
-		int expirationDateNotificationDateWeeks =
-			KBServiceConfigurationProviderUtil.
-				getExpirationDateNotificationDateWeeks(
-					themeDisplay.getCompanyId());
-
 		Instant instant = expirationDate.toInstant();
 
 		ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
@@ -130,6 +121,15 @@ public class KBArticleViewDisplayContext {
 			zonedDateTime.toLocalDateTime();
 
 		LocalDateTime nowLocalDateTime = LocalDateTime.now();
+
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		int expirationDateNotificationDateWeeks =
+			KBServiceConfigurationProviderUtil.
+				getExpirationDateNotificationDateWeeks(
+					themeDisplay.getCompanyId());
 
 		if (nowLocalDateTime.isAfter(
 				expirationDateLocalDateTime.minusWeeks(
