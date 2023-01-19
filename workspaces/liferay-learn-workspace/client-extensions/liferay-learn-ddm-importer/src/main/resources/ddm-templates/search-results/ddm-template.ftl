@@ -5,14 +5,17 @@
 
 	<#if entries?has_content>
 		<#list entries as entry>
-			<#assign searchEntryTitle = entry.getTitle()!""/>
-			<#assign searchEntryContent = entry.getContent()!languageUtil.get(locale, "no-content-preview", "No content preview")/>
+			<#assign
+				searchEntryTitle = entry.getTitle()!""
+				searchEntryContent = entry.getContent()!languageUtil.get(locale, "no-content-preview", "No content preview")
+			/>
 
 			<#if searchEntryTitle?has_content>
 				<div class="pb-5 search-results-entry">
 					<a class="search-results-entry-title" href="${entry.getViewURL()}">
 						${searchEntryTitle}
 					</a>
+
 					<div class="pt-2 search-results-entry-content">
 						${searchEntryContent}
 					</div>
