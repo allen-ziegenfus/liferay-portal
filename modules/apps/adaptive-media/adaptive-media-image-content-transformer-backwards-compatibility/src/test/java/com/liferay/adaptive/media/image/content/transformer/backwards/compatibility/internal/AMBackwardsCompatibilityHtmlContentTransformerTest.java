@@ -56,20 +56,15 @@ public class AMBackwardsCompatibilityHtmlContentTransformerTest {
 			"[REPLACED]"
 		);
 
-		ReflectionTestUtil.setFieldValue(
-			_contentTransformer, "_amImageHTMLTagFactory",
-			_amImageHTMLTagFactory);
+		Mockito.when(
+			_amImageMimeTypeProvider.isMimeTypeSupported(Mockito.anyString())
+		).thenReturn(
+			true
+		);
 
 		Mockito.when(
 			_dlAppLocalService.getFileEntryByUuidAndGroupId(
 				Mockito.anyString(), Mockito.anyLong())
-		).thenReturn(
-			_fileEntry
-		);
-
-		Mockito.when(
-			_fileEntryFriendlyURLResolver.resolveFriendlyURL(
-				Mockito.anyLong(), Mockito.anyString())
 		).thenReturn(
 			_fileEntry
 		);
@@ -81,9 +76,10 @@ public class AMBackwardsCompatibilityHtmlContentTransformerTest {
 		);
 
 		Mockito.when(
-			_amImageMimeTypeProvider.isMimeTypeSupported(Mockito.anyString())
+			_fileEntryFriendlyURLResolver.resolveFriendlyURL(
+				Mockito.anyLong(), Mockito.anyString())
 		).thenReturn(
-			true
+			_fileEntry
 		);
 
 		Mockito.when(
@@ -93,6 +89,9 @@ public class AMBackwardsCompatibilityHtmlContentTransformerTest {
 			_group
 		);
 
+		ReflectionTestUtil.setFieldValue(
+			_contentTransformer, "_amImageHTMLTagFactory",
+			_amImageHTMLTagFactory);
 		ReflectionTestUtil.setFieldValue(
 			_contentTransformer, "_amImageMimeTypeProvider",
 			_amImageMimeTypeProvider);
