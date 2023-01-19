@@ -11,8 +11,8 @@
 			/>
 
 			<#if searchEntryTitle?has_content>
-				<div class="pb-5 search-results-entry">
-					<a class="search-results-entry-title" href="${entry.getViewURL()}">
+				<div class="pb-4 search-results-entry">
+					<a class="font-weight-bold search-results-entry-title" href="${entry.getViewURL()}">
 						${searchEntryTitle}
 					</a>
 
