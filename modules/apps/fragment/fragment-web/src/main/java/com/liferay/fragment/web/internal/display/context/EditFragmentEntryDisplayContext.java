@@ -545,15 +545,12 @@ public class EditFragmentEntryDisplayContext {
 
 					renderFragmentEntryURL.setResourceID(
 						"/fragment/render_fragment_entry");
-
 					renderFragmentEntryURL.setParameter(
 						"fragmentEntryId",
 						String.valueOf(fragmentEntry.getFragmentEntryId()));
-
 					renderFragmentEntryURL.setParameter(
 						"fragmentEntryKey",
 						fragmentEntry.getFragmentEntryKey());
-
 					renderFragmentEntryURL.setWindowState(
 						LiferayWindowState.POP_UP);
 
