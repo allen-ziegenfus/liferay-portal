@@ -57,3 +57,4 @@ function initPageAlert() {
 // Initialize after DOM is ready
 
 document.addEventListener('DOMContentLoaded', initPageAlert);
+Liferay.on('endNavigate', initPageAlert);
