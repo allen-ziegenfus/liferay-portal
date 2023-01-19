@@ -3,6 +3,8 @@
 <#assign
 	groupFriendlyURL = "/web" + themeDisplay.getScopeGroup().getFriendlyURL()
 
+	isLandingPage = false
+
 	topLevelArticle = true
 />
 
@@ -16,6 +18,10 @@
 			topLevelArticle = false
 		/>
 	</#if>
+</#if>
+
+<#if (landingPage.getData())?? && (landingPage.getData() == "true")>
+	<#assign isLandingPage = true />
 </#if>
 
 <div class="container-fluid documentations main-content" role="main">
@@ -156,16 +162,14 @@
 				</div>
 			</div>
 
-			<div class="col-12 doc-content" id="docContent">
+			<div class="col-12 doc-content ${isLandingPage?then("landing-page-container", "")}" id="docContent">
 				<div class="row">
 					<div class="article-body col-12 col-md-8">
 						<#if (content.getData())??>
 							${content.getData()}
 						</#if>
-						<#if (landingPage.getData())??>
-							<#if landingPage.getData() == "true">
-								<#include "${templatesPath}/LANDING-PAGE">
-							</#if>
+						<#if isLandingPage>
+							<#include "${templatesPath}/LANDING-PAGE">
 						</#if>
 						<div class="autofit-padded-no-gutters-x autofit-row help-center-footer">
 							<div class="autofit-col">
@@ -200,113 +204,3 @@
 		</div>
 	</div>
 </div>
-
-<#noparse>
-	<script>
-		// Table of contents reading indicator
-
-		const headings = document.querySelectorAll('.article-body h2');
-
-		let activeIndex;
-		let targets = [];
-
-		if (headings) {
-			const articleTOC = document.getElementById('articleTOC');
-
-			headings.forEach(
-				heading => {
-					const id = heading.querySelector('a').hash.replace('#', '');
-
-					if (articleTOC) {
-						articleTOC.innerHTML += `
-					<li class="nav-item">
-						<a class="nav-link" href="#${id}" id="toc-${id}">
-							${heading.innerText}
-						</a>
-					</li>`;
-					}
-
-					targets.push({ id: id, isIntersecting: false });
-				}
-			);
-		}
-
-		const callback = entries => {
-			entries.forEach(entry => {
-				const index = targets.findIndex(target => target.id === entry.target.id);
-
-				targets[index].isIntersecting = entry.isIntersecting;
-
-				if (!targets[activeIndex] || !targets[activeIndex].isIntersecting) {
-					setActiveIndex()
-				}
-			});
-
-			if (targets[activeIndex]) {
-				toggleActiveClass(targets[activeIndex].id);
-			}
-		};
-
-		// rootMargin of 157px is header height + info bar height + 24px gutter offset
-
-		const observer = new IntersectionObserver(callback, { rootMargin: '-157px', threshold: [0, 0.2, 0.4, 0.6, 0.8, 1] });
-
-		const setActiveIndex = () => {
-			activeIndex = targets.findIndex(target => target.isIntersecting === true);
-		};
-
-		const toggleActiveClass = id => {
-			targets.forEach(target => {
-				const node = document.getElementById(`toc-${target.id}`);
-
-				if (node) {
-					node.classList.remove('active');
-				}
-			});
-
-			const activeNode = document.getElementById(`toc-${id}`);
-
-			if (activeNode) {
-				activeNode.classList.add('active');
-			}
-		}
-
-		targets.forEach(target => {
-			const node = target.id ? document.getElementById(target.id) : null;
-
-			if (node) {
-				observer.observe(node);
-
-				node.style.cssText = "margin-top: -157px; padding-top: 157px;"
-			}
-		});
-
-		const productDocumentationSelector = document.getElementById('productDocumentationSelector');
-
-		productDocumentationSelector.addEventListener('change', event => {
-			var selectedOption = event.target.options[event.target.selectedIndex];
-
-			window.location.pathname = selectedOption.dataset.href;
-		});
-
-		// Left Nav mobile interaction
-
-		const docNavWrapper = document.querySelector('.doc-nav-wrapper');
-		const mobileDocNavToggler = document.getElementById('mobileDocNavToggler');
-
-		if (docNavWrapper && mobileDocNavToggler) {
-			const togglers = mobileDocNavToggler.querySelectorAll('button');
-
-			togglers.forEach(toggler =>
-				toggler.addEventListener('click', () => {
-					docNavWrapper.classList.toggle('mobile-nav-hide');
-				})
-			);
-		}
-	</script>
-</#noparse>
-
-<script>
-	<#include "${templatesPath}/HIGHLIGHT-JS">
-	<#include "${templatesPath}/PAGE-ALERT-JS">
-</script>
