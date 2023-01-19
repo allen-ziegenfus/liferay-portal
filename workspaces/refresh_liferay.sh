@@ -18,7 +18,10 @@ function main {
 
 		rm -fr ${dir}/client-extensions/*
 
-		cp -R ${dir}.temp/client-extensions/* ${dir}/client-extensions
+		if [ -e ${dir}.temp/client-extensions ]
+		then
+			cp -R ${dir}.temp/client-extensions/* ${dir}/client-extensions
+		fi
 
 		rm -fr ${dir}.temp
 	done
