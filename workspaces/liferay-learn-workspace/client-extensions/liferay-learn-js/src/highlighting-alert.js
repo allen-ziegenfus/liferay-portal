@@ -1,9 +1,23 @@
+/**
+ * Copyright (c) 2000-present Liferay, Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or (at your option)
+ * any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ */
+
 import Mark from 'mark.js';
 
 /**
-* Adds an alert with the text being highlighted and provides a way to remove
-* the highlight styling.
-*/
+ * Adds an alert with the text being highlighted and provides a way to remove
+ * the highlight styling.
+ */
 
 const HIGHLIGHT_ALERT_ID = 'highlightAlert';
 const HIGHLIGHT_TEXT_MATCH_ID = 'highlightTextMatch';
@@ -22,10 +36,9 @@ function initHighlightingAlert() {
 		);
 
 		if (highlightAlertElement) {
-
 			const articleBody = document.querySelector('.article-body');
 			if (articleBody) {
-				var mark = new Mark(articleBody);
+				const mark = new Mark(articleBody);
 
 				// Add text being highlighted
 
@@ -44,9 +57,14 @@ function initHighlightingAlert() {
 					}
 
 					textMatchElement.textContent = ' "' + searchTerm + '"';
-					textMatchElement.title = urlSearchParams.get(HIGHLIGHT_PARAM);
+					textMatchElement.title = urlSearchParams.get(
+						HIGHLIGHT_PARAM
+					);
 
-					mark.mark(searchTerm, {'accuracy': 'exactly', 'className': 'highlighted'});
+					mark.mark(searchTerm, {
+						accuracy: 'exactly',
+						className: 'highlighted',
+					});
 				}
 
 				// Setup remove highlight link to clear highlights and dismiss alert
@@ -56,13 +74,10 @@ function initHighlightingAlert() {
 				);
 
 				if (removeHighlightLinkElement) {
-					removeHighlightLinkElement.addEventListener(
-						'click',
-						function () {
-							mark.unmark();
-							highlightAlertElement.remove();
-						}
-					);
+					removeHighlightLinkElement.addEventListener('click', () => {
+						mark.unmark();
+						highlightAlertElement.remove();
+					});
 				}
 
 				// Show alert
