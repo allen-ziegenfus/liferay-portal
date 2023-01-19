@@ -63,6 +63,40 @@ if [ -z "$SKIP_UPDATE_EXAMPLES" ] ; then
 	send_slack_message "update_examples.sh finished with return code $UPDATE_EXAMPLES_RC. $ERROR_COUNT entries in error log file."
 fi
 
+if [ -z "$SKIP_GENERATE_ZIPS" ] ; then
+	cd $REPO_FOLDER/docs || exit
+
+	for docs_dir_name in $(find . -maxdepth 4 -mindepth 4 -type f -name "contents.rst" -printf "%h\n" )
+	do
+		language=$(echo "${docs_dir_name}" | cut -f4 -d'/')
+		product=$(echo "${docs_dir_name}" | cut -f2 -d'/')
+		version=$(echo "${docs_dir_name}" | cut -f3 -d'/')
+
+		product_version_language_dir_name=$(echo "${product}"/"${version}"/"${language}")
+
+		for zip_dir_name in $(find "${product_version_language_dir_name}" -name *.zip -type d)
+		do
+			pushd "${zip_dir_name}"
+
+			zip_file_name=$(basename "${zip_dir_name}")
+
+			7z a ${zip_file_name} ../${zip_file_name}\
+
+			7z rn ${zip_file_name} ${zip_file_name} ${zip_file_name%.*}
+
+			popd
+
+			output_dir_name=$(dirname "/public_html/${zip_dir_name}")
+			output_dir_name=$(dirname "${output_dir_name}")
+			output_dir_name=$(dirname "${output_dir_name}")
+
+			mkdir -p "/${output_dir_name}"
+
+			mv "${zip_dir_name}"/"${zip_file_name}" "${output_dir_name}"
+		done
+	done
+fi
+
 echo "Starting java import"
 
 export JAVA_HOME=/opt/java/openjdk
