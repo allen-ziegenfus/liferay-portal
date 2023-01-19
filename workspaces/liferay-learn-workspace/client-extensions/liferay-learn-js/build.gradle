@@ -1,4 +1,0 @@
-apply plugin: "com.liferay.node"
-apply plugin: "com.liferay.source.formatter"
-
-createClientExtensionConfig.dependsOn packageRunBuild
