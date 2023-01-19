@@ -48,11 +48,5 @@
 
 			return url;
 		}
-
-		const docContent = document.getElementById('docContent');
-
-		if (docContent) {
-			docContent.classList.add('landing-page-container');
-		}
 	</script>
 </#noparse>
