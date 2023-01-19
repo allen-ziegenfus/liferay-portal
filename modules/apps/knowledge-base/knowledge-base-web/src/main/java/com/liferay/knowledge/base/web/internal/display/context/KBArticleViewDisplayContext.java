@@ -129,9 +129,9 @@ public class KBArticleViewDisplayContext {
 		LocalDateTime expirationDateLocalDateTime =
 			zonedDateTime.toLocalDateTime();
 
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime nowLocalDateTime = LocalDateTime.now();
 
-		if (now.isAfter(
+		if (nowLocalDateTime.isAfter(
 				expirationDateLocalDateTime.minusWeeks(
 					expirationDateNotificationDateWeeks))) {
 
