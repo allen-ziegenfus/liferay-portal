@@ -61,8 +61,8 @@ function initHighlightingAlert() {
 						HIGHLIGHT_PARAM
 					);
 
+					mark.unmark();
 					mark.mark(searchTerm, {
-						accuracy: 'exactly',
 						className: 'highlighted',
 					});
 				}
