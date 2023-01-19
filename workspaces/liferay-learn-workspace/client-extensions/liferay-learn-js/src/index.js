@@ -12,4 +12,8 @@
  * details.
  */
 
-import Prism from 'prismjs'; // eslint-disable-line no-unused-vars
+import 'prismjs';
+
+import './article';
+import './highlighting-alert';
+import './page-alert';

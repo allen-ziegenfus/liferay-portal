@@ -76,3 +76,4 @@ function initHighlightingAlert() {
 // Initialize after DOM is ready
 
 window.onload = initHighlightingAlert;
+Liferay.on('endNavigate', initHighlightingAlert);

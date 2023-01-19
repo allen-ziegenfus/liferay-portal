@@ -15,8 +15,8 @@
 const path = require('path');
 
 module.exports = {
-	entry: './src/index.js',
-	mode: 'development',
+	entry: ['./src/index.js'],
+	mode: 'production',
 	module: {
 		rules: [
 			{
@@ -36,8 +36,8 @@ module.exports = {
 		],
 	},
 	output: {
-		filename: 'index.js',
+		filename: '[name]-[hash].js',
 		globalObject: 'this',
-		path: path.resolve(__dirname, 'build/static'),
+		path: path.resolve(__dirname, 'build/'),
 	},
 };
