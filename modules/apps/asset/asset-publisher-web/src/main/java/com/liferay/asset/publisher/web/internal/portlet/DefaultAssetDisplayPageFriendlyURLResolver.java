@@ -202,23 +202,22 @@ public class DefaultAssetDisplayPageFriendlyURLResolver
 		AssetEntry assetEntry = _assetEntryLocalService.fetchEntry(
 			JournalArticle.class.getName(), journalArticle.getPrimaryKey());
 
-		if (assetEntry == null) {
-			AssetRendererFactory<?> assetRendererFactory =
-				AssetRendererFactoryRegistryUtil.
-					getAssetRendererFactoryByClassName(
-						JournalArticle.class.getName());
-
-			try {
-				return assetRendererFactory.getAssetEntry(
-					JournalArticle.class.getName(),
-					journalArticle.getResourcePrimKey());
-			}
-			catch (PortalException portalException) {
-				throw new RuntimeException(portalException);
-			}
+		if (assetEntry != null) {
+			return assetEntry;
 		}
 
-		return assetEntry;
+		AssetRendererFactory<?> assetRendererFactory =
+			AssetRendererFactoryRegistryUtil.getAssetRendererFactoryByClassName(
+				JournalArticle.class.getName());
+
+		try {
+			return assetRendererFactory.getAssetEntry(
+				JournalArticle.class.getName(),
+				journalArticle.getResourcePrimKey());
+		}
+		catch (PortalException portalException) {
+			throw new RuntimeException(portalException);
+		}
 	}
 
 	private String _getBasicLayoutURL(
