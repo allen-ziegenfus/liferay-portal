@@ -777,6 +777,21 @@ public class Main {
 	private void _initFlexmark() {
 		MutableDataSet mutableDataSet = new MutableDataSet(
 		).set(
+			AdmonitionExtension.TYPE_SVG_MAP, new HashMap<String, String>()
+		).set(
+			AdmonitionExtension.QUALIFIER_TYPE_MAP,
+			HashMapBuilder.put(
+				"error", "error"
+			).put(
+				"important", "important"
+			).put(
+				"note", "note"
+			).put(
+				"tip", "tip"
+			).put(
+				"warning", "warning"
+			).build()
+		).set(
 			AsideExtension.ALLOW_LEADING_SPACE, true
 		).set(
 			AsideExtension.EXTEND_TO_BLANK_LINE, false
@@ -1262,7 +1277,9 @@ public class Main {
 
 		sb.append("!!! ");
 		sb.append(directiveName);
-		sb.append(" \"\" \n");
+		sb.append(" \"");
+		sb.append(directiveName);
+		sb.append("\" \n");
 
 		for (String mySTDirectiveLine : mySTDirectiveLines) {
 			sb.append("    ");
