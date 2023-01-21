@@ -75,15 +75,17 @@
 				> a {
 					background-image: none;
 					border-left-color: $primary;
+					color: $color-neutral-10;
 				}
 			}
 
 			> a {
-				background-image: clay-icon(angle-right, #9A9BA3);
+				background-image: clay-icon(angle-right, $color-neutral-5);
 				background-position: right 0.8rem top $spacing-md;
 				background-repeat: no-repeat;
 				background-size: 0.65rem;
-				color: var(--color-neutral-6);
+				color: $color-neutral-6;
+				font-size: 1.125rem;
 			}
 		}
 
@@ -207,9 +209,10 @@
 			width: 100%;
 		}
 
-		.product-documentation-selector {
-			background-image: clay-icon(caret-bottom, #898593);
-			border: 1px solid var(--color-neutral-4);
+		select.form-control {
+			background-image: clay-icon(caret-bottom, $color-neutral-5);
+			background-size: 24px;
+			border: 1px solid $color-neutral-4;
 			border-radius: 0.5rem;
 		}
 	}
