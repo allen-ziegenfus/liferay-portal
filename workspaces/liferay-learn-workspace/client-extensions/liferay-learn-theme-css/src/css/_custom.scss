@@ -1,26 +1,4 @@
-@import 'sassy-inputs/sass/main';
-
-@import 'clay/functions/_global-functions';
-
-// Custom Variables
-
-@import '_custom_variable';
-
-@import 'clay/atlas/variables/alerts';
-
-@import 'clay/variables/alerts';
-
-// Clay Base-Variables
-
-@import 'clay/variables/_bs4-variable-overwrites';
-
-@import 'clay/bootstrap/_functions';
-@import 'clay/bootstrap/_mixins';
-
-@import 'clay/_mixins';
-
 @import 'clay/components/_tables';
-
 // Custom Components
 @import 'flexmark-ext-admonition/admonition';
 
