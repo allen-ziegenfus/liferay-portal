@@ -38,7 +38,7 @@
 
 		a {
 			border-left: 3px solid transparent;
-			color: $nav-color;
+			color: $color-neutral-6;
 			display: block;
 			padding: $spacing-xs $spacing-default $spacing-xs $spacing-md;
 
@@ -59,7 +59,7 @@
 			width: 100%;
 
 			svg {
-				fill: $nav-color;
+				fill: $color-neutral-6;
 				height: $spacing-default;
 				padding-right: $spacing-sm;
 				width: $spacing-default;
