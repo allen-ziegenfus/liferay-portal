@@ -155,3 +155,60 @@ $spacing-lg: 2rem; // 32px
 $spacing-md: 1rem; // 16px
 $spacing-sm: 0.75rem; // 12px
 $spacing-xs: 0.5rem; // 8px
+
+// Primary Site Navigation Variables
+
+$box-shadow-sm: inset 0px -1px 0px #c9c9ce;
+$brand-color-3: #00318f;
+$btn-link-color: #0b5fff;
+$btn-primary-background-color: #0b5fff;
+$btn-primary-border-color: #0b5fff;
+$color-action-primary-active: #004ad7;
+$color-action-primary-active-lighten: #0053f050;
+$color-action-primary-default: #0b5fff;
+$color-action-primary-hover: #0053f0;
+$color-action-primary-hover-lighten: #edf3fe;
+$color-brand-primary: #0b63ce;
+$color-brand-primary-darken-5: #00256c;
+$color-brand-primary-lighten-1: rgba(255, 255, 255, 0.05);
+$color-brand-primary-lighten-2: rgba(255, 255, 255, 0.1);
+$color-brand-primary-lighten-3: rgba(255, 255, 255, 0.15);
+$color-brand-primary-lighten-4: rgba(255, 255, 255, 0.4);
+$color-neutral-10: #282934;
+$color-neutral-2: #e2e2e4;
+$color-neutral-8: #54555f;
+$display4-size: 2rem;
+$display4-weight: 600;
+$elevation-fluffy-1: 0px 5px 15px rgba(19, 20, 31, 0.12);
+$hr-border-color: #e7e7ed;
+$lighter: #f8f8f9;
+
+:root {
+	--box-shadow-sm: #{$box-shadow-sm} !important;
+	--brand-color-3: #{$brand-color-3} !important;
+	--btn-link-color: #{$btn-link-color} !important;
+	--btn-primary-background-color: #{$btn-primary-background-color} !important;
+	--btn-primary-border-color: #{$btn-primary-border-color} !important;
+	--color-action-primary-active: #{$color-action-primary-active} !important;
+	--color-action-primary-active-lighten: #{$color-action-primary-active-lighten} !important;
+	--color-action-primary-default: #{$color-action-primary-default} !important;
+	--color-action-primary-hover: #{$color-action-primary-hover} !important;
+	--color-action-primary-hover-lighten: #{$color-action-primary-hover-lighten} !important;
+	--color-brand-primary: #{$color-brand-primary} !important;
+	--color-brand-primary-darken-5: #{$color-brand-primary-darken-5} !important;
+	--color-brand-primary-lighten-1: #{$color-brand-primary-lighten-1} !important;
+	--color-brand-primary-lighten-2: #{$color-brand-primary-lighten-2} !important;
+	--color-brand-primary-lighten-3: #{$color-brand-primary-lighten-3} !important;
+	--color-brand-primary-lighten-4: #{$color-brand-primary-lighten-4} !important;
+	--color-neutral-10: #{$color-neutral-10} !important;
+	--color-neutral-2: #{$color-neutral-2} !important;
+	--color-neutral-8: #{$color-neutral-8} !important;
+	--display4-size: #{$display4-size} !important;
+	--display4-weight: #{$display4-weight} !important;
+	--elevation-fluffy-1: #{$elevation-fluffy-1} !important;
+	--font-family-base: #{$font-family-base} !important;
+	--hr-border-color: #{$hr-border-color} !important;
+	--info: #{$info} !important;
+	--light: #{$light} !important;
+	--lighter: #{$lighter} !important;
+}
