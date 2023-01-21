@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
 	entry: './src/index.js',
 	output: {
-		filename: 'index.js',
+		filename: '[name]-[hash].js',
 		globalObject: 'this',
 		library: {
 			name: 'navigation',
