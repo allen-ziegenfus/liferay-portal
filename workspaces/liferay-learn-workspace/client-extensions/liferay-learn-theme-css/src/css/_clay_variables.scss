@@ -4,51 +4,42 @@
 $grid-gutter-width: 30px; // 30px is the original from bootstrap instead of the 24px defined in Atlas. This variable is needed to be defined earlier for alerts.
 
 $primary: #0b5fff;
-$primary-d1: darken($primary, 5.1); // #0053F0
-$primary-d2: darken($primary, 10); // #004AD7
-$primary-l1: lighten($primary, 22.94); // #80ACFF
-$primary-l2: lighten($primary, 32.94); // #B3CDFF
-$primary-l3: lighten($primary, 44.9); // #F0F5FF
+$primary-d1: #0053F0;
+$primary-d2: #004AD7;
+$primary-l1: #377cff;
+$primary-l2: #6399FF;
+$primary-l3: #8FB5FF;
 
-$secondary: #6b6c7e;
-$secondary-d1: darken(saturate($secondary, 4.82), 20);
-$secondary-d2: darken(saturate($secondary, 5.36), 23.92);
-$secondary-l1: lighten(
-	saturate(adjust-hue($secondary, -3), 5.39),
-	23.92
-); // #A7A9BC
-$secondary-l2: lighten(
-	saturate(adjust-hue($secondary, -2), 5.48),
-	37.06
-); // #CDCED9
-$secondary-l3: lighten(
-	saturate(adjust-hue($secondary, 3), 6.13),
-	46.08
-); // #E7E7ED
+$secondary: #FFC124;
+$secondary-d1: #F3AE00;
+$secondary-d2: #C28B00;
+$secondary-l1: #FFCB48;
+$secondary-l2: #FFD66D;
+$secondary-l3: #FFE092;
 
 $info: #2e5aac;
-$info-d1: darken($info, 5.1); // #294F98
-$info-d2: darken($info, 10); // #234584
-$info-l1: lighten(saturate($info, 0.59), 28.04); // #89A7E0
-$info-l2: lighten(desaturate($info, 3.25), 52.94); // #EEF2FA
+$info-d1: #25488A;
+$info-d2: #1C3667;
+$info-l1: #8AA3D1;
+$info-l2: #E6EBF5;
 
-$success: #287d3c;
-$success-d1: darken($success, 5.1); // #226A33
-$success-d2: darken($success, 10); // #1C5629
-$success-l1: lighten(desaturate($success, 0.14), 24.9); // #5ACA75
-$success-l2: lighten(desaturate($success, 1.52), 62.94); // #EDF9F0
+$success: #4AAB3B;
+$success-d1: #3B892F;
+$success-d2: #2C6723;
+$success-l1: #9AD091;
+$success-l2: #E9F5E8;
 
-$warning: #b95000;
-$warning-d1: darken($warning, 5.1); // #9F4500
-$warning-d2: darken($warning, 10); // #863A00
-$warning-l1: lighten($warning, 24.9); // #FF8F39
-$warning-l2: lighten($warning, 60); // #FFF4EC
+$warning: #B95000;
+$warning-d1: #944000;
+$warning-d2: #6F3000;
+$warning-l1: #D89D70;
+$warning-l2: #F7EAE0;
 
-$danger: #da1414;
-$danger-d1: darken($danger, 5.1); // #C31212
-$danger-d2: darken($danger, 10); // #AB1010
-$danger-l1: lighten(desaturate($danger, 0.25), 28.04); // #F48989
-$danger-l2: lighten(saturate($danger, 5.04), 50); // #FEEFEF
+$danger: #DA1414;
+$danger-d1: #AE1010;
+$danger-d2: #830C0C;
+$danger-l1: #EA7B7B;
+$danger-l2: #FBE3E3;
 
 $light: #f1f2f5;
 $light-d1: darken($light, 5.1); // #E2E4EA
@@ -62,6 +53,19 @@ $dark-d2: darken($dark, 10); // #111116
 $dark-l1: lighten(saturate($dark, 0.18), 4.12); // #30313F
 $dark-l2: lighten(desaturate($dark, 0.36), 8.04); // #393A4A
 
+$color-neutral-1: #282934;
+$color-neutral-2: #e2e2e4;
+$color-neutral-3: #C9C9CF;
+$color-neutral-4: #b1b2b9;
+$color-neutral-5: #999aa3;
+$color-neutral-6: #82828c;
+$color-neutral-7: #6C6C75;
+$color-neutral-8: #54555f;
+$color-neutral-9: #3F404B;
+$color-neutral-10: #282934;
+
+$body-color: $color-neutral-8;
+
 $link-color: $primary;
 $link-hover-color: $primary-d2;
 
@@ -72,28 +76,26 @@ $background-color: #f4f6f9;
 $black: #000;
 $border-color: #ebeef2;
 $brand-secondary: #184496;
-$default-color: $dark-l1;
+$default-color: $color-neutral-8;
 $filter-color: #eff3fd;
-$header-color: #09101d;
 $highlight-color: #c4d6f8;
 $hr-color: #dadee3;
-$nav-color: $secondary;
 $pre-text-color: #f8faff;
 $white: #fff;
 
-$admonition-error: $danger;
+$admonition-error: $danger-d1;
 $admonition-error-bg: $danger-l2;
 $admonition-error-highlight: $alert-color;
-$admonition-important: $info;
+$admonition-important: $info-d1;
 $admonition-important-bg: $info-l2;
 $admonition-important-highlight: $info-l1;
-$admonition-note: $success;
+$admonition-note: $success-d1;
 $admonition-note-bg: $success-l2;
 $admonition-note-highlight: $success-l1;
-$admonition-tip: #0b7543;
-$admonition-tip-bg: #eafaf7;
-$admonition-tip-highlight: #50d2a0;
-$admonition-warning: $warning;
+$admonition-tip: $success-d1;
+$admonition-tip-bg: $success-l2;
+$admonition-tip-highlight: $success-l1;
+$admonition-warning: $warning-d1;
 $admonition-warning-bg: $warning-l2;
 $admonition-warning-highlight: $warning-l1;
 
@@ -137,10 +139,6 @@ $h6-line-height: 16px;
 $code-line-height: 24px; // set pixel value to prevent nested <pre> and <code> from scaling down line height
 $secondary-text-line-height: 1.429;
 
-$blockquote-color: $nav-color;
-$blockquote-font-weight: 300;
-$blockquote-line-height: 30px;
-
 $breadcrumb-divider-svg-icon: clay-icon(angle-right, $breadcrumb-divider-color);
 $breadcrumb-divider-svg-icon-height: 0.75em; // 12px
 $breadcrumb-divider-svg-icon-width: $breadcrumb-divider-svg-icon-height;
@@ -160,12 +158,12 @@ $spacing-xs: 0.5rem; // 8px
 
 $box-shadow-sm: inset 0px -1px 0px #c9c9ce;
 $brand-color-3: #00318f;
-$btn-link-color: #0b5fff;
-$btn-primary-background-color: #0b5fff;
-$btn-primary-border-color: #0b5fff;
+$btn-link-color: $primary;
+$btn-primary-background-color: $primary;
+$btn-primary-border-color: $primary;
 $color-action-primary-active: #004ad7;
 $color-action-primary-active-lighten: #0053f050;
-$color-action-primary-default: #0b5fff;
+$color-action-primary-default: $primary;
 $color-action-primary-hover: #0053f0;
 $color-action-primary-hover-lighten: #edf3fe;
 $color-brand-primary: #0b63ce;
@@ -174,12 +172,6 @@ $color-brand-primary-lighten-1: rgba(255, 255, 255, 0.05);
 $color-brand-primary-lighten-2: rgba(255, 255, 255, 0.1);
 $color-brand-primary-lighten-3: rgba(255, 255, 255, 0.15);
 $color-brand-primary-lighten-4: rgba(255, 255, 255, 0.4);
-$color-neutral-10: #282934;
-$color-neutral-2: #e2e2e4;
-$color-neutral-4: #b1b2b9;
-$color-neutral-5: #999aa3;
-$color-neutral-6: #82828c;
-$color-neutral-8: #54555f;
 $display4-size: 2rem;
 $display4-weight: 600;
 $elevation-fluffy-1: 0px 5px 15px rgba(19, 20, 31, 0.12);

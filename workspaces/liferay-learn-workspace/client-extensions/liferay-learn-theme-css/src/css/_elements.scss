@@ -36,9 +36,15 @@ h2,
 h3,
 h4,
 h5,
-h6 {
-	color: $header-color;
-	font-weight: $font-weight-semi-bold;
+h6,
+h1 > a,
+h2 > a,
+h3 > a,
+h4 > a,
+h5 > a,
+h6 > a {
+	color: $black;
+	font-weight: $font-weight-bold;
 	margin: 0;
 }
 
@@ -78,9 +84,10 @@ h6 {
 
 blockquote {
 	border-left: 2px solid $primary;
-	color: $blockquote-color;
-	font-weight: $blockquote-font-weight;
-	line-height: $blockquote-line-height;
+	color: $color-neutral-8;
+	font-size: 1.125rem;
+	font-weight: 300;
+	line-height: 20px;
 	margin: $spacing-default 0;
 	padding-left: $spacing-default;
 }
