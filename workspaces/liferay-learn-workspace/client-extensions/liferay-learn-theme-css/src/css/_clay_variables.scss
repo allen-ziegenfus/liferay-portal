@@ -4,42 +4,42 @@
 $grid-gutter-width: 30px; // 30px is the original from bootstrap instead of the 24px defined in Atlas. This variable is needed to be defined earlier for alerts.
 
 $primary: #0b5fff;
-$primary-d1: #0053F0;
-$primary-d2: #004AD7;
+$primary-d1: #0053f0;
+$primary-d2: #004ad7;
 $primary-l1: #377cff;
-$primary-l2: #6399FF;
-$primary-l3: #8FB5FF;
+$primary-l2: #6399ff;
+$primary-l3: #8fb5ff;
 
-$secondary: #FFC124;
-$secondary-d1: #F3AE00;
-$secondary-d2: #C28B00;
-$secondary-l1: #FFCB48;
-$secondary-l2: #FFD66D;
-$secondary-l3: #FFE092;
+$secondary: #ffc124;
+$secondary-d1: #f3ae00;
+$secondary-d2: #c28b00;
+$secondary-l1: #ffcb48;
+$secondary-l2: #ffd66d;
+$secondary-l3: #ffe092;
 
 $info: #2e5aac;
-$info-d1: #25488A;
-$info-d2: #1C3667;
-$info-l1: #8AA3D1;
-$info-l2: #E6EBF5;
+$info-d1: #25488a;
+$info-d2: #1c3667;
+$info-l1: #8aa3d1;
+$info-l2: #e6ebf5;
 
-$success: #4AAB3B;
-$success-d1: #3B892F;
-$success-d2: #2C6723;
-$success-l1: #9AD091;
-$success-l2: #E9F5E8;
+$success: #4aab3b;
+$success-d1: #3b892f;
+$success-d2: #2c6723;
+$success-l1: #9ad091;
+$success-l2: #e9f5e8;
 
-$warning: #B95000;
+$warning: #b95000;
 $warning-d1: #944000;
-$warning-d2: #6F3000;
-$warning-l1: #D89D70;
-$warning-l2: #F7EAE0;
+$warning-d2: #6f3000;
+$warning-l1: #d89d70;
+$warning-l2: #f7eae0;
 
-$danger: #DA1414;
-$danger-d1: #AE1010;
-$danger-d2: #830C0C;
-$danger-l1: #EA7B7B;
-$danger-l2: #FBE3E3;
+$danger: #da1414;
+$danger-d1: #ae1010;
+$danger-d2: #830c0c;
+$danger-l1: #ea7b7b;
+$danger-l2: #fbe3e3;
 
 $light: #f1f2f5;
 $light-d1: darken($light, 5.1); // #E2E4EA
@@ -55,13 +55,13 @@ $dark-l2: lighten(desaturate($dark, 0.36), 8.04); // #393A4A
 
 $color-neutral-1: #282934;
 $color-neutral-2: #e2e2e4;
-$color-neutral-3: #C9C9CF;
+$color-neutral-3: #c9c9cf;
 $color-neutral-4: #b1b2b9;
 $color-neutral-5: #999aa3;
 $color-neutral-6: #82828c;
-$color-neutral-7: #6C6C75;
+$color-neutral-7: #6c6c75;
 $color-neutral-8: #54555f;
-$color-neutral-9: #3F404B;
+$color-neutral-9: #3f404b;
 $color-neutral-10: #282934;
 
 $body-color: $color-neutral-8;
