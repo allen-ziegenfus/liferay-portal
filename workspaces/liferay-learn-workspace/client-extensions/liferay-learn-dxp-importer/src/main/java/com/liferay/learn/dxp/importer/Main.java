@@ -1820,10 +1820,16 @@ public class Main {
 			_contentLines.add(contentLine);
 		}
 
-		public String getTitleHTML() {
+		public String getTitleHTML(boolean link) {
 			StringBundler sb = new StringBundler(3);
 
-			sb.append("<h4 class=\"title\">");
+			if (link) {
+				sb.append("<h4 class=\"right-arrow-link title\">");
+			}
+			else {
+				sb.append("<h4 class=\"title\">");
+			}
+
 			sb.append(_title);
 			sb.append("</h4>");
 
@@ -1846,18 +1852,18 @@ public class Main {
 			sb.append("<div class=\"autofit-col autofit-col-expand\">");
 
 			if (Validator.isNotNull(_link)) {
-				sb.append("<a class=\"right-arrow-link\" href=\"");
+				sb.append("<a href=\"");
 				sb.append(_link);
 				sb.append("\">");
 
 				if (Validator.isNotNull(_title)) {
-					sb.append(getTitleHTML());
+					sb.append(getTitleHTML(true));
 				}
 
 				sb.append("</a>");
 			}
 			else if (Validator.isNotNull(_title)) {
-				sb.append(getTitleHTML());
+				sb.append(getTitleHTML(false));
 			}
 
 			if (!_contentLines.isEmpty()) {
