@@ -2,6 +2,10 @@
 	display: flex;
 	flex-wrap: wrap;
 
+	@include media-breakpoint-down(sm) {
+		justify-content: center;
+	}
+
 	.autofit-row-center > .autofit-col {
 		justify-content: initial;
 	}
@@ -40,6 +44,11 @@
 			.autofit-row {
 				display: block;
 			}
+		}
+
+		@include media-breakpoint-down(sm) {
+			flex: 1 0 100%;
+			margin: 0.5rem !important;
 		}
 
 		&:hover {

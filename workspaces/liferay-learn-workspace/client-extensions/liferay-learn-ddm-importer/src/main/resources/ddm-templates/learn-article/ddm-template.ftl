@@ -136,7 +136,7 @@
 		</div>
 
 		<div class="col-12 col-md-10 doc-body">
-			<div class="col-12 general-info p-0">
+			<div class="col-12 general-info p-md-0">
 				<div class="col-12 info-bar p-0">
 					<div class="col-12 col-md-7 offset-md-1 p-0">
 						<#if breadcrumbLinksJSONArray??>
