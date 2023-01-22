@@ -1,5 +1,16 @@
-.page-alert-container {
-	margin: 0 -15px;
+#pageAlertContainer {
+	.alert-info {
+		background-color: $info_l2;
+		font-size: 0.8125rem;
+
+		.lead {
+			font-size: 0.8125rem;
+			font-weight: $font-weight-semi-bold;
+		}
+	}
+	.autofit-row.alert-autofit-row {
+		align-items: center;
+	}
 }
 
 .page-alert-hidden {
