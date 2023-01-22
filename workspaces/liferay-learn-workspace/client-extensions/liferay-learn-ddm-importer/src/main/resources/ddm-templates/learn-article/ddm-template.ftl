@@ -164,7 +164,7 @@
 
 			<div class="col-12 doc-content ${isLandingPage?then("landing-page-container", "")}" id="docContent">
 				<div class="row">
-					<div class="article-body col-12 col-md-8">
+					<div class="article-body col-12 col-md-8 language-log">
 						<#if (content.getData())??>
 							${content.getData()}
 						</#if>
