@@ -137,10 +137,10 @@
 
 		<div class="col-12 col-md-10 doc-body">
 			<div class="col-12 general-info p-0">
-				<div class="col-12 info-bar">
-					<div class="breadcrumb-wrapper col-12 col-md-7 offset-md-1">
+				<div class="col-12 info-bar p-0">
+					<div class="col-12 col-md-7 offset-md-1 p-0">
 						<#if breadcrumbLinksJSONArray??>
-							<ul "aria-label"="breadcrumb navigation" class="breadcrumb" role="navigation">
+							<ul aria-label="breadcrumb navigation" class="article-breadcrumb" role="navigation">
 								<li>
 									<a href="${groupFriendlyURL}">Liferay Learn</a>
 								</li>

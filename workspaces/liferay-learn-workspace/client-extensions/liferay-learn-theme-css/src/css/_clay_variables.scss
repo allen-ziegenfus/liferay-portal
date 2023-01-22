@@ -121,11 +121,9 @@ $h3-font-size: 1.25rem; // 20px
 $h4-font-size: 1rem; // 16px
 $h5-font-size: 0.875rem; // 14px
 $h6-font-size: $small-font-size; // 12px
+$breadcrumb-font-size: 0.8125rem; // 13px;
 $code-font-size: 14px; // set pixel value to prevent nested <pre> and <code> from scaling down font size
 $mobile-font-size: 1.75rem; // 28px
-
-$breadcrumb-divider-color: null;
-$breadcrumb-text-truncate-max-width: 10rem; // 160px
 
 $table-accent-bg: $background-color;
 $table-data-border-color: transparent;
@@ -138,10 +136,6 @@ $h1-display-font-size: 3rem; // 48px
 $h6-line-height: 16px;
 $code-line-height: 24px; // set pixel value to prevent nested <pre> and <code> from scaling down line height
 $secondary-text-line-height: 1.429;
-
-$breadcrumb-divider-svg-icon: clay-icon(angle-right, $breadcrumb-divider-color);
-$breadcrumb-divider-svg-icon-height: 0.75em; // 12px
-$breadcrumb-divider-svg-icon-width: $breadcrumb-divider-svg-icon-height;
 
 $footer-height: 3.5rem; // 56px
 $header-height: 7.1rem; // 113.6px
