@@ -1823,7 +1823,7 @@ public class Main {
 		public String getTitleHTML() {
 			StringBundler sb = new StringBundler(3);
 
-			sb.append("<h4 class=\"sidebar title\">");
+			sb.append("<h4 class=\"title\">");
 			sb.append(_title);
 			sb.append("</h4>");
 
@@ -1846,7 +1846,7 @@ public class Main {
 			sb.append("<div class=\"autofit-col autofit-col-expand\">");
 
 			if (Validator.isNotNull(_link)) {
-				sb.append("<a href=\"");
+				sb.append("<a class=\"right-arrow-link\" href=\"");
 				sb.append(_link);
 				sb.append("\">");
 
