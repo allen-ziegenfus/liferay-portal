@@ -31,8 +31,7 @@
 					],
 					"plugins": [
 						"copy-to-clipboard"
-					],
-					"theme": "okaidia"
+					]
 				}
 			]
 		]
