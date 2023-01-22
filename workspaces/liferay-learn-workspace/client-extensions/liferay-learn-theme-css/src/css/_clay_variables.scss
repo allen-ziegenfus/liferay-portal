@@ -64,6 +64,11 @@ $color-neutral-8: #54555f;
 $color-neutral-9: #3f404b;
 $color-neutral-10: #282934;
 
+$chart-1: #4d2ec9;
+$chart-2: #fdcc4a;
+$chart-3: #ad9ee9;
+$chart-4: #fe8856;
+$chart-5: #002c62;
 $body-color: $color-neutral-8;
 
 $link-color: $primary;
@@ -122,7 +127,8 @@ $h4-font-size: 1.4375rem; // 23px
 $h5-font-size: 1.125rem; // 18px
 $h6-font-size: 0.875rem; // 14px
 $breadcrumb-font-size: 0.8125rem; // 13px;
-$code-font-size: 14px; // set pixel value to prevent nested <pre> and <code> from scaling down font size
+$code-font-size: 16px; // set pixel value to prevent nested <pre> and <code> from scaling down font size
+$pre-font-size: 13px;
 $mobile-font-size: 1.75rem; // 28px
 
 $table-accent-bg: $background-color;
