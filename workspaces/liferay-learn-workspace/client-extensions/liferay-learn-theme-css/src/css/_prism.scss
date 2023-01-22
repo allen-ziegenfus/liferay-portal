@@ -1,17 +1,17 @@
 code[class*='language-'],
 pre[class*='language-'] {
+	background: none;
 	border-radius: $border-radius;
 	color: $white;
-	background: none;
 	font-family: 'Roboto Mono', SFMono-Regular, monospace;
 	font-size: $code-font-size;
 	font-weight: $font-weight-normal;
 	line-height: $code-line-height;
-	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
 	text-align: left;
+	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
 	white-space: pre;
-	word-spacing: normal;
 	word-break: normal;
+	word-spacing: normal;
 	word-wrap: normal;
 
 	-moz-tab-size: 4;
@@ -24,12 +24,12 @@ pre[class*='language-'] {
 	hyphens: none;
 }
 
-/* Code blocks */
+/* ---------- Code blocks ---------- */
 pre[class*='language-'] {
 	border-radius: 0.5rem;
-	padding: 1em;
 	margin: 0.5em 0;
 	overflow: auto;
+	padding: 1em;
 }
 
 :not(pre) > code[class*='language-'],
@@ -37,7 +37,7 @@ pre[class*='language-'] {
 	background: $color-neutral-9;
 }
 
-/* Inline code */
+/* ---------- Inline code ---------- */
 :not(pre) > code[class*='language-'] {
 	background-color: $color-neutral-2;
 	color: $color-neutral-10;
