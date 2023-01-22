@@ -6,9 +6,13 @@ $grid-gutter-width: 30px; // 30px is the original from bootstrap instead of the 
 $primary: #0b5fff;
 $primary-d1: #0053f0;
 $primary-d2: #004ad7;
+$primary-d3: #003eb3;
+$primary-d4: #00318f;
+$primary-d5: #00256c;
 $primary-l1: #377cff;
 $primary-l2: #6399ff;
 $primary-l3: #8fb5ff;
+$primary-l4: #bbd2ff;
 
 $secondary: #ffc124;
 $secondary-d1: #f3ae00;
@@ -41,18 +45,6 @@ $danger-d2: #830c0c;
 $danger-l1: #ea7b7b;
 $danger-l2: #fbe3e3;
 
-$light: #f1f2f5;
-$light-d1: darken($light, 5.1); // #E2E4EA
-$light-d2: darken($light, 10); // #D3D6E0
-$light-l1: lighten(desaturate(adjust-hue($light, -15), 2.38), 1.96); // #F7F8F9
-$light-l2: lighten(desaturate(adjust-hue($light, -225), 16.67), 4.71);
-
-$dark: #272833;
-$dark-d1: darken($dark, 5.1); // #1C1C24
-$dark-d2: darken($dark, 10); // #111116
-$dark-l1: lighten(saturate($dark, 0.18), 4.12); // #30313F
-$dark-l2: lighten(desaturate($dark, 0.36), 8.04); // #393A4A
-
 $color-neutral-1: #282934;
 $color-neutral-2: #e2e2e4;
 $color-neutral-3: #c9c9cf;
@@ -76,21 +68,14 @@ $link-hover-color: $primary-d2;
 
 // Site Color Variables
 
-$alert-color: #d33a2f;
 $background-color: #f4f6f9;
 $black: #000;
-$border-color: #ebeef2;
-$brand-secondary: #184496;
 $default-color: $color-neutral-8;
-$filter-color: #eff3fd;
-$highlight-color: #c4d6f8;
-$hr-color: #dadee3;
-$pre-text-color: #f8faff;
 $white: #fff;
 
 $admonition-error: $danger-d1;
 $admonition-error-bg: $danger-l2;
-$admonition-error-highlight: $alert-color;
+$admonition-error-highlight: $danger-l1;
 $admonition-important: $info-d1;
 $admonition-important-bg: $info-l2;
 $admonition-important-highlight: $info-l1;
@@ -154,18 +139,13 @@ $spacing-xs: 0.5rem; // 8px
 
 // Primary Site Navigation Variables
 
-$box-shadow-sm: inset 0px -1px 0px #c9c9ce;
-$brand-color-3: #00318f;
-$btn-link-color: $primary;
-$btn-primary-background-color: $primary;
-$btn-primary-border-color: $primary;
-$color-action-primary-active: #004ad7;
+$color-action-primary-active: $primary-d2;
 $color-action-primary-active-lighten: #0053f050;
 $color-action-primary-default: $primary;
-$color-action-primary-hover: #0053f0;
+$color-action-primary-hover: $primary-d1;
 $color-action-primary-hover-lighten: #edf3fe;
-$color-brand-primary: #0b63ce;
-$color-brand-primary-darken-5: #00256c;
+$color-brand-primary: $primary;
+$color-brand-primary-darken-5: $primary-d5;
 $color-brand-primary-lighten-1: rgba(255, 255, 255, 0.05);
 $color-brand-primary-lighten-2: rgba(255, 255, 255, 0.1);
 $color-brand-primary-lighten-3: rgba(255, 255, 255, 0.15);
@@ -173,15 +153,9 @@ $color-brand-primary-lighten-4: rgba(255, 255, 255, 0.4);
 $display4-size: 2rem;
 $display4-weight: 600;
 $elevation-fluffy-1: 0px 5px 15px rgba(19, 20, 31, 0.12);
-$hr-border-color: #e7e7ed;
-$lighter: #f8f8f9;
+$hr-border-color: $color-neutral-2;
 
 :root {
-	--box-shadow-sm: #{$box-shadow-sm} !important;
-	--brand-color-3: #{$brand-color-3} !important;
-	--btn-link-color: #{$btn-link-color} !important;
-	--btn-primary-background-color: #{$btn-primary-background-color} !important;
-	--btn-primary-border-color: #{$btn-primary-border-color} !important;
 	--color-action-primary-active: #{$color-action-primary-active} !important;
 	--color-action-primary-active-lighten: #{$color-action-primary-active-lighten} !important;
 	--color-action-primary-default: #{$color-action-primary-default} !important;
@@ -202,6 +176,4 @@ $lighter: #f8f8f9;
 	--font-family-base: #{$font-family-base} !important;
 	--hr-border-color: #{$hr-border-color} !important;
 	--info: #{$info} !important;
-	--light: #{$light} !important;
-	--lighter: #{$lighter} !important;
 }
