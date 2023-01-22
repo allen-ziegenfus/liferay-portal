@@ -54,15 +54,25 @@
 			}
 		}
 
+		.right-arrow-link::after {
+			background-image: clay-icon(order-arrow-right, $primary);
+			background-position: center center;
+			background-repeat: no-repeat;
+			background-size: 0.75rem;
+			content: ' ';
+			display: inline-block;
+			height: 24px;
+			vertical-align: middle;
+			width: 24px;
+		}
+
 		h4 {
+			&.right-arrow-link {
+				color: $primary;
+			}
+
 			font-size: 1.125rem;
 			margin-bottom: $spacing-xs;
-
-			&.sidebar {
-				border-left: 3px solid $card-sidebar;
-				margin-left: -$spacing-default;
-				padding-left: 1.25rem;
-			}
 		}
 	}
 
@@ -72,7 +82,7 @@
 	}
 
 	.subsection {
-		font-size: $h5-font-size;
+		font-weight: $font-weight-semi-bold;
 		list-style: none;
 		padding-inline-start: 0;
 	}
