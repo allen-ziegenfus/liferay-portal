@@ -54,6 +54,8 @@
 		.back-link {
 			align-items: center;
 			display: flex;
+			font-size: 1.125rem;
+			font-weight: $font-weight-semi-bold;
 			padding-left: $spacing-md;
 			width: 100%;
 
@@ -208,10 +210,11 @@
 
 	.nav-link {
 		color: $default-color;
+		font-size: 0.875rem;
 
 		&.active {
 			color: $primary;
-			font-weight: $font-weight-semi-bold;
+			font-weight: $font-weight-bold;
 		}
 	}
 
