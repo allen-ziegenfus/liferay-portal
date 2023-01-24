@@ -17,12 +17,6 @@
 		"react-scripts": "5.0.1",
 		"sass": "^1.57.1"
 	},
-	"eslintConfig": {
-		"extends": [
-			"react-app",
-			"react-app/jest"
-		]
-	},
 	"name": "fox-remote-app",
 	"private": true,
 	"scripts": {
