@@ -10,7 +10,7 @@
 
 				<div class="autofit-col autofit-col-expand">
 					<a :href="removeRelativeURLHTMLExtensions(card.sectionURL)">
-						<h4 class="title right-arrow-link">{{ card.sectionName }}</h4>
+						<h4 class="title">{{ card.sectionName }}</h4>
 					</a>
 
 					<div class="subsection-wrapper" v-if="card.subsections">
