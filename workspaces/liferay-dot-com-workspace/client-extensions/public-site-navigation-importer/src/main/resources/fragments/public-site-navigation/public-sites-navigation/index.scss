@@ -1635,7 +1635,8 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 		}
 	}
 
-	.no-results-message, .search-error-message {
+	.no-results-message,
+	.search-error-message {
 		color: var(--white);
 		display: none;
 	}
