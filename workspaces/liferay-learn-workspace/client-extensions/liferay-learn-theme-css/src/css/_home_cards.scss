@@ -1,0 +1,43 @@
+.home-cards {
+	display: grid;
+	gap: 48px;
+	grid-template-columns: repeat(auto-fit, 254px);
+	grid-template-rows: 130px;
+	max-width: 948px;
+	padding: 0 1.3125rem;
+
+	@media (max-width: 1200px) {
+		grid-template-columns: repeat(2, 254px);
+	}
+
+	@media (max-width: 576px) {
+		grid-template-columns: repeat(1, 254px);
+	}
+
+	.product-card {
+		background-color: #fff;
+		border: 1px solid rgba(9, 16, 24, 0.12);
+		border-radius: 0.25rem;
+		box-shadow: 0 6px 15px -6px rgb(9 16 29 / 6%);
+		min-width: 254px;
+		padding: 2.375rem 1.5rem;
+		text-decoration: none;
+
+		&:not(.card-disabled):hover {
+			border-bottom: 3px solid $primary;
+			box-shadow: 0 6px 11px 0 rgb(9 16 29 / 9%);
+			text-decoration: none;
+			transform: translateY(-4px);
+		}
+
+		.icon {
+			height: 2rem;
+			margin-right: 1rem;
+			width: 2rem;
+		}
+
+		.title {
+			color: $color-neutral-10;
+		}
+	}
+}
