@@ -9,6 +9,7 @@
 	[#assign navClass = "dark-nav" /]
 [/#if]
 
+<div class="public-sites-navigation-padding"></div>
 <nav class="${navClass} d-flex nav flex-column public-sites-navigation">
 	<div class="utility-nav-container">
 		<div class="align-items-center d-flex justify-content-between py-1 utility-nav w-100">
@@ -22,7 +23,7 @@
 								${languageUtil.get(locale, "liferay-sites", "Liferay Sites")}
 							</div>
 
-							<span class="caret-bottom-icon opacity-30 pl-1">[@clay["icon"] symbol="caret-bottom-l"/]</span>
+							<span class="caret-bottom-icon opacity-30">[@clay["icon"] symbol="caret-bottom-l"/]</span>
 						</div>
 					</div>
 
@@ -33,10 +34,10 @@
 					</div>
 				</div>
 				[#if configuration.showLanguageMenu]
-					<div class="language-selector-container">
-						<div class="language language-selector p-2 utility-nav-link" tabindex="7">
-							<div class="language-selector-globe-icon">[@clay["icon"] symbol="globe-lines"/]</div>
-							<div class="language-selector-text">
+					<div class="language-selector-container ml-2">
+						<div class="language language-selector pl-2 py-2 utility-nav-link" tabindex="7">
+							<div class="language-selector-globe-icon opacity-50">[@clay["icon"] symbol="globe-lines"/]</div>
+							<div class="language-selector-text opacity-80">
 								[#assign current_locale = locale ]
 
 								[#if current_locale?has_content]
@@ -46,7 +47,7 @@
 								${current_locale?upper_case}
 							</div>
 
-							<div class="language-caret-icon">[@clay["icon"] symbol="caret-bottom-l"/]</div>
+							<div class="language-caret-icon opacity-30">[@clay["icon"] symbol="caret-bottom-l"/]</div>
 						</div>
 
 						<div class="language-dropdown-list-container">
@@ -80,12 +81,11 @@
 
 			<div class="align-items-center d-flex search-account-container">
 				<div class="mr-2 search-icon-container">
-					<span class="search-icon" tabindex="8"> [@clay["icon"] symbol="search"/] </span>
+					<span class="search-icon mr-2 opacity-50" tabindex="8"> [@clay["icon"] symbol="search"/] </span>
 				</div>
-
 				[#if configuration.showAccountMenu]
 					<div class="account position-relative" tabindex="9">
-						<div class="account-info align-items-center d-flex">
+						<div class="account-info align-items-center d-flex ${themeDisplay.isSignedIn()?then('py-1 pl-2', '')}">
 							[#if themeDisplay.isSignedIn()]
 								<div class="user-avatar">
 									<img class="h-100 mx-100" src="${user.fetchPortraitURL(themeDisplay)}" />
@@ -101,9 +101,9 @@
 							<span class="account-dropdown-icon opacity-30 pr-2">[@clay["icon"] symbol="caret-bottom-l"/]</span>
 						</div>
 
-						<div class="dropdown-content position-absolute pt-3">
+						<div class="account-dropdown position-absolute pt-3">
 							<div class="dropdown-wrapper">
-								<div class="account-configurables mb-1 pb-2 px-3">
+								<div class="account-configurables mb-1 pb-2 pl-3">
 									[@liferay_site_navigation["navigation-menu"]
 										ddmTemplateGroupId=(scopeGroupId)
 										ddmTemplateKey="NAVIGATION_ACCOUNT_MENU"
@@ -115,7 +115,6 @@
 										siteNavigationMenuId=(configuration.accountMenuId)!0
 									/]
 								</div>
-
 								<div class="account-content p-2">
 									<div class="create-account-settings">
 										[#if themeDisplay.isSignedIn()]
@@ -126,7 +125,7 @@
 														${languageUtil.get(locale, "account-settings", "Account Settings")}
 													</span>
 												</a>
-											<a class="d-flex p-3 sign-out text-decoration-none" href="${htmlUtil.escape(themeDisplay.getURLSignOut())}">
+												<a class="d-flex p-3 sign-out text-decoration-none" href="${htmlUtil.escape(themeDisplay.getURLSignOut())}">
 													<span class="pr-2 sign-out-icon opacity-70">[@clay["icon"] symbol="logout"/]</span>
 													<span>
 														${languageUtil.get(locale, "sign-out")}
@@ -180,7 +179,7 @@
 				rootLayoutType="absolute"
 				siteNavigationMenuId=(configuration.siteNavigationMenuId)!0
 			/]
-			<div class="cta-container-mobile mx-4 py-3">
+			<div class="cta-container-mobile py-3">
 				[#if !configuration.showAccountMenu && themeDisplay.isSignedIn()]
 					<div class="account mobile position-relative">
 						<div class="account-info align-items-center d-flex px-2">
