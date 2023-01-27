@@ -50,6 +50,13 @@ window.addEventListener('load', () => {
 	new navigation.default.DropdownProvider('.sites', '.sites', 'show', true);
 
 	new navigation.default.DropdownProvider(
+		'.sites',
+		'.sites',
+		'show',
+		true
+	);
+
+	new navigation.default.DropdownProvider(
 		'.menu-button-group',
 		'.menu-button-group',
 		'menu-open'
