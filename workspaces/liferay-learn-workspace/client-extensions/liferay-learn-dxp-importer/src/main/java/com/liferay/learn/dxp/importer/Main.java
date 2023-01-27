@@ -208,12 +208,26 @@ public class Main {
 
 		int count = 0;
 
-		Map<String, StructuredContent> siteStructuredContents =
+		List<StructuredContent> siteStructuredContents =
 			_getSiteStructuredContents(_liferayGroupId);
 
 		System.out.println(
 			siteStructuredContents.size() +
 				" existing articles were found in group " + _liferayGroupId);
+
+		Map<String, StructuredContent>
+			structuredContentsExternalReferenceCodeMap = new HashMap<>();
+
+		Map<String, StructuredContent> structuredContentsFriendyUrlPathMap =
+			new HashMap<>();
+
+		for (StructuredContent structuredContent : siteStructuredContents) {
+			structuredContentsExternalReferenceCodeMap.put(
+				structuredContent.getExternalReferenceCode(),
+				structuredContent);
+			structuredContentsFriendyUrlPathMap.put(
+				structuredContent.getFriendlyUrlPath(), structuredContent);
+		}
 
 		for (String fileName : _fileNames) {
 			if (!fileName.contains("/en/") || !fileName.endsWith(".md")) {
@@ -245,30 +259,52 @@ public class Main {
 				StructuredContent structuredContent = _toStructuredContent(
 					fileName);
 
+				String externalReferenceCode =
+					structuredContent.getExternalReferenceCode();
 				String friendlyUrlPath = structuredContent.getFriendlyUrlPath();
 
 				StructuredContent importedStructuredContent;
 
-				if (siteStructuredContents.containsKey(friendlyUrlPath)) {
+				if (structuredContentsExternalReferenceCodeMap.containsKey(
+						externalReferenceCode)) {
+
 					StructuredContent siteStructuredContent =
-						siteStructuredContents.get(friendlyUrlPath);
+						structuredContentsExternalReferenceCodeMap.get(
+							externalReferenceCode);
 
 					System.out.println(
-						"Updating existing article for " + friendlyUrlPath);
+						"Updating existing article by UUID for " +
+							structuredContent.getFriendlyUrlPath());
+
 					importedStructuredContent =
 						_structuredContentResource.putStructuredContent(
 							siteStructuredContent.getId(), structuredContent);
 				}
 				else {
+					if (structuredContentsFriendyUrlPathMap.containsKey(
+							friendlyUrlPath)) {
+
+						StructuredContent siteStructuredContent =
+							structuredContentsFriendyUrlPathMap.get(
+								friendlyUrlPath);
+
+						System.out.println(
+							"Found existing article by Friendly URL Path for " +
+								structuredContent.getFriendlyUrlPath() +
+									" - deleting.");
+
+						_structuredContentResource.deleteStructuredContent(
+							siteStructuredContent.getId());
+					}
+
 					System.out.println(
-						"Posting new article for " + friendlyUrlPath);
+						"Posting new article for " +
+							structuredContent.getFriendlyUrlPath());
 					importedStructuredContent =
 						_structuredContentResource.
 							postStructuredContentFolderStructuredContent(
-								_getStructuredContentFolderId(
-									FilenameUtils.getPathNoEndSeparator(
-										fileName.substring(
-											_markdownImportDirName.length()))),
+								structuredContent.
+									getStructuredContentFolderId(),
 								structuredContent);
 				}
 
@@ -646,12 +682,11 @@ public class Main {
 		return dirNames[0];
 	}
 
-	private Map<String, StructuredContent> _getSiteStructuredContents(
-			long groupId)
+	private List<StructuredContent> _getSiteStructuredContents(long groupId)
 		throws Exception {
 
 		if (_offline) {
-			return new HashMap<>();
+			return new ArrayList<>();
 		}
 
 		int page = 1;
@@ -673,14 +708,7 @@ public class Main {
 			page++;
 		}
 
-		Map<String, StructuredContent> siteStructuredContents = new HashMap<>();
-
-		for (StructuredContent structuredContent : structuredContents) {
-			siteStructuredContents.put(
-				structuredContent.getFriendlyUrlPath(), structuredContent);
-		}
-
-		return siteStructuredContents;
+		return structuredContents;
 	}
 
 	private Long _getStructuredContentFolderId(String fileName)
@@ -772,6 +800,29 @@ public class Main {
 		String title = text.substring(x + 1, y);
 
 		return title.trim();
+	}
+
+	private String _getUuid(String text) {
+		com.vladsch.flexmark.util.ast.Document document = _parser.parse(text);
+
+		SnakeYamlFrontMatterVisitor snakeYamlFrontMatterVisitor =
+			new SnakeYamlFrontMatterVisitor();
+
+		snakeYamlFrontMatterVisitor.visit(document);
+
+		Map<String, Object> data = snakeYamlFrontMatterVisitor.getData();
+
+		if ((data == null) || !data.containsKey("uuid")) {
+			return StringPool.BLANK;
+		}
+
+		Object uuid = data.get("uuid");
+
+		if (!(uuid instanceof String)) {
+			return StringPool.BLANK;
+		}
+
+		return uuid.toString();
 	}
 
 	private void _initFlexmark() {
@@ -1429,13 +1480,19 @@ public class Main {
 	private StructuredContent _toStructuredContent(String fileName)
 		throws Exception {
 
-		StructuredContent structuredContent = new StructuredContent();
-
 		File englishFile = new File(fileName);
 
 		String englishText = _processMarkdown(
 			FileUtils.readFileToString(englishFile, StandardCharsets.UTF_8),
 			englishFile);
+
+		String uuid = _getUuid(englishText);
+
+		if (Validator.isNull(uuid)) {
+			throw new Exception("Nonexistant UUID for article " + fileName);
+		}
+
+		StructuredContent structuredContent = new StructuredContent();
 
 		ContentFieldValue englishContentFieldValue = new ContentFieldValue() {
 			{
@@ -1634,7 +1691,12 @@ public class Main {
 		}
 
 		structuredContent.setContentStructureId(_liferayContentStructureId);
+		structuredContent.setExternalReferenceCode(uuid);
 		structuredContent.setFriendlyUrlPath(_toFriendlyURLPath(englishFile));
+		structuredContent.setStructuredContentFolderId(
+			_getStructuredContentFolderId(
+				FilenameUtils.getPathNoEndSeparator(
+					fileName.substring(_markdownImportDirName.length()))));
 		structuredContent.setTitle(englishTitle);
 		structuredContent.setViewableBy(StructuredContent.ViewableBy.ANYONE);
 
