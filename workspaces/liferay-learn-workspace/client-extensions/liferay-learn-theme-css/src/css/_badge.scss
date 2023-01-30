@@ -22,17 +22,20 @@
 	}
 }
 
-.bdg-link-primary, .bdg-primary {
+.bdg-link-primary,
+.bdg-primary {
 	background-color: $info;
 	border-color: $info;
 }
 
-.bdg-link-secondary, .bdg-secondary {
+.bdg-link-secondary,
+.bdg-secondary {
 	background-color: $color-neutral-6;
 	border-color: $color-neutral-6;
 }
 
-.bdg-link-warning, .bdg-warning {
+.bdg-link-warning,
+.bdg-warning {
 	background-color: $warning;
 	border-color: $warning;
 }
