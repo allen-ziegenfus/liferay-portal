@@ -24,7 +24,7 @@ pre[class*='language-'] {
 	hyphens: none;
 }
 
-/* ---------- Code blocks ---------- */
+// Code blocks
 pre[class*='language-'] {
 	border-radius: 0.5rem;
 	margin: 0.5em 0;
@@ -37,7 +37,7 @@ pre[class*='language-'] {
 	background: $color-neutral-9;
 }
 
-/* ---------- Inline code ---------- */
+// Inline Code
 :not(pre) > code[class*='language-'] {
 	background-color: $color-neutral-2;
 	color: $color-neutral-10;
