@@ -1463,10 +1463,13 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 			.no-results-message {
 				display: block;
 			}
+			.search-loading-animation {
+				display: none;
+			}
 		}
 		&.search-error {
 			.no-results-message,
-			.suggestions-popular {
+			.suggestions-popular, .search-loading-animation {
 				display: none;
 			}
 			.search-error-message {
@@ -1475,7 +1478,8 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 		}
 		&.search-results-found {
 			.no-results-message,
-			.suggestions-popular {
+			.suggestions-popular,
+			.search-loading-animation {
 				display: none;
 			}
 
@@ -1485,6 +1489,18 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 			.search-suggestions-see-all-results {
 				display: table;
 			}
+		}
+		&.loading-search {
+			.no-results-message, .suggestions-popular, .suggested-text, .search-suggestions, .no-results-message, .search-error-message, .search-suggestions-see-all-results {
+				display: none;
+			}
+			.search-loading-animation {
+				display: block;
+			}
+		}
+
+		.search-loading-animation {
+			display: none;
 		}
 
 		.suggestions-popular {
