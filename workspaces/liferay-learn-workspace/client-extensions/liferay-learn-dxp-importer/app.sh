@@ -66,34 +66,25 @@ fi
 if [ -z "$SKIP_GENERATE_ZIPS" ] ; then
 	cd $REPO_FOLDER/docs || exit
 
-	for docs_dir_name in $(find . -maxdepth 4 -mindepth 4 -type f -name "contents.rst" -printf "%h\n" )
+	for zip_dir_name in $(find * -name \*.zip -type d)
 	do
-		language=$(echo "${docs_dir_name}" | cut -f4 -d'/')
-		product=$(echo "${docs_dir_name}" | cut -f2 -d'/')
-		version=$(echo "${docs_dir_name}" | cut -f3 -d'/')
+		pushd "${zip_dir_name}"
 
-		product_version_language_dir_name=$(echo "${product}"/"${version}"/"${language}")
+		zip_file_name=$(basename "${zip_dir_name}")
 
-		for zip_dir_name in $(find "${product_version_language_dir_name}" -name *.zip -type d)
-		do
-			pushd "${zip_dir_name}"
+		7z a ${zip_file_name} ../${zip_file_name}\
 
-			zip_file_name=$(basename "${zip_dir_name}")
+		7z rn ${zip_file_name} ${zip_file_name} ${zip_file_name%.*}
 
-			7z a ${zip_file_name} ../${zip_file_name}\
+		popd
 
-			7z rn ${zip_file_name} ${zip_file_name} ${zip_file_name%.*}
+		output_dir_name=$(dirname "/public_html/${zip_dir_name}")
+		output_dir_name=$(dirname "${output_dir_name}")
+		output_dir_name=$(dirname "${output_dir_name}")
 
-			popd
+		mkdir -p "/${output_dir_name}"
 
-			output_dir_name=$(dirname "/public_html/${zip_dir_name}")
-			output_dir_name=$(dirname "${output_dir_name}")
-			output_dir_name=$(dirname "${output_dir_name}")
-
-			mkdir -p "/${output_dir_name}"
-
-			mv "${zip_dir_name}"/"${zip_file_name}" "${output_dir_name}"
-		done
+		mv "${zip_dir_name}"/"${zip_file_name}" "${output_dir_name}"
 	done
 fi
 
