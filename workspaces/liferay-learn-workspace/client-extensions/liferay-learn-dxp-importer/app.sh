@@ -64,6 +64,8 @@ if [ -z "$SKIP_UPDATE_EXAMPLES" ] ; then
 fi
 
 if [ -z "$SKIP_GENERATE_ZIPS" ] ; then
+	echo "Generating zip files"
+
 	cd $REPO_FOLDER/docs || exit
 
 	for zip_dir_name in $(find * -name \*.zip -type d)
@@ -86,6 +88,53 @@ if [ -z "$SKIP_GENERATE_ZIPS" ] ; then
 
 		mv "${zip_dir_name}"/"${zip_file_name}" "${output_dir_name}"
 	done
+fi
+
+if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
+	echo "Populating reference docs"
+
+	source ${REPO_FOLDER}/_common.sh
+
+	curl -L https://github.com/liferay/liferay-portal/releases/download/"${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}"/"${LIFERAY_LEARN_PORTAL_DOC_FILE_NAME}" > liferay-ce-portal-doc.zip
+
+	7z x liferay-ce-portal-doc.zip
+
+	mkdir -p /public_html/reference/latest/en/dxp
+
+	mv liferay-ce-portal-doc-${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}/* /public_html/reference/latest/en/dxp
+
+	rmdir liferay-ce-portal-doc-${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}
+
+	rm -f liferay-ce-portal-doc.zip
+
+	echo "# Apps" > /public_html/reference/latest/en/dxp/apps.md
+
+	echo "" >> /public_html/reference/latest/en/dxp/apps.md
+
+	for app_dir_name in /public_html/reference/latest/en/dxp/javadocs/modules/apps/*
+	do
+		echo "## $(echo ${app_dir_name} | cut -d/ -f11)" >> /public_html/reference/latest/en/dxp/apps.md
+
+		for app_jar_dir_name in ${app_dir_name}/*
+		do
+			app_jar_relative_path = $(echo "${app_jar_dir_name}/index.html" | cut -d/ -f4-)
+
+			echo "[${app_jar_dir_name##*/}](/${app_jar_relative_path})" >> /public_html/reference/latest/en/dxp/apps.md
+			echo "" >> /public_html/reference/latest/en/dxp/apps.md
+		done
+	done
+
+	#
+	# portlet-api-3.0.1-javadoc.jar
+	#
+
+	curl https://repo1.maven.org/maven2/javax/portlet/portlet-api/3.0.1/portlet-api-3.0.1-javadoc.jar -O
+
+	mkdir -p /public_html/reference/latest/en/dxp/portlet-api
+
+	7z x -o/public_html/reference/latest/en/portlet-api portlet-api-3.0.1-javadoc.jar
+
+	rm -f portlet-api-3.0.1-javadoc.jar
 fi
 
 echo "Starting java import"
