@@ -1,6 +1,6 @@
 {
 	"className": "com.liferay.portal.kernel.theme.NavItem",
-	"ddmTemplateKey": "LEARN_HOME_CARDS",
-	"name": "Learn Home Cards",
+	"ddmTemplateKey": "LEARN_PRODUCT_CARDS",
+	"name": "Learn Product Cards",
 	"resourceClassName": "com.liferay.portlet.display.template.PortletDisplayTemplate"
 }

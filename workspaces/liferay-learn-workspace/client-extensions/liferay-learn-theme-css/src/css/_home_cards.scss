@@ -1,34 +1,40 @@
-.home-cards {
-	display: grid;
-	gap: 48px;
-	grid-template-columns: repeat(auto-fit, 254px);
-	grid-template-rows: 130px;
-	max-width: 948px;
-	padding: 0 1.3125rem;
-
-	@media (max-width: 1200px) {
-		grid-template-columns: repeat(2, 254px);
+@mixin home-cards($max-width-sm, $card-width, $card-y-padding, $icon-size) {
+	@include media-breakpoint-up(sm) {
+		max-width: $max-width-sm;
 	}
 
-	@media (max-width: 576px) {
-		grid-template-columns: repeat(1, 254px);
+	@include media-breakpoint-up(xl) {
+		max-width: 948px;
 	}
 
-	.product-card {
-		@include card;
+	.card-container {
+		min-width: $card-width;
 
-		background-color: $white;
-		min-width: 254px;
-		padding: 2.375rem $spacing-default;
+		.home-card {
+			@include card;
 
-		.icon {
-			height: $spacing-lg;
-			margin-right: $spacing-md;
-			width: $spacing-lg;
-		}
+			background-color: $white;
+			padding: $card-y-padding $spacing-default;
+			width: $card-width;
 
-		.title {
-			color: $color-neutral-10;
+			.icon {
+				height: $icon-size;
+				width: $icon-size;
+			}
+
+			.title {
+				color: $color-neutral-10;
+				letter-spacing: unset;
+				text-transform: none;
+			}
 		}
 	}
+}
+
+.more-resources {
+	@include home-cards(416px, 184px, 1.8125rem, 3rem);
+}
+
+.product-cards {
+	@include home-cards(620px, 254px, 2.375rem, 2rem);
 }
