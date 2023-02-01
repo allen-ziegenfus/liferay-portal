@@ -184,7 +184,7 @@ function performSearch(query) {
 							true
 						);
 
-						const assetURL = suggestion.attributes.assetURL;
+						const assetURL = suggestion.attributes.assetURL.replace(/\?.*$/, '');
 
 						suggestionLink.href = assetURL;
 
@@ -220,7 +220,7 @@ function performSearch(query) {
 
 						suggestionURL.appendChild(
 							document.createTextNode(
-								assetURL.replace(/\?.*$/, '')
+								convertUrlToBreadcrumb(assetURL)
 							)
 						);
 
@@ -238,6 +238,7 @@ function performSearch(query) {
 			suggestions.classList.remove('search-error');
 		})
 		.catch(() => {
+			suggestions.classList.remove('loading-search');
 			suggestions.classList.add('search-error');
 		});
 }
@@ -256,4 +257,31 @@ async function postData(url = '', data = {}) {
 	});
 
 	return response.json();
+}
+
+const convertUrlToBreadcrumb = url => {
+    if (!url) {
+      return '';
+    }
+
+    url = url.replaceAll('/web/guest/w/', 'home/').replaceAll('/web/guest/', 'home/').replaceAll('/', ' / ').replaceAll('-', ' ');
+
+	const ancronymList = ['api', 'ccr', 'dxp', 'mvc', ' ui ', 'url'];
+
+	ancronymList.forEach((word) => {
+		if (url.includes(word)) {
+			var regEx = new RegExp(word, "ig");
+			url = url.replace(regEx, word.toUpperCase());
+		}
+	});
+
+    let breadcrumbs = [];
+    const excludeWords = ['a', 'and', 'of', 'the', 'to', 'via']
+    breadcrumbs = url.split(' ');
+
+    return breadcrumbs.map((word, i) =>
+    {
+       return excludeWords.includes(word) && i!==0 ? [word] : word.charAt(0).toUpperCase() + word.slice(1);
+
+    }).join(' ');
 }
