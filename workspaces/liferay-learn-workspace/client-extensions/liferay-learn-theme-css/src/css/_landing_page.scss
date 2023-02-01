@@ -17,9 +17,8 @@
 	}
 
 	.section-card {
-		border: 1px solid rgba(9, 16, 24, 0.12);
-		border-radius: $border-radius;
-		box-shadow: 0 6px 15px -6px rgba(9, 16, 29, 0.06);
+		@include card;
+
 		cursor: pointer;
 		margin-left: $spacing-md;
 		margin-right: $spacing-xs;
@@ -49,18 +48,6 @@
 		@include media-breakpoint-down(sm) {
 			flex: 1 0 100%;
 			margin: 0.5rem !important;
-		}
-
-		&:hover {
-			border-bottom: 3px solid $primary;
-			box-shadow: 0 6px 11px 0 rgba(9, 16, 29, 0.09);
-			margin-bottom: -3px;
-			text-decoration: none;
-			transform: translateY(-4px);
-
-			h4 {
-				text-decoration: none;
-			}
 		}
 
 		.right-arrow-link::after {
