@@ -1,6 +1,6 @@
 <#include "${templatesPath}/SVG">
 
-<div class="home-cards">
+<div class="col-12 m-0 more-resources row">
 	<#if entries?has_content>
 		<#list entries as navigationEntry>
 			<#assign
@@ -8,15 +8,15 @@
 				navItemIconId = customFields["SVG Sprite Map ID"]
 			/>
 
-			<div class="my-1">
-				<a class="align-items-center d-flex product-card" href="${navigationEntry.getURL()}">
+			<div class="card-container col-12 col-sm-6 col-xl-3 d-flex justify-content-center my-1 p-2 p-xl-4">
+				<a class="align-items-center d-flex flex-column home-card" href="${navigationEntry.getURL()}">
 					<svg class="icon">
 						<use xlink:href="#${navItemIconId}"></use>
 					</svg>
 
-					<h5 class="title">
+					<h6 class="pt-3 title">
 						${navigationEntry.getName()}
-					</h5>
+					</h6>
 				</a>
 			</div>
 		</#list>
