@@ -270,7 +270,7 @@ const convertUrlToBreadcrumb = url => {
 
 	ancronymList.forEach((word) => {
 		if (url.includes(word)) {
-			var regEx = new RegExp(word, "ig");
+			const regEx = new RegExp(word, "ig");
 			url = url.replace(regEx, word.toUpperCase());
 		}
 	});
