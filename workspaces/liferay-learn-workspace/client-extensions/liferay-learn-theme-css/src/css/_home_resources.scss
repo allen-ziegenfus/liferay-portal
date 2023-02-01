@@ -16,20 +16,12 @@
 	}
 
 	.resource {
-		background-color: #fff;
-		border: 1px solid rgba(9, 16, 24, 0.12);
-		border-radius: 0.25rem;
-		box-shadow: 0 6px 15px -6px rgb(9 16 29 / 6%);
-		min-width: 184px;
-		padding: 1.8125rem 1rem;
-		text-decoration: none;
+		@include card;
 
-		&:hover {
-			border-bottom: 3px solid $primary;
-			box-shadow: 0 6px 11px 0 rgb(9 16 29 / 9%);
-			text-decoration: none;
-			transform: translateY(-4px);
-		}
+		background-color: $white;
+		min-width: 184px;
+		padding: 1.8125rem $spacing-md;
+		text-decoration: none;
 
 		.icon {
 			height: 3rem;
@@ -39,7 +31,7 @@
 		.title {
 			color: $color-neutral-10;
 			letter-spacing: unset;
-			padding-top: 1rem;
+			padding-top: $spacing-md;
 			text-transform: none;
 		}
 	}
