@@ -112,15 +112,20 @@ const searchSuggestions = fragmentElement.querySelector('.search-suggestions');
 
 const searchSuggestionItemTemplate = suggestions.querySelector('template');
 
+const seeAllResultsLink = fragmentElement.querySelector('.search-suggestions-see-all-results-text');
+
 const searchSuggestionItem =
 	searchSuggestionItemTemplate.content.querySelector('a');
 
 const updateSearch = () => {
 	searchSuggestions.innerHTML = '';
 
-	if (searchSuggestionsInput.value) {
+	const searchSuggestionsInputValue = searchSuggestionsInput.value;
+
+	if (searchSuggestionsInputValue) {
+		seeAllResultsLink.href = "/search?q=" + searchSuggestionsInputValue;
 		suggestions.classList.add('performing-search');
-		performSearch(searchSuggestionsInput.value);
+		performSearch(searchSuggestionsInputValue);
 	}
 	else {
 		suggestions.classList.remove(
