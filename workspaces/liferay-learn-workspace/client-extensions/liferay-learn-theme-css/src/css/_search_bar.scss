@@ -1,11 +1,5 @@
 .learn-search {
 	.input-group {
-		width: 700px;
-
-		@media (max-width: 576px) {
-			width: 382px;
-		}
-
 		.input-group-inset-item .btn {
 			padding-right: 1rem;
 		}
