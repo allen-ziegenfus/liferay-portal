@@ -206,7 +206,8 @@ public class Main {
 	public void uploadToLiferay() throws Exception {
 		long start = System.currentTimeMillis();
 
-		int count = 0;
+		int addedArticleCount = 0;
+		int updatedArticleCount = 0;
 
 		List<StructuredContent> siteStructuredContents =
 			_getSiteStructuredContents(_liferayGroupId);
@@ -284,7 +285,7 @@ public class Main {
 							externalReferenceCode);
 
 					System.out.println(
-						"Updating existing article by UUID for " +
+						"Updating existing article for " +
 							structuredContent.getFriendlyUrlPath());
 
 					importedStructuredContent =
@@ -293,6 +294,8 @@ public class Main {
 
 					importedStructuredContentIds.add(
 						siteStructuredContent.getId());
+
+					updatedArticleCount++;
 				}
 				else {
 					if (structuredContentsFriendyUrlPathMap.containsKey(
@@ -333,6 +336,8 @@ public class Main {
 						"Friendly Url path was modified to " +
 							importedStructuredContent.getFriendlyUrlPath());
 				}
+
+				addedArticleCount++;
 			}
 			catch (Exception exception) {
 				String errorMessage =
@@ -342,8 +347,6 @@ public class Main {
 				System.out.println(errorMessage);
 				_errorMessages.add(errorMessage);
 			}
-
-			count++;
 		}
 
 		existingStructuredContentIds.removeAll(importedStructuredContentIds);
@@ -356,7 +359,12 @@ public class Main {
 				existingStructuredContentId);
 		}
 
-		System.out.println(count + " articles were imported.");
+		System.out.println(addedArticleCount + " new articles were added.");
+		System.out.println(
+			updatedArticleCount + " existing articles were updated.");
+		System.out.println(
+			existingStructuredContentIds.size() +
+				" existing articles were deleted.");
 
 		if (!_warningMessages.isEmpty()) {
 			System.out.println(
@@ -1513,7 +1521,7 @@ public class Main {
 		String uuid = _getUuid(englishText);
 
 		if (Validator.isNull(uuid)) {
-			throw new Exception("Nonexistant UUID for article " + fileName);
+			throw new Exception("Nonexistent UUID for article " + fileName);
 		}
 
 		StructuredContent structuredContent = new StructuredContent();
