@@ -353,18 +353,11 @@ public class Main {
 
 		for (Long existingStructuredContentId : existingStructuredContentIds) {
 			System.out.println(
-				"Removing dangling Structured Content Id " +
+				"Removing dangling Structured Content with ID " +
 					existingStructuredContentId);
 			_structuredContentResource.deleteStructuredContent(
 				existingStructuredContentId);
 		}
-
-		System.out.println(addedArticleCount + " new articles were added.");
-		System.out.println(
-			updatedArticleCount + " existing articles were updated.");
-		System.out.println(
-			existingStructuredContentIds.size() +
-				" existing articles were deleted.");
 
 		if (!_warningMessages.isEmpty()) {
 			System.out.println(
@@ -374,6 +367,13 @@ public class Main {
 				System.out.println(warningMessage);
 			}
 		}
+
+		System.out.println(addedArticleCount + " new articles were added.");
+		System.out.println(
+			updatedArticleCount + " existing articles were updated.");
+		System.out.println(
+			existingStructuredContentIds.size() +
+				" existing articles were deleted.");
 
 		if (!_errorMessages.isEmpty()) {
 			System.out.println(
