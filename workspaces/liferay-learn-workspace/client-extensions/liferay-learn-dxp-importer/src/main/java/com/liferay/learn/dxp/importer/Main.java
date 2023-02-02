@@ -221,12 +221,23 @@ public class Main {
 		Map<String, StructuredContent> structuredContentsFriendyUrlPathMap =
 			new HashMap<>();
 
+		Set<Long> importedStructuredContentIds = new HashSet<>();
+
+		Set<Long> existingStructuredContentIds = new HashSet<>();
+
 		for (StructuredContent structuredContent : siteStructuredContents) {
+			if (structuredContent.getContentStructureId() !=
+					_liferayContentStructureId) {
+
+				continue;
+			}
+
 			structuredContentsExternalReferenceCodeMap.put(
 				structuredContent.getExternalReferenceCode(),
 				structuredContent);
 			structuredContentsFriendyUrlPathMap.put(
 				structuredContent.getFriendlyUrlPath(), structuredContent);
+			existingStructuredContentIds.add(structuredContent.getId());
 		}
 
 		for (String fileName : _fileNames) {
@@ -279,6 +290,9 @@ public class Main {
 					importedStructuredContent =
 						_structuredContentResource.putStructuredContent(
 							siteStructuredContent.getId(), structuredContent);
+
+					importedStructuredContentIds.add(
+						siteStructuredContent.getId());
 				}
 				else {
 					if (structuredContentsFriendyUrlPathMap.containsKey(
@@ -330,6 +344,16 @@ public class Main {
 			}
 
 			count++;
+		}
+
+		existingStructuredContentIds.removeAll(importedStructuredContentIds);
+
+		for (Long existingStructuredContentId : existingStructuredContentIds) {
+			System.out.println(
+				"Removing dangling Structured Content Id " +
+					existingStructuredContentId);
+			_structuredContentResource.deleteStructuredContent(
+				existingStructuredContentId);
 		}
 
 		System.out.println(count + " articles were imported.");
