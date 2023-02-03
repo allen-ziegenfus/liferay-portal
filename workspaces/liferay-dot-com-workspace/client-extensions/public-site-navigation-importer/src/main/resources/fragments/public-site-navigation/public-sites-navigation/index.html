@@ -228,10 +228,10 @@
 							</div>
 						</div>
 					</div>
-				[#else]
-				<a class="align-items-center align-self-center btn btn-primary d-flex justify-content-center w-100" data-lfr-editable-id="call-to-action-btn-mobile" data-lfr-editable-type="link" tabindex="5">
-					Call to Action
-				</a>
+				[#elseif configuration.showCta]
+					<a class="align-items-center align-self-center btn btn-primary d-flex justify-content-center w-100" data-lfr-editable-id="call-to-action-btn-mobile" data-lfr-editable-type="link" tabindex="5">
+						Call to Action
+					</a>
 				[/#if]
 			</div>
 		</div>
@@ -283,8 +283,8 @@
 						</div>
 					</div>
 				</div>
-			[#else]
-			<a class="align-items-center align-self-center btn btn-primary cta-btn-nav" data-lfr-editable-id="call-to-action-btn" data-lfr-editable-type="link">
+			[#elseif configuration.showCta]
+				<a class="align-items-center align-self-center btn btn-primary cta-btn-nav" data-lfr-editable-id="call-to-action-btn" data-lfr-editable-type="link">
 					Call to Action
 				</a>
 			[/#if]
