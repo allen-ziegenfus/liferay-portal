@@ -323,6 +323,8 @@ public class Main {
 								structuredContent.
 									getStructuredContentFolderId(),
 								structuredContent);
+
+					addedArticleCount++;
 				}
 
 				if (!Objects.equals(
@@ -336,8 +338,6 @@ public class Main {
 						"Friendly Url path was modified to " +
 							importedStructuredContent.getFriendlyUrlPath());
 				}
-
-				addedArticleCount++;
 			}
 			catch (Exception exception) {
 				String errorMessage =
