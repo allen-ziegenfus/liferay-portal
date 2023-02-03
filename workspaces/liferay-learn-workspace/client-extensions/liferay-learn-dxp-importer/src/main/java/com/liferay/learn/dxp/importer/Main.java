@@ -361,12 +361,22 @@ public class Main {
 				structuredContentsStructuredContentIdMap.get(
 					existingStructuredContentId);
 
-			System.out.println(
-				"Removing dangling Structured Content with Friendly URL Path " +
-					structuredContent.getFriendlyUrlPath());
+			try {
+				System.out.println(
+					"Removing dangling Structured Content with Friendly URL " +
+						"Path " + structuredContent.getFriendlyUrlPath());
 
-			_structuredContentResource.deleteStructuredContent(
-				existingStructuredContentId);
+				_structuredContentResource.deleteStructuredContent(
+					existingStructuredContentId);
+			}
+			catch (Exception exception) {
+				String errorMessage =
+					structuredContent.getFriendlyUrlPath() +
+						" could not be deleted." + exception.getMessage();
+
+				System.out.println(errorMessage);
+				_errorMessages.add(errorMessage);
+			}
 		}
 
 		if (!_warningMessages.isEmpty()) {
