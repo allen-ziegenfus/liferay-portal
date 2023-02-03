@@ -222,6 +222,9 @@ public class Main {
 		Map<String, StructuredContent> structuredContentsFriendyUrlPathMap =
 			new HashMap<>();
 
+		Map<Long, StructuredContent> structuredContentsStructuredContentIdMap =
+			new HashMap<>();
+
 		Set<Long> importedStructuredContentIds = new HashSet<>();
 
 		Set<Long> existingStructuredContentIds = new HashSet<>();
@@ -238,6 +241,8 @@ public class Main {
 				structuredContent);
 			structuredContentsFriendyUrlPathMap.put(
 				structuredContent.getFriendlyUrlPath(), structuredContent);
+			structuredContentsStructuredContentIdMap.put(
+				structuredContent.getId(), structuredContent);
 			existingStructuredContentIds.add(structuredContent.getId());
 		}
 
@@ -352,9 +357,14 @@ public class Main {
 		existingStructuredContentIds.removeAll(importedStructuredContentIds);
 
 		for (Long existingStructuredContentId : existingStructuredContentIds) {
-			System.out.println(
-				"Removing dangling Structured Content with ID " +
+			StructuredContent structuredContent =
+				structuredContentsStructuredContentIdMap.get(
 					existingStructuredContentId);
+
+			System.out.println(
+				"Removing dangling Structured Content with Friendly URL Path " +
+					structuredContent.getFriendlyUrlPath());
+
 			_structuredContentResource.deleteStructuredContent(
 				existingStructuredContentId);
 		}
