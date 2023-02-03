@@ -1469,7 +1469,8 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 		}
 		&.search-error {
 			.no-results-message,
-			.suggestions-popular, .search-loading-animation {
+			.suggestions-popular,
+			.search-loading-animation {
 				display: none;
 			}
 			.search-error-message {
@@ -1491,7 +1492,13 @@ html body:not(.has-edit-mode-menu) .content #main-content.layout-content {
 			}
 		}
 		&.loading-search {
-			.no-results-message, .suggestions-popular, .suggested-text, .search-suggestions, .no-results-message, .search-error-message, .search-suggestions-see-all-results {
+			.no-results-message,
+			.suggestions-popular,
+			.suggested-text,
+			.search-suggestions,
+			.no-results-message,
+			.search-error-message,
+			.search-suggestions-see-all-results {
 				display: none;
 			}
 			.search-loading-animation {
