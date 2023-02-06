@@ -27,7 +27,7 @@
 
 	.doc-nav {
 		font-weight: $font-weight-semi-bold;
-		height: calc(100% - #{$footer-height + $info-bar-height});
+		height: calc(100% - #{$footer-height});
 		overflow: auto;
 		padding: $spacing-md 0;
 
@@ -161,19 +161,6 @@
 		display: flex;
 		height: $info-bar-height;
 		z-index: 1;
-
-		label {
-			margin-left: $spacing-sm;
-			margin-right: $spacing-sm;
-			width: 100%;
-		}
-
-		select.form-control {
-			background-image: clay-icon(caret-bottom, $color-neutral-5);
-			background-size: 24px;
-			border: 1px solid $color-neutral-4;
-			border-radius: 0.5rem;
-		}
 	}
 
 	.general-info {
