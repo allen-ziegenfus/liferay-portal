@@ -62,6 +62,10 @@
 			width: 24px;
 		}
 
+		a:hover {
+			text-decoration: none;
+		}
+
 		h4 {
 			&.right-arrow-link {
 				color: $primary;
