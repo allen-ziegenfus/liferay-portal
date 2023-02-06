@@ -5,6 +5,9 @@
 	@include media-breakpoint-down(sm) {
 		justify-content: center;
 	}
+	@include media-breakpoint-down(md) {
+		margin-top: $spacing-md;
+	}
 
 	.autofit-row-center > .autofit-col {
 		justify-content: initial;
@@ -30,19 +33,7 @@
 		@include media-breakpoint-down(md) {
 			margin-left: 0;
 			margin-right: 0;
-
-			&:nth-child(odd) {
-				margin-left: $spacing-xs;
-				margin-right: 1.25rem;
-			}
-
-			.autofit-col-expand {
-				margin-top: $spacing-md;
-			}
-
-			.autofit-row {
-				display: block;
-			}
+			width: 100%;
 		}
 
 		@include media-breakpoint-down(sm) {
