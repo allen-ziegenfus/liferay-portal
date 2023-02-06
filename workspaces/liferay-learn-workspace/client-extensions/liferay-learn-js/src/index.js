@@ -17,5 +17,3 @@ import 'prismjs';
 import './article';
 
 import './highlighting-alert';
-
-import './page-alert';
