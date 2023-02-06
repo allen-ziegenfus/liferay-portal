@@ -4,7 +4,7 @@
 
 		@include media-breakpoint-up(md) {
 			margin-bottom: 5rem;
-			padding: 0 8.33333% $spacing-default;
+			margin-left: 2rem;
 		}
 	}
 
@@ -203,7 +203,7 @@
 		padding: $spacing-xs 0.25rem $spacing-xs $spacing-md;
 
 		button {
-			color: $primary;
+			color: $color-action-neutral-default;
 		}
 	}
 
