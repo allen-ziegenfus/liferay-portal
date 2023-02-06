@@ -26,17 +26,6 @@
 
 <div class="container-fluid documentations main-content" role="main">
 	<div class="row">
-		<div class="col-12 p-0 page-alert" id="pageAlertContainer">
-			<div class="page-alert-hidden" id="pageAlert" role="alert">
-				<@clay["alert"]
-					message=languageUtil.get(locale, "important-as-we-revamp-and-transition-our-documentation-to-this-site", "<strong class=\"lead\">IMPORTANT: </strong>As we revamp and transition our documentation to this site, you may find the articles you need on <a href=\"https://help.liferay.com/hc\"><strong>Liferay's Help Center</strong></a>.")
-					displayType="info"
-					defaultTitleDisabled=true
-					dismissible=true
-				/>
-			</div>
-		</div>
-
 		<div class="col-12 col-md-2 doc-nav-wrapper mobile-nav-hide">
 			<div class="doc-nav-wrapper-inner">
 				<div class="info-bar">
