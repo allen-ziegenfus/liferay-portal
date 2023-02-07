@@ -54,15 +54,14 @@ nav.public-sites-navigation {
 		background-color: var(--color-brand-primary-darken-5);
 
 		.primary-nav {
-			background-color: var(--color-brand-primary-darken-5);
-
-			.menu-btn {
+			&,
+			.close-btn,
+			.menu-btn,
+			.nav-items-wrapper {
 				background-color: var(--color-brand-primary-darken-5);
 			}
 
 			.nav-items-wrapper {
-				background-color: var(--color-brand-primary-darken-5);
-
 				@media (max-width: 1199px) {
 					background-color: var(--white);
 				}
