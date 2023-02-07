@@ -1,3 +1,3 @@
 FROM liferay/caddy:latest
 
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY learn_404_caddy_file /etc/caddy.d/
