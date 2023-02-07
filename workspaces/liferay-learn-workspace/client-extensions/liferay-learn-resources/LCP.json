@@ -22,7 +22,6 @@
 		}
 	},
 	"id": "liferaylearnresources",
-	"image": "liferay/caddy:latest",
 	"kind": "Deployment",
 	"loadBalancer": {
 		"cdn": true,
