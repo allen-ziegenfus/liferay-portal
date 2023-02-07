@@ -7,12 +7,21 @@
 				"targetPort": 80
 			}
 		},
+		"extprd": {
+			"env": {
+				"LIFERAY_LEARN_404_URL": "https://learn.lxc.liferay.com/404"
+			}
+		},
+		"extuat": {
+			"env": {
+				"LIFERAY_LEARN_404_URL": "https://learn-uat.lxc.liferay.com/404"
+			}
+		},
 		"infra": {
 			"deploy": false
 		}
 	},
 	"id": "liferaylearnresources",
-	"image": "liferay/caddy:latest",
 	"kind": "Deployment",
 	"loadBalancer": {
 		"cdn": true,
