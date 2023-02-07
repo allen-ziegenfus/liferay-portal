@@ -97,7 +97,7 @@ function initArticle() {
 		if (node) {
 			observer.observe(node);
 
-			var offsetMargin = 'margin-top: -130px; padding-top: 130px;';
+			let offsetMargin = 'margin-top: -130px; padding-top: 130px;';
 
 			if (themeDisplay.isSignedIn()) {
 				offsetMargin = 'margin-top: -173px; padding-top: 173px;';
