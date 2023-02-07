@@ -112,7 +112,7 @@ const seeAllResultsLink = fragmentElement.querySelector(
 const searchSuggestionItem =
 	searchSuggestionItemTemplate.content.querySelector('a');
 
-const updateSearch = () => {
+function updateSearch() {
 	searchSuggestions.innerHTML = '';
 
 	const searchSuggestionsInputValue = searchSuggestionsInput.value;
@@ -130,7 +130,7 @@ const updateSearch = () => {
 			'search-results-found'
 		);
 	}
-};
+}
 
 let debounceTimer;
 
@@ -260,7 +260,7 @@ async function postData(url = '', data = {}) {
 	return response.json();
 }
 
-const getBreadcrumbFromURL = (url) => {
+function getBreadcrumbFromURL(url) {
 	if (!url) {
 		return '';
 	}
@@ -291,4 +291,4 @@ const getBreadcrumbFromURL = (url) => {
 				: word.charAt(0).toUpperCase() + word.slice(1);
 		})
 		.join(' ');
-};
+}
