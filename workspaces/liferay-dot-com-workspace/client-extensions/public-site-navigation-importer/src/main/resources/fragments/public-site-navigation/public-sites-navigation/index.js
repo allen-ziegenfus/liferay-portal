@@ -221,7 +221,7 @@ function performSearch(query) {
 
 						suggestionURL.appendChild(
 							document.createTextNode(
-								convertUrlToBreadcrumb(assetURL)
+								getBreadcrumbFromURL(assetURL)
 							)
 						);
 
@@ -260,7 +260,7 @@ async function postData(url = '', data = {}) {
 	return response.json();
 }
 
-const convertUrlToBreadcrumb = (url) => {
+const getBreadcrumbFromURL = (url) => {
 	if (!url) {
 		return '';
 	}
