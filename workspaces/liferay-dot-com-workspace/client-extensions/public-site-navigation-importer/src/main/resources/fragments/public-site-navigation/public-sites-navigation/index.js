@@ -143,7 +143,7 @@ searchSuggestionsInput.addEventListener(
 	'input',
 	() => {
 		suggestions.classList.add('loading-search');
-		debounce(updateSearch, 500);
+		debounce(updateSearch, 250);
 	},
 	false
 );
