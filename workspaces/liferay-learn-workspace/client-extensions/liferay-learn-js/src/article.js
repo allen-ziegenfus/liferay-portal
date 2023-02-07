@@ -34,7 +34,7 @@ function initArticle() {
 			if (articleTOC) {
 				articleTOC.innerHTML += `
 				<li class="nav-item">
-					<a class="nav-link" href="#${id}" id="toc-${id}">
+					<a class="nav-link" data-senna-off="true" href="#${id}" id="toc-${id}">
 						${heading.innerText}
 					</a>
 				</li>`;
@@ -62,10 +62,28 @@ function initArticle() {
 		}
 	};
 
-	// rootMargin of 157px is header height + info bar height + 24px gutter offset
+	const headerSelectors = [
+		'.control-menu-container',
+		'.info-bar',
+		'.public-sites-navigation',
+	];
+
+	const headerOffset = headerSelectors
+		.map((headerSelector) => {
+			const headerElement = document.querySelector(headerSelector);
+			if (headerElement) {
+				return -1 * headerElement.offsetHeight;
+			}
+
+			return 0;
+		})
+		.reduce(
+			(previousValue, currentValue) => previousValue + currentValue,
+			0
+		);
 
 	const observer = new IntersectionObserver(callback, {
-		rootMargin: '-157px',
+		rootMargin: headerOffset + 'px',
 		threshold: [0, 0.2, 0.4, 0.6, 0.8, 1],
 	});
 
@@ -97,16 +115,16 @@ function initArticle() {
 		if (node) {
 			observer.observe(node);
 
-			let offsetMargin = 'margin-top: -130px; padding-top: 130px;';
-
-			if (themeDisplay.isSignedIn()) {
-				offsetMargin = 'margin-top: -173px; padding-top: 173px;';
-			}
+			const offsetMargin =
+				'margin-top: ' +
+				headerOffset +
+				'px; padding-top: ' +
+				headerOffset * -1 +
+				'px;';
 
 			node.style.cssText = offsetMargin;
 		}
 	});
-
 
 	// Left Nav mobile interaction
 
