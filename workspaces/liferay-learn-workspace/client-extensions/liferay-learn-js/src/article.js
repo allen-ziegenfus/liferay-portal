@@ -97,7 +97,13 @@ function initArticle() {
 		if (node) {
 			observer.observe(node);
 
-			node.style.cssText = 'margin-top: -157px; padding-top: 157px;';
+			var offsetMargin = 'margin-top: -130px; padding-top: 130px;';
+
+			if (themeDisplay.isSignedIn()) {
+				offsetMargin = 'margin-top: -173px; padding-top: 173px;';
+			}
+
+			node.style.cssText = offsetMargin;
 		}
 	});
 
