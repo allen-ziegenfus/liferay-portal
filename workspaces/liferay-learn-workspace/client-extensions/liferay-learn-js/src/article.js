@@ -107,18 +107,6 @@ function initArticle() {
 		}
 	});
 
-	const productDocumentationSelector = document.getElementById(
-		'productDocumentationSelector'
-	);
-
-	if (productDocumentationSelector) {
-		productDocumentationSelector.addEventListener('change', (event) => {
-			const selectedOption =
-				event.target.options[event.target.selectedIndex];
-
-			window.location.pathname = selectedOption.dataset.href;
-		});
-	}
 
 	// Left Nav mobile interaction
 
