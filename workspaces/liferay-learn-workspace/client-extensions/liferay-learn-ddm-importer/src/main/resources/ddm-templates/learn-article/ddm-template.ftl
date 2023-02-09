@@ -118,6 +118,17 @@
 							</ul>
 						</#if>
 					</div>
+
+					<div class="actions col-md-2 d-md-block d-none offset-md-1">
+						<a
+							aria-label="${languageUtil.get(locale, 'give-feedback', 'Give Feedback')}"
+							href="https://liferay.dev/c/portal/login?redirect=https://liferay.dev/ask/questions/liferay-learn-feedback/new"
+							title="${languageUtil.get(locale, 'give-feedback', 'Give Feedback')}">
+							<svg>
+								<use xlink:href="#edit"></use>
+							</svg>
+						</a>
+					</div>
 				</div>
 			</div>
 
