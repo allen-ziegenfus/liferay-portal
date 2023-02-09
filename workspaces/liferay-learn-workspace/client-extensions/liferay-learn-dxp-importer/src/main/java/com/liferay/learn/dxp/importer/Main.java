@@ -1050,7 +1050,8 @@ public class Main {
 
 		int index = line.indexOf(StringPool.CLOSE_CURLY_BRACE);
 
-		int columns = Integer.valueOf(line.substring(index + 2));
+		int columns = Integer.valueOf(
+			StringUtil.trim(line.substring(index + 2)));
 
 		while (true) {
 			String gridLine = bufferedReader.readLine();
