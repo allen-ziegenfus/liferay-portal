@@ -16,13 +16,13 @@
 					<div class="subsection-wrapper" v-if="card.subsections">
 						<ul class="subsection" v-show="card.subsections.length <= 3 || card.showAll">
 							<li v-for="subsection in card.subsections">
-								<a class="right-arrow-link" :href="removeRelativeURLHTMLExtensions(subsection.url)">{{ subsection.name}}</a>
+								<a :href="removeRelativeURLHTMLExtensions(subsection.url)">{{ subsection.name}}</a>
 							</li>
 						</ul>
 
 						<ul class="subsection" v-show="card.subsections.length > 3 && !card.showAll">
 							<li v-for="(subsection, index) in card.subsections" v-show="index < 3">
-								<a class="right-arrow-link" :href="removeRelativeURLHTMLExtensions(subsection.url)">{{ subsection.name}}</a>
+								<a :href="removeRelativeURLHTMLExtensions(subsection.url)">{{ subsection.name}}</a>
 							</li>
 							<li>
 								<button class="btn btn-monospaced show-more" role="button" type="button" v-on:click="card.showAll = true">
