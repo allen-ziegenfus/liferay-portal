@@ -1938,7 +1938,7 @@ public class Main {
 			StringBundler sb = new StringBundler(3);
 
 			if (link) {
-				sb.append("<h4 class=\"right-arrow-link title\">");
+				sb.append("<h4 class=\"primary-heading-link title\">");
 			}
 			else {
 				sb.append("<h4 class=\"title\">");
