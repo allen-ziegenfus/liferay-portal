@@ -1295,9 +1295,12 @@ public class Main {
 
 		String trimmedLine = line.trim();
 
-		if (!trimmedLine.startsWith("```{")) {
+		if (!trimmedLine.startsWith(_MYST_DIRECTIVE_BLOCK_START)) {
 			return line;
 		}
+
+		String leadingWhitespace = line.substring(
+			0, line.indexOf(_MYST_DIRECTIVE_BLOCK_START));
 
 		List<String> mySTDirectiveLines = new ArrayList<>();
 
@@ -1319,9 +1322,9 @@ public class Main {
 
 			mySTDirectiveLine = _processTokens(mySTDirectiveLine);
 
-			String trimmedMySTDirectiveLine = mySTDirectiveLine.trim();
+			if (mySTDirectiveLine.startsWith(
+					leadingWhitespace + _MYST_DIRECTIVE_BLOCK_END)) {
 
-			if (trimmedMySTDirectiveLine.startsWith("```")) {
 				break;
 			}
 
@@ -1863,6 +1866,10 @@ public class Main {
 
 		FileUtils.writeStringToFile(file, content, StandardCharsets.UTF_8);
 	}
+
+	private static final String _MYST_DIRECTIVE_BLOCK_END = "```";
+
+	private static final String _MYST_DIRECTIVE_BLOCK_START = "```{";
 
 	private static final Pattern _literalIncludeParameterPattern =
 		Pattern.compile(":(.*): (.*)");
