@@ -72,7 +72,6 @@ import com.vladsch.flexmark.util.sequence.CharSubSequence;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 
@@ -85,13 +84,11 @@ import java.nio.file.Paths;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -122,14 +119,6 @@ import org.yaml.snakeyaml.Yaml;
 public class Main {
 
 	public static void main(String[] arguments) throws Exception {
-		Properties tokenProperties = new Properties();
-
-		try (InputStream inputStream = Main.class.getResourceAsStream(
-				"dependencies/token.properties")) {
-
-			tokenProperties.load(inputStream);
-		}
-
 		File markdownImportDirFile = new File(
 			System.getenv("MARKDOWN_IMPORT_DIR"));
 
@@ -140,7 +129,7 @@ public class Main {
 			System.getenv("LIFERAY_OAUTH_CLIENT_SECRET"),
 			new URL(System.getenv("LIFERAY_URL")),
 			markdownImportDirFile.getCanonicalPath(),
-			GetterUtil.getBoolean(System.getenv("OFFLINE")), tokenProperties);
+			GetterUtil.getBoolean(System.getenv("OFFLINE")));
 
 		main.uploadToLiferay();
 	}
@@ -148,8 +137,7 @@ public class Main {
 	public Main(
 			String liferayDataDefinitionKey, String liferayGroupFriendlyUrlPath,
 			String liferayOAuthClientId, String liferayOAuthClientSecret,
-			URL liferayURL, String markdownImportDirName, boolean offline,
-			Properties tokenProperties)
+			URL liferayURL, String markdownImportDirName, boolean offline)
 		throws Exception {
 
 		_liferayOAuthClientId = liferayOAuthClientId;
@@ -161,19 +149,6 @@ public class Main {
 		System.out.println("Importing into " + _liferayURL);
 
 		_yaml = new Yaml();
-
-		Enumeration<String> enumeration =
-			(Enumeration<String>)tokenProperties.propertyNames();
-
-		while (enumeration.hasMoreElements()) {
-			String key = enumeration.nextElement();
-
-			if (key.endsWith("_TOKEN")) {
-				_tokens.put(
-					tokenProperties.getProperty(key),
-					tokenProperties.getProperty(key + "_VALUE"));
-			}
-		}
 
 		_addFileNames(_markdownImportDirName);
 
@@ -1064,8 +1039,6 @@ public class Main {
 				break;
 			}
 
-			gridLine = _processTokens(gridLine);
-
 			String trimmedGridLine = gridLine.trim();
 
 			if (trimmedGridLine.startsWith("::::")) {
@@ -1279,7 +1252,6 @@ public class Main {
 			line = _processMySTDirectiveBlocks(
 				bufferedReader, line, markdownFile);
 			line = _processSphinxBadges(line);
-			line = _processTokens(line);
 
 			sb.append(line);
 
@@ -1319,8 +1291,6 @@ public class Main {
 
 				break;
 			}
-
-			mySTDirectiveLine = _processTokens(mySTDirectiveLine);
 
 			if (mySTDirectiveLine.startsWith(
 					leadingWhitespace + _MYST_DIRECTIVE_BLOCK_END)) {
@@ -1402,14 +1372,6 @@ public class Main {
 
 		if (matcher.find()) {
 			line = matcher.replaceFirst("<span class=\"bdg bdg-$1\">$2</span>");
-		}
-
-		return line;
-	}
-
-	private String _processTokens(String line) {
-		for (Map.Entry<String, String> entry : _tokens.entrySet()) {
-			line = StringUtil.replace(line, entry.getKey(), entry.getValue());
 		}
 
 		return line;
@@ -1936,7 +1898,6 @@ public class Main {
 		new HashMap<>();
 	private StructuredContentFolderResource _structuredContentFolderResource;
 	private StructuredContentResource _structuredContentResource;
-	private final Map<String, String> _tokens = new HashMap<>();
 	private final List<String> _warningMessages = new ArrayList<>();
 	private final Yaml _yaml;
 
