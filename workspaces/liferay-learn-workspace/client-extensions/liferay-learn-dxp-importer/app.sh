@@ -107,20 +107,25 @@ if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
 
 	rm -f liferay-ce-portal-doc.zip
 
-	echo "# Apps" > /public_html/reference/latest/en/dxp/apps.md
+	APPS_MARKDOWN_FILE=$REPO_FOLDER/docs/reference/latest/en/dxp/apps.md
 
-	echo "" >> /public_html/reference/latest/en/dxp/apps.md
+	echo "---" > $APPS_MARKDOWN_FILE
+	echo "uuid: ba71e6fa-d76f-42ec-b3bb-c54cebae6156" >> $APPS_MARKDOWN_FILE
+	echo "---" >> $APPS_MARKDOWN_FILE
+	echo "# Apps" >> $APPS_MARKDOWN_FILE
+
+	echo "" >> $APPS_MARKDOWN_FILE
 
 	for app_dir_name in /public_html/reference/latest/en/dxp/javadocs/modules/apps/*
 	do
-		echo "## $(echo ${app_dir_name} | cut -d/ -f11)" >> /public_html/reference/latest/en/dxp/apps.md
+		echo "## $(basename $app_dir_name)" >> $APPS_MARKDOWN_FILE
 
 		for app_jar_dir_name in ${app_dir_name}/*
 		do
-			app_jar_relative_path = $(echo "${app_jar_dir_name}/index.html" | cut -d/ -f4-)
+			app_jar_relative_path=$(echo "${app_jar_dir_name}/index.html" | cut -d/ -f4-)
 
-			echo "[${app_jar_dir_name##*/}](/${app_jar_relative_path})" >> /public_html/reference/latest/en/dxp/apps.md
-			echo "" >> /public_html/reference/latest/en/dxp/apps.md
+			echo "[${app_jar_dir_name##*/}](${LIFERAY_LEARN_RESOURCES_DOMAIN}/reference/${app_jar_relative_path})" >> $APPS_MARKDOWN_FILE
+			echo "" >> $APPS_MARKDOWN_FILE
 		done
 	done
 
