@@ -1745,10 +1745,14 @@ public class Main {
 		structuredContent.setContentStructureId(_liferayContentStructureId);
 		structuredContent.setExternalReferenceCode(uuid);
 		structuredContent.setFriendlyUrlPath(_toFriendlyURLPath(englishFile));
-		structuredContent.setStructuredContentFolderId(
-			_getStructuredContentFolderId(
-				FilenameUtils.getPathNoEndSeparator(
-					fileName.substring(_markdownImportDirName.length()))));
+
+		if (!_offline) {
+			structuredContent.setStructuredContentFolderId(
+				_getStructuredContentFolderId(
+					FilenameUtils.getPathNoEndSeparator(
+						fileName.substring(_markdownImportDirName.length()))));
+		}
+
 		structuredContent.setTitle(englishTitle);
 		structuredContent.setViewableBy(StructuredContent.ViewableBy.ANYONE);
 
