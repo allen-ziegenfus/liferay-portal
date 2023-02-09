@@ -125,6 +125,7 @@ public class Main {
 		Main main = new Main(
 			System.getenv("LIFERAY_DATA_DEFINITION_KEY"),
 			System.getenv("LIFERAY_GROUP_FRIENDLY_URL_PATH"),
+			System.getenv("LIFERAY_LEARN_RESOURCES_DOMAIN"),
 			System.getenv("LIFERAY_OAUTH_CLIENT_ID"),
 			System.getenv("LIFERAY_OAUTH_CLIENT_SECRET"),
 			new URL(System.getenv("LIFERAY_URL")),
@@ -136,10 +137,12 @@ public class Main {
 
 	public Main(
 			String liferayDataDefinitionKey, String liferayGroupFriendlyUrlPath,
-			String liferayOAuthClientId, String liferayOAuthClientSecret,
-			URL liferayURL, String markdownImportDirName, boolean offline)
+			String liferayLearnResourcesDomain, String liferayOAuthClientId,
+			String liferayOAuthClientSecret, URL liferayURL,
+			String markdownImportDirName, boolean offline)
 		throws Exception {
 
+		_liferayLearnResourcesDomain = liferayLearnResourcesDomain;
 		_liferayOAuthClientId = liferayOAuthClientId;
 		_liferayOAuthClientSecret = liferayOAuthClientSecret;
 		_liferayURL = liferayURL;
@@ -967,6 +970,16 @@ public class Main {
 		).build();
 	}
 
+	private String _processAbsoluteZipURLs(String line) {
+		Matcher matcher = _absoluteZipURLPattern.matcher(line);
+
+		if (matcher.find()) {
+			line = matcher.replaceFirst(_liferayLearnResourcesDomain + "/$1");
+		}
+
+		return line;
+	}
+
 	private String _processGridBlock(List<String> gridLines, int columns) {
 		List<GridCard> gridCards = new ArrayList<>();
 
@@ -1248,6 +1261,7 @@ public class Main {
 		String line = null;
 
 		while ((line = bufferedReader.readLine()) != null) {
+			line = _processAbsoluteZipURLs(line);
 			line = _processGridBlocks(bufferedReader, line, markdownFile);
 			line = _processMySTDirectiveBlocks(
 				bufferedReader, line, markdownFile);
@@ -1807,6 +1821,32 @@ public class Main {
 		BasedSequence basedSequence = link.getUrl();
 
 		link.setUrl(basedSequence.replace(".md", StringPool.BLANK));
+
+		String url = basedSequence.toString();
+
+		if (url.contains(".zip") && url.startsWith("./")) {
+			try {
+				String markdownFilePath = _markdownFile.getParent();
+
+				String dirName = markdownFilePath.substring(
+					_markdownImportDirName.length());
+
+				link.setUrl(
+					BasedSequence.of(
+						StringBundler.concat(
+							_liferayLearnResourcesDomain, dirName,
+							url.substring(1))));
+			}
+			catch (Exception exception) {
+				String errorMessage =
+					_markdownFile.getPath() +
+						" could not be imported correctly: " +
+							exception.getMessage();
+
+				System.out.println(errorMessage);
+				_errorMessages.add(errorMessage);
+			}
+		}
 	}
 
 	private void _warn(String warningMessage) {
@@ -1833,6 +1873,8 @@ public class Main {
 
 	private static final String _MYST_DIRECTIVE_BLOCK_START = "```{";
 
+	private static final Pattern _absoluteZipURLPattern = Pattern.compile(
+		"https:\\/\\/learn\\.liferay\\.com\\/(.*liferay-....\\.zip)");
 	private static final Pattern _literalIncludeParameterPattern =
 		Pattern.compile(":(.*): (.*)");
 	private static final Pattern _markdownLinkPattern = Pattern.compile(
@@ -1850,6 +1892,7 @@ public class Main {
 	private final Set<File> _landingPageFiles = new HashSet<>();
 	private final long _liferayContentStructureId;
 	private final long _liferayGroupId;
+	private final String _liferayLearnResourcesDomain;
 	private final String _liferayOAuthClientId;
 	private final String _liferayOAuthClientSecret;
 	private final URL _liferayURL;
