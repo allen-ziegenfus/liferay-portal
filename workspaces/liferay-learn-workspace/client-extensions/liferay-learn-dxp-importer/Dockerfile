@@ -33,6 +33,8 @@ COPY app.sh /
 
 RUN chmod a+x /app.sh
 RUN useradd -ms /bin/bash importer
+RUN mkdir -p /public_html
+RUN chown importer:importer /public_html
 
 USER importer
 
