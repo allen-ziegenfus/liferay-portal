@@ -44,6 +44,8 @@ cd $REPO_FOLDER/docs || exit
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 export PATH=$JAVA_HOME/bin:$PATH
 
+source ${REPO_FOLDER}/_common.sh
+
 java -version
 
 if [ -z "$SKIP_UPDATE_EXAMPLES" ] ; then
@@ -93,8 +95,6 @@ fi
 if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
 	echo "Populating reference docs"
 
-	source ${REPO_FOLDER}/_common.sh
-
 	curl -L https://github.com/liferay/liferay-portal/releases/download/"${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}"/"${LIFERAY_LEARN_PORTAL_DOC_FILE_NAME}" > liferay-ce-portal-doc.zip
 
 	7z x liferay-ce-portal-doc.zip
@@ -136,6 +136,17 @@ if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
 
 	rm -f portlet-api-3.0.1-javadoc.jar
 fi
+
+for md_file_name in $(find $REPO_FOLDER/docs -name "*.md" -type f)
+do
+	sed -i "s/${LIFERAY_LEARN_COMMERCE_DOCKER_IMAGE_TOKEN}/${LIFERAY_LEARN_COMMERCE_DOCKER_IMAGE_VALUE}/g" "${md_file_name}"
+	sed -i "s/${LIFERAY_LEARN_COMMERCE_GIT_TAG_TOKEN}/${LIFERAY_LEARN_COMMERCE_GIT_TAG_VALUE}/g" "${md_file_name}"
+	sed -i "s/${LIFERAY_LEARN_DXP_DOCKER_IMAGE_TOKEN}/${LIFERAY_LEARN_DXP_DOCKER_IMAGE_VALUE}/g" "${md_file_name}"
+	sed -i "s/${LIFERAY_LEARN_PORTAL_DOCKER_IMAGE_TOKEN}/${LIFERAY_LEARN_PORTAL_DOCKER_IMAGE_VALUE}/g" "${md_file_name}"
+	sed -i "s/${LIFERAY_LEARN_PORTAL_GIT_TAG_TOKEN}/${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}/g" "${md_file_name}"
+	sed -i "s/${LIFERAY_LEARN_PORTAL_WORKSPACE_TOKEN}/${LIFERAY_LEARN_PORTAL_WORKSPACE_TOKEN_VALUE}/g" "${md_file_name}"
+	sed -i "s/\(${LIFERAY_LEARN_YOUTUBE_URL_TOKEN}\=\)\(\https:\/\/www.youtube.com\/embed\/.*\)/${LIFERAY_LEARN_YOUTUBE_BEGIN_HTML}\2${LIFERAY_LEARN_YOUTUBE_END_HTML}/" "${md_file_name}"
+done
 
 echo "Starting java import"
 
