@@ -1,5 +1,5 @@
 {
-	"cpu": 4,
+	"cpu": 0.1,
 	"env": {
 		"LIFERAY_GROUP_FRIENDLY_URL_PATH": "guest"
 	},
