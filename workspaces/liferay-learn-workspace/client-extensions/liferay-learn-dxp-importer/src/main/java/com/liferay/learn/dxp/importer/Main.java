@@ -295,6 +295,9 @@ public class Main {
 
 						_structuredContentResource.deleteStructuredContent(
 							siteStructuredContent.getId());
+
+						importedStructuredContentIds.add(
+							siteStructuredContent.getId());
 					}
 
 					System.out.println(
