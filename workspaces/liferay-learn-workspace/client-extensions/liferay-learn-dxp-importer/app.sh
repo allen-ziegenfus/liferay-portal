@@ -101,11 +101,7 @@ if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
 
 	mkdir -p /public_html/reference/latest/en/dxp
 
-	mv liferay-ce-portal-doc-${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}/* /public_html/reference/latest/en/dxp
-
-	rmdir liferay-ce-portal-doc-${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}
-
-	rm -f liferay-ce-portal-doc.zip
+	cp -r liferay-ce-portal-doc-${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}/* /public_html/reference/latest/en/dxp
 
 	APPS_MARKDOWN_FILE=$REPO_FOLDER/docs/reference/latest/en/dxp/apps.md
 
@@ -137,7 +133,7 @@ if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
 
 	mkdir -p /public_html/reference/latest/en/dxp/portlet-api
 
-	7z x -o/public_html/reference/latest/en/portlet-api portlet-api-3.0.1-javadoc.jar
+	7z x -aoa -o/public_html/reference/latest/en/portlet-api portlet-api-3.0.1-javadoc.jar
 
 	rm -f portlet-api-3.0.1-javadoc.jar
 fi
