@@ -1,5 +1,5 @@
 const headers = {
-	Authorization: 'Basic ' + btoa('test@liferay.com:test'),
+	'Authorization': 'Basic ' + btoa('test@liferay.com:test'),
 	'Content-Type': 'application/json',
 };
 
@@ -16,8 +16,8 @@ export function createApp({
 			body: JSON.stringify({
 				active: true,
 				catalogId: 43495,
-				description: { en_US: appDescription },
-				name: { en_US: appName },
+				description: {en_US: appDescription},
+				name: {en_US: appName},
 				productType: 'simple',
 			}),
 			headers,

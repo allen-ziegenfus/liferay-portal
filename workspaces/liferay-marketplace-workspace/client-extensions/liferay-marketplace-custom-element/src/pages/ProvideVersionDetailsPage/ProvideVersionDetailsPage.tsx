@@ -1,9 +1,9 @@
-import { Header } from '../../components/Header/Header';
-import { Input } from '../../components/Input/Input';
-import { NewAppPageFooterButtons } from '../../components/NewAppPageFooterButtons/NewAppPageFooterButtons';
-import { Section } from '../../components/Section/Section';
-import { TYPES } from '../../manage-app-state/actionTypes';
-import { useAppContext } from '../../manage-app-state/AppManageState';
+import {Header} from '../../components/Header/Header';
+import {Input} from '../../components/Input/Input';
+import {NewAppPageFooterButtons} from '../../components/NewAppPageFooterButtons/NewAppPageFooterButtons';
+import {Section} from '../../components/Section/Section';
+import {TYPES} from '../../manage-app-state/actionTypes';
+import {useAppContext} from '../../manage-app-state/AppManageState';
 import './ProvideVersionDetailsPage.scss';
 
 interface ProvideVersionDetailsPageProps {
@@ -18,36 +18,36 @@ export function ProvideVersionDetailsPage({
 	const [_, dispatch] = useAppContext();
 
 	return (
-		<div className='provide-version-details-page-container'>
-			<div className='provide-version-details-page-header'>
+		<div className="provide-version-details-page-container">
+			<div className="provide-version-details-page-header">
 				<Header
-					title='Provide version details'
-					description='Define version information for your app. This will inform users about this version’s updates on the storefront.'
+					title="Provide version details"
+					description="Define version information for your app. This will inform users about this version’s updates on the storefront."
 				/>
 			</div>
 
 			<Section
-				label='App Version'
-				tooltip='More info'
-				tooltipText='More Info'
+				label="App Version"
+				tooltip="More info"
+				tooltipText="More Info"
 			>
 				<Input
 					helpMessage={
 						'This is the first version of the app to be published'
 					}
-					label='Version'
-					placeholder='0.0.0'
+					label="Version"
+					placeholder="0.0.0"
 					required
-					tooltip='version'
+					tooltip="version"
 				/>
 
 				<Input
-					component='textarea'
-					label='Notes'
+					component="textarea"
+					label="Notes"
 					localized
 					placeholder={'Enter app description'}
 					required
-					tooltip='notes'
+					tooltip="notes"
 				/>
 			</Section>
 
