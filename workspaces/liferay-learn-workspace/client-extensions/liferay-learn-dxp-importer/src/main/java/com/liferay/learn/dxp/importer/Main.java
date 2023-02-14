@@ -1802,8 +1802,11 @@ public class Main {
 				Document documentFolderDocument = documentFolderDocuments.get(
 					document.getTitle());
 
-				importedDocument = _documentResource.putDocument(
-					documentFolderDocument.getId(), document, multipartFiles);
+				_documentResource.deleteDocument(
+					documentFolderDocument.getId());
+
+				importedDocument = _documentResource.postDocumentFolderDocument(
+					documentFolderId, document, multipartFiles);
 			}
 			else {
 				importedDocument = _documentResource.postDocumentFolderDocument(
