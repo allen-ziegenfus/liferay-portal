@@ -21,8 +21,8 @@ export function InformLicensingTermsPage({
     onClickBack,
     onClickContinue
 }: InformLicensingTermsPageProps) {
-    const [appLicense, setAppLicense] = useState('perpetualLicense');
-    const [dayTrial, setDayTrial] = useState('no');
+    const [appLicense, setAppLicense] = useState(true);
+    const [dayTrial, setDayTrial] = useState(false);
 
     return (
         <div className='informing-licensing-terms-page-container'>
@@ -41,20 +41,18 @@ export function InformLicensingTermsPage({
                     <RadioCard
                         description="The app is offered in the Marketplace with no charge."
                         selected={appLicense}
-                        setSelected={setAppLicense}
+						onChange={() => {}}
                         title="Perpetual License"
                         tooltip="More Info"
-                        value="perpetualLicense"
                         icon={scheduleIcon}
                     />
 
                     <RadioCard
                         description="License must be renewed annually."
                         selected={appLicense}
-                        setSelected={setAppLicense}
                         title="Non-perpetual license"
                         tooltip="More Info"
-                        value="nonPerpetualLicense"
+						onChange={() => {}}
                         icon={pendingActionsIcon}
                     />
                 </div>
@@ -70,20 +68,18 @@ export function InformLicensingTermsPage({
                     <RadioCard
                         description='Offer a 30-day free trial for this app'
                         title='Yes'
-                        value='yes'
                         icon={taskCheckedIcon}
                         selected={dayTrial}
-                        setSelected={setDayTrial}
+                        onChange={() => {}}
                         tooltip='More Info'
                     />
 
                     <RadioCard
                         description='Do not offer a 30-day free trial'
                         title='No'
-                        value='no'
                         icon={cancelIcon}
                         selected={dayTrial}
-                        setSelected={setDayTrial}
+						onChange={() => {}}
                         tooltip='More Info'
                     />
                 </div>
