@@ -1,4 +1,4 @@
-body {
+html.dev body {
 	margin: 0;
 	display: flex;
 	justify-content: center;
@@ -6,4 +6,8 @@ body {
 	place-items: center;
 	min-width: 320px;
 	min-height: 100vh;
+
+	liferay-marketplace-custom-element {
+		flex: 1;
+	}
 }
