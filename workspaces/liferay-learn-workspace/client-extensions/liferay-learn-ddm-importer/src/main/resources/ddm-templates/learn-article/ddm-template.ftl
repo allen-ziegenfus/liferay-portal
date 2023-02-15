@@ -69,17 +69,13 @@
 					<button
 						aria-label="Expand Documentation Menu" class="btn expand-btn" onclick="javascript:;"
 						title="Expand Documentation Menu" type="button">
-						<svg class="lexicon-icon lexicon-icon-product-menu" role="presentation">
-							<use xlink:href="#product-menu" />
-						</svg>
+						<@clay["icon"] symbol="angle-down-small" />
 					</button>
 
 					<button
 						aria-label="Close Documentation Menu" class="btn collapse-btn" onclick="javascript:;"
 						title="Close Documentation Menu" type="button">
-						<svg class="lexicon-icon lexicon-icon-times" role="presentation">
-							<use xlink:href="#times" />
-						</svg>
+						<@clay["icon"] symbol="angle-up-small" />
 					</button>
 				</div>
 
