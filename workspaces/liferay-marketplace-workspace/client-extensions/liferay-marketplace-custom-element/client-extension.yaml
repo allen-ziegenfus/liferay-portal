@@ -14,3 +14,17 @@ liferay-marketplace-custom-element:
     urls:
         - .*.js
     useESM: false
+liferay-marketplace-create-new-app-custom-element:
+    cssURLs:
+        - .*.css
+    friendlyURLMapping: liferay-marketplace-custom-element
+    htmlElementName: liferay-marketplace-custom-element
+    instanceable: false
+    name: Create New App
+    portletCategoryName: category.client-extensions
+    properties:
+      route: create-new-app
+    type: customElement
+    urls:
+        - .*.js
+    useESM: false
