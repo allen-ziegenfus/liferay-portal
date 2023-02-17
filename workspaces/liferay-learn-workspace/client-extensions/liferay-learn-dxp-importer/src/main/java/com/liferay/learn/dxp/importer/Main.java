@@ -124,7 +124,7 @@ public class Main {
 
 		Main main = new Main(
 			System.getenv("LIFERAY_DATA_DEFINITION_KEY"),
-			System.getenv("LIFERAY_GROUP_FRIENDLY_URL_PATH"),
+			System.getenv("LIFERAY_SITE_FRIENDLY_URL_PATH"),
 			System.getenv("LIFERAY_LEARN_RESOURCES_DOMAIN"),
 			System.getenv("LIFERAY_OAUTH_CLIENT_ID"),
 			System.getenv("LIFERAY_OAUTH_CLIENT_SECRET"),
@@ -136,7 +136,7 @@ public class Main {
 	}
 
 	public Main(
-			String liferayDataDefinitionKey, String liferayGroupFriendlyUrlPath,
+			String liferayDataDefinitionKey, String liferaySiteFriendlyUrlPath,
 			String liferayLearnResourcesDomain, String liferayOAuthClientId,
 			String liferayOAuthClientSecret, URL liferayURL,
 			String markdownImportDirName, boolean offline)
@@ -159,7 +159,7 @@ public class Main {
 
 		if (_offline) {
 			_liferayContentStructureId = 0;
-			_liferayGroupId = 0;
+			_liferaySiteId = 0;
 
 			return;
 		}
@@ -167,9 +167,9 @@ public class Main {
 		_initResourceBuilders(_getOAuthAuthorization());
 
 		Site site = _siteResource.getSiteByFriendlyUrlPath(
-			liferayGroupFriendlyUrlPath);
+			liferaySiteFriendlyUrlPath);
 
-		_liferayGroupId = site.getId();
+		_liferaySiteId = site.getId();
 
 		System.out.println("Importing into " + site.getName() + " site.");
 
@@ -184,15 +184,16 @@ public class Main {
 	public void uploadToLiferay() throws Exception {
 		long start = System.currentTimeMillis();
 
-		int addedArticleCount = 0;
-		int updatedArticleCount = 0;
+		int addedStructuredContentCount = 0;
+		int updatedStructuredContentCount = 0;
 
 		List<StructuredContent> siteStructuredContents =
-			_getSiteStructuredContents(_liferayGroupId);
+			_getSiteStructuredContents(_liferaySiteId);
 
 		System.out.println(
 			siteStructuredContents.size() +
-				" existing articles were found in group " + _liferayGroupId);
+				" existing structured contents were found in site with id " +
+					_liferaySiteId);
 
 		Map<String, StructuredContent>
 			structuredContentsExternalReferenceCodeMap = new HashMap<>();
@@ -224,6 +225,8 @@ public class Main {
 			existingStructuredContentIds.add(structuredContent.getId());
 		}
 
+		List<StructuredContent> structuredContents = new ArrayList<>();
+
 		for (String fileName : _fileNames) {
 			if (!fileName.contains("/en/") || !fileName.endsWith(".md")) {
 				continue;
@@ -251,9 +254,36 @@ public class Main {
 			}
 
 			try {
-				StructuredContent structuredContent = _toStructuredContent(
-					fileName);
+				structuredContents.add(_toStructuredContent(fileName));
+			}
+			catch (InvalidUUIDException invalidUUIDException) {
+				_errorMessages.add(invalidUUIDException.getMessage());
 
+				_reportImportResult(
+					addedStructuredContentCount, updatedStructuredContentCount,
+					0);
+				System.exit(1);
+			}
+			catch (Exception exception) {
+				String errorMessage =
+					fileName + " could not be imported correctly: " +
+						exception.getMessage();
+
+				System.out.println(errorMessage);
+				_errorMessages.add(errorMessage);
+			}
+		}
+
+		for (StructuredContent structuredContent : structuredContents) {
+			long delta = System.currentTimeMillis() - start;
+
+			if (delta > (_oauthExpirationMillis - 100000)) {
+				_initResourceBuilders(_getOAuthAuthorization());
+
+				start = System.currentTimeMillis();
+			}
+
+			try {
 				String externalReferenceCode =
 					structuredContent.getExternalReferenceCode();
 				String friendlyUrlPath = structuredContent.getFriendlyUrlPath();
@@ -268,7 +298,7 @@ public class Main {
 							externalReferenceCode);
 
 					System.out.println(
-						"Updating existing article for " +
+						"Updating existing structured content for " +
 							structuredContent.getFriendlyUrlPath());
 
 					importedStructuredContent =
@@ -278,7 +308,7 @@ public class Main {
 					importedStructuredContentIds.add(
 						siteStructuredContent.getId());
 
-					updatedArticleCount++;
+					updatedStructuredContentCount++;
 				}
 				else {
 					if (structuredContentsFriendyUrlPathMap.containsKey(
@@ -289,9 +319,11 @@ public class Main {
 								friendlyUrlPath);
 
 						System.out.println(
-							"Found existing article by Friendly URL Path for " +
-								structuredContent.getFriendlyUrlPath() +
-									" - deleting.");
+							StringBundler.concat(
+								"Found existing structured content by ",
+								"friendly URL path for ",
+								structuredContent.getFriendlyUrlPath(),
+								" - deleting."));
 
 						_structuredContentResource.deleteStructuredContent(
 							siteStructuredContent.getId());
@@ -301,7 +333,7 @@ public class Main {
 					}
 
 					System.out.println(
-						"Posting new article for " +
+						"Posting new structured content for " +
 							structuredContent.getFriendlyUrlPath());
 					importedStructuredContent =
 						_structuredContentResource.
@@ -310,7 +342,7 @@ public class Main {
 									getStructuredContentFolderId(),
 								structuredContent);
 
-					addedArticleCount++;
+					addedStructuredContentCount++;
 				}
 
 				if (!Objects.equals(
@@ -327,8 +359,9 @@ public class Main {
 			}
 			catch (Exception exception) {
 				String errorMessage =
-					fileName + " could not be imported correctly: " +
-						exception.getMessage();
+					structuredContent.getTitle() +
+						" could not be imported correctly: " +
+							exception.getMessage();
 
 				System.out.println(errorMessage);
 				_errorMessages.add(errorMessage);
@@ -360,32 +393,9 @@ public class Main {
 			}
 		}
 
-		if (!_warningMessages.isEmpty()) {
-			System.out.println(
-				_warningMessages.size() + " articles had import warnings.");
-
-			for (String warningMessage : _warningMessages) {
-				System.out.println(warningMessage);
-			}
-		}
-
-		System.out.println(addedArticleCount + " new articles were added.");
-		System.out.println(
-			updatedArticleCount + " existing articles were updated.");
-		System.out.println(
-			existingStructuredContentIds.size() +
-				" existing articles were deleted.");
-
-		if (!_errorMessages.isEmpty()) {
-			System.out.println(
-				_errorMessages.size() + " articles had import errors.");
-
-			for (String errorMessage : _errorMessages) {
-				System.out.println(errorMessage);
-			}
-
-			System.exit(1);
-		}
+		_reportImportResult(
+			addedStructuredContentCount, updatedStructuredContentCount,
+			existingStructuredContentIds.size());
 	}
 
 	private void _addFileNames(String fileName) {
@@ -502,28 +512,23 @@ public class Main {
 		throws Exception {
 
 		int page = 1;
-		List<Document> documentFolderDocuments = new ArrayList<>();
-		boolean fetchedAllItems = false;
+		Map<String, Document> documents = new HashMap<>();
 
-		while (!fetchedAllItems) {
+		while (true) {
 			Page<Document> documentsPage =
 				_documentResource.getDocumentFolderDocumentsPage(
 					documentFolderId, false, null, null, null,
 					Pagination.of(page, 100), null);
 
-			documentFolderDocuments.addAll(documentsPage.getItems());
+			for (Document document : documentsPage.getItems()) {
+				documents.put(document.getTitle(), document);
+			}
 
 			if (documentsPage.getLastPage() == page) {
-				fetchedAllItems = true;
+				break;
 			}
 
 			page++;
-		}
-
-		Map<String, Document> documents = new HashMap<>();
-
-		for (Document document : documentFolderDocuments) {
-			documents.put(document.getTitle(), document);
 		}
 
 		return documents;
@@ -556,14 +561,14 @@ public class Main {
 		if (parentDocumentFolderId == 0) {
 			Page<DocumentFolder> page =
 				_documentFolderResource.getSiteDocumentFoldersPage(
-					_liferayGroupId, null, null, null,
+					_liferaySiteId, null, null, null,
 					"name eq '" + dirName + "'", null, null);
 
 			documentFolder = page.fetchFirstItem();
 
 			if (documentFolder == null) {
 				documentFolder = _documentFolderResource.postSiteDocumentFolder(
-					_liferayGroupId,
+					_liferaySiteId,
 					new DocumentFolder() {
 						{
 							description = "";
@@ -715,7 +720,7 @@ public class Main {
 		return dirNames[0];
 	}
 
-	private List<StructuredContent> _getSiteStructuredContents(long groupId)
+	private List<StructuredContent> _getSiteStructuredContents(long siteId)
 		throws Exception {
 
 		if (_offline) {
@@ -724,18 +729,17 @@ public class Main {
 
 		int page = 1;
 		List<StructuredContent> structuredContents = new ArrayList<>();
-		boolean fetchedAllItems = false;
 
-		while (!fetchedAllItems) {
+		while (true) {
 			Page<StructuredContent> structuredContentsPage =
 				_structuredContentResource.getSiteStructuredContentsPage(
-					groupId, true, null, null, null, Pagination.of(page, 100),
+					siteId, true, null, null, null, Pagination.of(page, 100),
 					null);
 
 			structuredContents.addAll(structuredContentsPage.getItems());
 
 			if (structuredContentsPage.getLastPage() == page) {
-				fetchedAllItems = true;
+				break;
 			}
 
 			page++;
@@ -775,7 +779,7 @@ public class Main {
 			Page<StructuredContentFolder> page =
 				_structuredContentFolderResource.
 					getSiteStructuredContentFoldersPage(
-						_liferayGroupId, null, null, null,
+						_liferaySiteId, null, null, null,
 						"name eq '" + dirName + "'", null, null);
 
 			structuredContentFolder = page.fetchFirstItem();
@@ -784,7 +788,7 @@ public class Main {
 				structuredContentFolder =
 					_structuredContentFolderResource.
 						postSiteStructuredContentFolder(
-							_liferayGroupId,
+							_liferaySiteId,
 							new StructuredContentFolder() {
 								{
 									description = "";
@@ -1394,6 +1398,43 @@ public class Main {
 		return line;
 	}
 
+	private void _reportImportResult(
+		int addedStructuredContentCount, int updatedStructuredContentCount,
+		int deletedStructuredContentCount) {
+
+		if (!_warningMessages.isEmpty()) {
+			System.out.println(
+				_warningMessages.size() +
+					" structured contents had import warnings.");
+
+			for (String warningMessage : _warningMessages) {
+				System.out.println(warningMessage);
+			}
+		}
+
+		System.out.println(
+			addedStructuredContentCount +
+				" new structured contents were added.");
+		System.out.println(
+			updatedStructuredContentCount +
+				" existing structured contents were updated.");
+		System.out.println(
+			deletedStructuredContentCount +
+				" existing structured contents were deleted.");
+
+		if (!_errorMessages.isEmpty()) {
+			System.out.println(
+				_errorMessages.size() +
+					" structured contents had import errors.");
+
+			for (String errorMessage : _errorMessages) {
+				System.out.println(errorMessage);
+			}
+
+			System.exit(1);
+		}
+	}
+
 	private BasedSequence _toBasedSequence(String string) {
 		return CharSubSequence.of(string.toCharArray(), 0, string.length());
 	}
@@ -1524,8 +1565,16 @@ public class Main {
 		String uuid = _getUuid(englishText);
 
 		if (Validator.isNull(uuid)) {
-			throw new Exception("Nonexistent UUID for article " + fileName);
+			throw new Exception("Nonexistent UUID for file " + fileName);
 		}
+
+		if (_uuids.contains(uuid)) {
+			throw new InvalidUUIDException(
+				StringBundler.concat(
+					"Duplicate UUID ", uuid, " found in file ", fileName));
+		}
+
+		_uuids.add(uuid);
 
 		StructuredContent structuredContent = new StructuredContent();
 
@@ -1576,6 +1625,11 @@ public class Main {
 				FileUtils.readFileToString(
 					japaneseFile, StandardCharsets.UTF_8),
 				japaneseFile);
+
+			if (Validator.isNotNull(_getUuid(japaneseText))) {
+				throw new InvalidUUIDException(
+					"UUID found in translated file " + japaneseFile.getPath());
+			}
 
 			structuredContent.setContentFields(
 				new ContentField[] {
@@ -1897,10 +1951,10 @@ public class Main {
 	private final Map<String, String> _imageURLs = new HashMap<>();
 	private final Set<File> _landingPageFiles = new HashSet<>();
 	private final long _liferayContentStructureId;
-	private final long _liferayGroupId;
 	private final String _liferayLearnResourcesDomain;
 	private final String _liferayOAuthClientId;
 	private final String _liferayOAuthClientSecret;
+	private final long _liferaySiteId;
 	private final URL _liferayURL;
 	private File _markdownFile;
 	private final String _markdownImportDirName;
@@ -1947,8 +2001,17 @@ public class Main {
 		new HashMap<>();
 	private StructuredContentFolderResource _structuredContentFolderResource;
 	private StructuredContentResource _structuredContentResource;
+	private final Set<String> _uuids = new HashSet<>();
 	private final List<String> _warningMessages = new ArrayList<>();
 	private final Yaml _yaml;
+
+	private static class InvalidUUIDException extends Exception {
+
+		public InvalidUUIDException(String message) {
+			super(message);
+		}
+
+	}
 
 	private class GridCard {
 
