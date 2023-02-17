@@ -4,6 +4,7 @@ import {NewAppPageFooterButtons} from '../../components/NewAppPageFooterButtons/
 import {Section} from '../../components/Section/Section';
 import {useAppContext} from '../../manage-app-state/AppManageState';
 import {TYPES} from '../../manage-app-state/actionTypes';
+
 import './InformLicensingTermsPage.scss';
 
 interface InformLicensingTermsPricePageProps {
@@ -30,7 +31,7 @@ export function InformLicensingTermsPricePage({
 				tooltip="More Info"
 				tooltipText="More Info"
 			>
-				<LicensePriceCard price={''} currency={''} />
+				<LicensePriceCard currency="" price="" />
 			</Section>
 
 			<NewAppPageFooterButtons

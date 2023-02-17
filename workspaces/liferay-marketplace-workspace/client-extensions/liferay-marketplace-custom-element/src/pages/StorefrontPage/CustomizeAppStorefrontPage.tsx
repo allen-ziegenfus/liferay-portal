@@ -9,6 +9,7 @@ import {NewAppPageFooterButtons} from '../../components/NewAppPageFooterButtons/
 import {Section} from '../../components/Section/Section';
 import {useAppContext} from '../../manage-app-state/AppManageState';
 import {TYPES} from '../../manage-app-state/actionTypes';
+
 import './CustomizeAppStorefrontPage.scss';
 
 const acceptFileTypes = {
@@ -68,7 +69,7 @@ export function CustomizeAppStorefrontPage({
 			setUploadedFiles([...uploadedFiles, ...newUploadedFiles]);
 
 			// await api.post();
-			//processUpload();
+			// processUpload();
 
 		}
 	};
@@ -85,13 +86,13 @@ export function CustomizeAppStorefrontPage({
 	return (
 		<div className="storefront-page-container">
 			<Header
-				title="Customize app storefront"
 				description="Design the storefront for your app. This will set the information displayed on ths app’s page."
+				title="Customize app storefront"
 			/>
 
 			<Section
-				required
 				label="App Storefront"
+				required
 				tooltip="More Info"
 				tooltipText="More Info"
 			>

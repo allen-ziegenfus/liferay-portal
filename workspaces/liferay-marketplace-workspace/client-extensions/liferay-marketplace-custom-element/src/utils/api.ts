@@ -63,8 +63,8 @@ export function createImage({
 }
 
 export async function createProductSpecification({
-	body,
 	appId,
+	body,
 }: {
 	body: Object;
 	appId: string;
@@ -77,6 +77,7 @@ export async function createProductSpecification({
 			method: 'POST',
 		}
 	);
+
 	return await response.json();
 }
 

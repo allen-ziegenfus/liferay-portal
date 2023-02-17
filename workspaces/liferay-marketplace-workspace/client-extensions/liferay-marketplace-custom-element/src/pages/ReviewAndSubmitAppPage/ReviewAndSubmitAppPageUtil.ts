@@ -30,18 +30,18 @@ export type ReviewAndSubmitAppPageUtilProps = {
 };
 
 import brightnessEmptyIcon from '../../assets/icons/brightness-empty.svg';
-import documentationIcon from '../../assets/icons/documentation-icon.svg';
-import phoneIcon from '../../assets/icons/phone-icon.svg';
-import identifiersIcon from '../../assets/icons/identifiers-icon.svg';
 import browsingHistoryIcon from '../../assets/icons/browsing-history-icon.svg';
-import financialIcon from '../../assets/icons/financial-icon.svg';
-import contactIcon from '../../assets/icons/person-fill.svg';
-import guideIcon from '../../assets/icons/guide-icon.svg';
-import userDataIcon from '../../assets/icons/user-data-icon.svg';
-import globeIcon from '../../assets/icons/globe-icon.svg';
 import diagnosticsIcon from '../../assets/icons/diagnostics-icon.svg';
-import usageTermsIcon from '../../assets/icons/usage-terms-icon.svg';
+import documentationIcon from '../../assets/icons/documentation-icon.svg';
+import financialIcon from '../../assets/icons/financial-icon.svg';
+import globeIcon from '../../assets/icons/globe-icon.svg';
+import guideIcon from '../../assets/icons/guide-icon.svg';
+import identifiersIcon from '../../assets/icons/identifiers-icon.svg';
+import contactIcon from '../../assets/icons/person-fill.svg';
+import phoneIcon from '../../assets/icons/phone-icon.svg';
 import scheduleIcon from '../../assets/icons/schedule-icon.svg';
+import usageTermsIcon from '../../assets/icons/usage-terms-icon.svg';
+import userDataIcon from '../../assets/icons/user-data-icon.svg';
 import file1 from '../../assets/images/file1.svg';
 import file2 from '../../assets/images/file2.svg';
 
