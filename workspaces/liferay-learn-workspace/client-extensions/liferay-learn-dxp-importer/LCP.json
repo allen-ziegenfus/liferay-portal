@@ -20,7 +20,8 @@
 			"env": {
 				"LIFERAY_LEARN_RESOURCES_DOMAIN": "https://resources.learn.liferay.com",
 				"SLACK_CHANNEL": "#is-sites-learn-devops-prd"
-			}
+			},
+			"schedule": "0 17 * * *"
 		},
 		"infra": {
 			"deploy": false
@@ -30,7 +31,7 @@
 	"kind": "CronJob",
 	"memory": 3000,
 	"scale": 1,
-	"schedule": "0 14 * * *",
+	"schedule": "0 15 * * *",
 	"volumes": {
 		"publicHtml": "/public_html"
 	}
