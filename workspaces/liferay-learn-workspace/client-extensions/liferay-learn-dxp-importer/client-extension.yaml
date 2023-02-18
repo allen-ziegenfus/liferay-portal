@@ -17,7 +17,7 @@ runtime:
           value: liferay-learn-dxp-importer
         - name: LIFERAY_DATA_DEFINITION_KEY
           value: LEARN-ARTICLE
-        - name: LIFERAY_GROUP_FRIENDLY_URL_PATH
+        - name: LIFERAY_SITE_FRIENDLY_URL_PATH
           value: guest
         - name: LIFERAY_LEARN_GITHUB_BRANCH
           value: master
