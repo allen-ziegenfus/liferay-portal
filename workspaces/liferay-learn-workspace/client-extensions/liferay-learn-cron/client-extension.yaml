@@ -1,4 +1,4 @@
-liferay-learn-dxp-importer:
+liferay-learn-cron:
     homePageURL: https://$[conf:ext.lxc.liferay.com.mainDomain]
     name: Liferay Learn DXP Importer
     scopes:
@@ -14,7 +14,7 @@ runtime:
     cpu: 2000m
     env:
         - name: OAUTH2_JOB_PROFILE
-          value: liferay-learn-dxp-importer
+          value: liferay-learn-cron
         - name: LIFERAY_DATA_DEFINITION_KEY
           value: LEARN-ARTICLE
         - name: LIFERAY_SITE_FRIENDLY_URL_PATH
