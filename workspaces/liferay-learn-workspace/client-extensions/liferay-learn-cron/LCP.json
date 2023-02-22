@@ -27,7 +27,7 @@
 			"deploy": false
 		}
 	},
-	"id": "liferaylearndxpimporter",
+	"id": "liferaylearncron",
 	"kind": "CronJob",
 	"memory": 3000,
 	"scale": 1,
