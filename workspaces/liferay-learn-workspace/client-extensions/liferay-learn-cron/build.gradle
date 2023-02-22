@@ -53,6 +53,7 @@ repositories {
 	}
 }
 
-assembleClientExtension {
-	dependsOn jar
+def assembleClientExtensionTasks= getTasksByName("assembleClientExtension", true)
+assembleClientExtensionTasks.each{
+	it.dependsOn(jar)
 }
