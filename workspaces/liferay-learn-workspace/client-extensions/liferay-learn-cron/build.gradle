@@ -47,16 +47,6 @@ jar {
 	}
 }
 
-assembleClientExtension {
-	doLast {
-		copy {
-			from "."
-			into "build/clientExtension"
-			include "app.sh"
-		}
-	}
-}
-
 repositories {
 	mavenLocal()
 
@@ -64,13 +54,3 @@ repositories {
 		url "https://repository-cdn.liferay.com/nexus/content/groups/public"
 	}
 }
-
-try {
-	tasks.named("assembleClientExtension") {
-		from jar
-
-	}
-} catch (Exception e) {
-}
-
-task wrapper
