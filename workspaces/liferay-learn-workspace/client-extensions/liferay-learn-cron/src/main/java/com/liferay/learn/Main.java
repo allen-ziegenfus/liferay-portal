@@ -274,6 +274,9 @@ public class Main {
 						structuredContentsExternalReferenceCodeMap.get(
 							externalReferenceCode);
 
+					importedStructuredContentIds.add(
+						siteStructuredContent.getId());
+
 					System.out.println(
 						"Updating existing structured content for " +
 							structuredContent.getFriendlyUrlPath());
@@ -281,9 +284,6 @@ public class Main {
 					importedStructuredContent =
 						_structuredContentResource.putStructuredContent(
 							siteStructuredContent.getId(), structuredContent);
-
-					importedStructuredContentIds.add(
-						siteStructuredContent.getId());
 
 					updatedStructuredContentCount++;
 				}
