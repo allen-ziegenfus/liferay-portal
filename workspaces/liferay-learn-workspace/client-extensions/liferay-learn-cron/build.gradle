@@ -30,7 +30,7 @@ dependencies {
 	compile group: "org.yaml", name: "snakeyaml", version: "1.21"
 }
 
-mainClassName = "com.liferay.learn.dxp.importer.Main"
+mainClassName = "com.liferay.learn.Main"
 jar {
 	manifest {
 		attributes "Main-Class": "$mainClassName"
