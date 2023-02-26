@@ -5,14 +5,14 @@ function send_slack_message() {
 
 	echo "$SLACK_MESSAGE"
 
-	if [ -z "$SLACK_ENDPOINT" ] ; then return 0; fi
+	if [ -z "$LIFERAY_LEARN_CRON_SLACK_ENDPOINT" ] ; then return 0; fi
 
 	TIMESTAMP=$(date)
 	LOG_URL="https://console.${LCP_INFRASTRUCTURE_DOMAIN}/projects/${LCP_PROJECT_ID}/services/${LCP_SERVICE_ID}/logs?instanceId=${HOSTNAME}&logServiceId=${LCP_SERVICE_ID}"
 
 	SLACK_MESSAGE_TEXT="${TIMESTAMP} *${LCP_PROJECT_ID}*->*${LCP_SERVICE_ID}* <${LOG_URL}|${HOSTNAME}> \n>$SLACK_MESSAGE"
 
-	curl -X POST --data-urlencode "payload={'channel': '${SLACK_CHANNEL}', 'username': 'devopsbot', 'text': '${SLACK_MESSAGE_TEXT}', 'icon_emoji': ':robot_face:'}" ${SLACK_ENDPOINT}
+	curl -X POST --data-urlencode "payload={'channel': '${LIFERAY_LEARN_CRON_SLACK_CHANNEL}', 'username': 'devopsbot', 'text': '${SLACK_MESSAGE_TEXT}', 'icon_emoji': ':robot_face:'}" ${LIFERAY_LEARN_CRON_SLACK_ENDPOINT}
 }
 
 send_slack_message "Import job starting"
@@ -22,7 +22,7 @@ echo "Cloning repo"
 mkdir -p ~/.ssh
 
 echo "-----BEGIN OPENSSH PRIVATE KEY-----" > ~/.ssh/id_rsa
-echo "$LIFERAY_LEARN_GITHUB_DEPLOY_KEY" | fold -w 64 >> ~/.ssh/id_rsa
+echo "$LIFERAY_LEARN_CRON_GITHUB_DEPLOY_KEY" | fold -w 64 >> ~/.ssh/id_rsa
 echo "-----END OPENSSH PRIVATE KEY-----" >> ~/.ssh/id_rsa
 
 chmod 600 ~/.ssh/id_rsa
@@ -31,13 +31,13 @@ ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
 REPO_FOLDER=~/liferay-learn
 
-git clone -b ${LIFERAY_LEARN_GITHUB_BRANCH} --depth 1 --single-branch "${LIFERAY_LEARN_GITHUB_REPO}" $REPO_FOLDER
+git clone -b ${LIFERAY_LEARN_CRON_GITHUB_BRANCH} --depth 1 --single-branch "${LIFERAY_LEARN_CRON_GITHUB_REPO}" $REPO_FOLDER
 
 git -C $REPO_FOLDER log
 
 GIT_COMMIT=$(git -C $REPO_FOLDER log -1 --pretty="%B %H %aN")
 
-send_slack_message "Cloned repo *${LIFERAY_LEARN_GITHUB_REPO}* commit: *${GIT_COMMIT//$'\n'/}*"
+send_slack_message "Cloned repo *${LIFERAY_LEARN_CRON_GITHUB_REPO}* commit: *${GIT_COMMIT//$'\n'/}*"
 
 cd $REPO_FOLDER/docs || exit
 
@@ -48,7 +48,7 @@ source ${REPO_FOLDER}/_common.sh
 
 java -version
 
-if [ -z "$SKIP_UPDATE_EXAMPLES" ] ; then
+if [ -z "$LIFERAY_LEARN_CRON_SKIP_UPDATE_EXAMPLES" ] ; then
 	echo "Running update_examples.sh"
 
 	UPDATE_EXAMPLES_LOG_FILE=~/update_examples.log
@@ -65,7 +65,7 @@ if [ -z "$SKIP_UPDATE_EXAMPLES" ] ; then
 	send_slack_message "update_examples.sh finished with return code $UPDATE_EXAMPLES_RC. $ERROR_COUNT entries in error log file."
 fi
 
-if [ -z "$SKIP_GENERATE_ZIPS" ] ; then
+if [ -z "$LIFERAY_LEARN_CRON_SKIP_GENERATE_ZIPS" ] ; then
 	echo "Generating zip files"
 
 	cd $REPO_FOLDER/docs || exit
@@ -92,7 +92,7 @@ if [ -z "$SKIP_GENERATE_ZIPS" ] ; then
 	done
 fi
 
-if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
+if [ -z "$LIFERAY_LEARN_CRON_SKIP_REFERENCE_DOCS" ] ; then
 	echo "Populating reference docs"
 
 	curl -L https://github.com/liferay/liferay-portal/releases/download/"${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}"/"${LIFERAY_LEARN_PORTAL_DOC_FILE_NAME}" > liferay-ce-portal-doc.zip
@@ -120,7 +120,7 @@ if [ -z "$SKIP_REFERENCE_DOCS" ] ; then
 		do
 			app_jar_relative_path=$(echo "${app_jar_dir_name}/index.html" | cut -d/ -f4-)
 
-			echo "[${app_jar_dir_name##*/}](${LIFERAY_LEARN_RESOURCES_DOMAIN}/reference/${app_jar_relative_path})" >> $APPS_MARKDOWN_FILE
+			echo "[${app_jar_dir_name##*/}](${LIFERAY_LEARN_CRON_LIFERAY_LEARN_RESOURCES_DOMAIN}/reference/${app_jar_relative_path})" >> $APPS_MARKDOWN_FILE
 			echo "" >> $APPS_MARKDOWN_FILE
 		done
 	done
@@ -156,19 +156,19 @@ export PATH=$JAVA_HOME/bin:$PATH
 
 java -version
 
-if [ -z "$LIFERAY_OAUTH_CLIENT_ID" ] ; then
-	export LIFERAY_OAUTH_CLIENT_ID
-	LIFERAY_OAUTH_CLIENT_ID=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-cron.oauth2.headless.server.client.id)
+if [ -z "$LIFERAY_LEARN_CRON_LIFERAY_OAUTH_CLIENT_ID" ] ; then
+	export LIFERAY_LEARN_CRON_LIFERAY_OAUTH_CLIENT_ID
+	LIFERAY_LEARN_CRON_LIFERAY_OAUTH_CLIENT_ID=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-cron.oauth2.headless.server.client.id)
 fi
 
-if [ -z "$LIFERAY_OAUTH_CLIENT_SECRET" ] ; then
-	export LIFERAY_OAUTH_CLIENT_SECRET
-	LIFERAY_OAUTH_CLIENT_SECRET=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-cron.oauth2.headless.server.client.secret)
+if [ -z "$LIFERAY_LEARN_CRON_LIFERAY_OAUTH_CLIENT_SECRET" ] ; then
+	export LIFERAY_LEARN_CRON_LIFERAY_OAUTH_CLIENT_SECRET
+	LIFERAY_LEARN_CRON_LIFERAY_OAUTH_CLIENT_SECRET=$(cat /etc/liferay/lxc/ext-init-metadata/liferay-learn-cron.oauth2.headless.server.client.secret)
 fi
 
-if [ -z "$LIFERAY_URL" ] ; then
-	export LIFERAY_URL
-	LIFERAY_URL=https://$(cat /etc/liferay/lxc/dxp-metadata/com.liferay.lxc.dxp.mainDomain)
+if [ -z "$LIFERAY_LEARN_CRON_LIFERAY_URL" ] ; then
+	export LIFERAY_LEARN_CRON_LIFERAY_URL
+	LIFERAY_LEARN_CRON_LIFERAY_URL=https://$(cat /etc/liferay/lxc/dxp-metadata/com.liferay.lxc.dxp.mainDomain)
 fi
 
 java -Xmx2048m -agentlib:jdwp=transport=dt_socket,address=*:${DEBUG_PORT:-8001},server=y,suspend=n -jar /app.jar
