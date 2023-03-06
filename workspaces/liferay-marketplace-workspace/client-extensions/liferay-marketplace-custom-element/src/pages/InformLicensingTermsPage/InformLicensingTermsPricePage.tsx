@@ -42,6 +42,8 @@ export function InformLicensingTermsPricePage({
 						appProductId,
 						body: {
 							price: parseFloat(appLicensePrice),
+							published: true,
+							purchasable: true,
 							sku: 'default',
 						},
 					});
