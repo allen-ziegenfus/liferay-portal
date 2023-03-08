@@ -785,7 +785,7 @@ public class Main {
 		for (int page = 1;; page++) {
 			Page<StructuredContent> structuredContentsPage =
 				_structuredContentResource.getSiteStructuredContentsPage(
-					siteId, true, null, null, null, Pagination.of(page, 100),
+					siteId, true, null, null, null, Pagination.of(page, 50),
 					null);
 
 			structuredContents.addAll(structuredContentsPage.getItems());
