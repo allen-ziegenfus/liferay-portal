@@ -149,6 +149,10 @@ do
 	sed -i "s/\(${LIFERAY_LEARN_YOUTUBE_URL_TOKEN}\=\)\(\https:\/\/www.youtube.com\/embed\/.*\)/${LIFERAY_LEARN_YOUTUBE_BEGIN_HTML}\2${LIFERAY_LEARN_YOUTUBE_END_HTML}/" "${md_file_name}"
 done
 
+echo "Copying image files"
+
+rsync --include='images/*' --include='*/' --exclude='*' --prune-empty-dirs -r $REPO_FOLDER/docs/ /public_html/images
+
 echo "Starting java import"
 
 export JAVA_HOME=/usr/lib/jvm/zulu-11-amd64
