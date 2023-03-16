@@ -151,14 +151,6 @@ do
 	sed -i "s/\(${LIFERAY_LEARN_YOUTUBE_URL_TOKEN}\=\)\(\https:\/\/www.youtube.com\/embed\/.*\)/${LIFERAY_LEARN_YOUTUBE_BEGIN_HTML}\2${LIFERAY_LEARN_YOUTUBE_END_HTML}/" "${md_file_name}"
 done
 
-echo "Copying BREAKING_CHANGES.markdown"
-
-curl https://raw.githubusercontent.com/liferay/liferay-portal/${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}/readme/BREAKING_CHANGES.markdown -O
-
-find $REPO_FOLDER/docs/dxp/latest/en -name "*breaking-changes*.md" -name "*7-4*" -exec mv BREAKING_CHANGES.markdown {} \;
-
-rm BREAKING_CHANGES.markdown
-
 echo "Copying image files"
 
 rsync --include='images/*' --include='*/' --exclude='*' --prune-empty-dirs -r $REPO_FOLDER/docs/ /public_html/images
