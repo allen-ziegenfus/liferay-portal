@@ -1,5 +1,6 @@
 buildscript {
 	dependencies {
+		classpath group: "com.github.jengelman.gradle.plugins", name: "shadow", version: "5.1.0"
 		classpath group: "com.liferay", name: "com.liferay.gradle.plugins.defaults", version: "latest.release"
 	}
 
@@ -13,13 +14,9 @@ buildscript {
 }
 
 apply plugin: "application"
-apply plugin: "com.liferay.css.builder"
+apply plugin: "com.github.johnrengelman.shadow"
 apply plugin: "com.liferay.source.formatter"
 apply plugin: "java"
-
-buildCSS {
-	outputDirName = "."
-}
 
 dependencies {
 	compile group: "com.liferay", name: "com.liferay.data.engine.rest.client", version: "latest.release"
@@ -35,45 +32,10 @@ dependencies {
 }
 
 mainClassName = "com.liferay.learn.ddm.importer.Main"
-
-jar {
-	manifest {
-		attributes "Main-Class": "$mainClassName"
-
-	}
-
-	from {
-		configurations.compile.collect {
-			it.isDirectory() ? it : zipTree(it)
-		}
-
-	}
-}
-
-assembleClientExtension {
-	doLast {
-		copy {
-			from "."
-			into "build/clientExtension"
-			include "app.sh"
-		}
-	}
-}
-
-task wrapper
-
 repositories {
 	mavenLocal()
 
 	maven {
 		url "https://repository-cdn.liferay.com/nexus/content/groups/public"
 	}
-}
-
-try {
-	tasks.named("assembleClientExtension") {
-		from jar
-
-	}
-} catch (Exception e) {
 }

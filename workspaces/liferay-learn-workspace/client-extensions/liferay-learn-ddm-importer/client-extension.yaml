@@ -1,3 +1,11 @@
+assemble:
+    - from: .
+      include: "liferay_learn_ddm_importer_entrypoint.sh"
+      into: .
+    - from: build/libs
+      include: "*.jar"
+      into: .
+    - fromTask: shadowJar
 liferay-learn-ddm-importer:
     homePageURL: https://$[conf:ext.lxc.liferay.com.mainDomain]
     name: Liferay Learn Web
@@ -7,13 +15,3 @@ liferay-learn-ddm-importer:
         - Liferay.Data.Engine.REST.everything
         - Liferay.Headless.Admin.User.everything.read
     type: oAuthApplicationHeadlessServer
-runtime:
-    cpu: 2000m
-    env:
-        - name: LIFERAY_GROUP_FRIENDLY_URL_PATH
-          value: guest
-        - name: OAUTH2_JOB_PROFILE
-          value: liferay-learn-ddm-importer
-    memory: 500Mi
-    type: configuration
-    workload: job

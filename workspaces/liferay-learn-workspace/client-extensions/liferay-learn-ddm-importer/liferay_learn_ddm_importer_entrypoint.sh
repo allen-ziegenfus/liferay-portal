@@ -15,4 +15,7 @@ if [ -z "$LIFERAY_URL" ] ; then
 	LIFERAY_URL=https://$(cat /etc/liferay/lxc/dxp-metadata/com.liferay.lxc.dxp.mainDomain)
 fi
 
-java -Xmx2048m -agentlib:jdwp=transport=dt_socket,address=*:${DEBUG_PORT:-8001},server=y,suspend=n -jar /app.jar
+export JAVA_HOME=/usr/lib/jvm/zulu-11-amd64
+export PATH=$JAVA_HOME/bin:$PATH
+
+java -Xmx2048m -jar /home/liferay/liferay-learn-ddm-importer-all.jar
