@@ -138,6 +138,8 @@ if [ -z "$LIFERAY_LEARN_CRON_SKIP_REFERENCE_DOCS" ] ; then
 	rm -f portlet-api-3.0.1-javadoc.jar
 fi
 
+echo "Substituting tokens"
+
 for md_file_name in $(find $REPO_FOLDER/docs -name "*.md" -type f)
 do
 	sed -i "s/${LIFERAY_LEARN_COMMERCE_DOCKER_IMAGE_TOKEN}/${LIFERAY_LEARN_COMMERCE_DOCKER_IMAGE_VALUE}/g" "${md_file_name}"
@@ -148,6 +150,14 @@ do
 	sed -i "s/${LIFERAY_LEARN_PORTAL_WORKSPACE_TOKEN}/${LIFERAY_LEARN_PORTAL_WORKSPACE_TOKEN_VALUE}/g" "${md_file_name}"
 	sed -i "s/\(${LIFERAY_LEARN_YOUTUBE_URL_TOKEN}\=\)\(\https:\/\/www.youtube.com\/embed\/.*\)/${LIFERAY_LEARN_YOUTUBE_BEGIN_HTML}\2${LIFERAY_LEARN_YOUTUBE_END_HTML}/" "${md_file_name}"
 done
+
+echo "Copying BREAKING_CHANGES.markdown"
+
+curl https://raw.githubusercontent.com/liferay/liferay-portal/${LIFERAY_LEARN_PORTAL_GIT_TAG_VALUE}/readme/BREAKING_CHANGES.markdown -O
+
+find $REPO_FOLDER/docs/dxp/latest/en -name "*breaking-changes*.md" -name "*7-4*" -exec mv BREAKING_CHANGES.markdown {} \;
+
+rm BREAKING_CHANGES.markdown
 
 echo "Copying image files"
 
