@@ -1,0 +1,6 @@
+assemble:
+    - from: build
+      into: static
+liferay-sample-static-content:
+  name: Liferay Sample Static Content
+  type: staticContent
