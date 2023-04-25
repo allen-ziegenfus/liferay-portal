@@ -1,2 +1,12 @@
 assemble:
-    - from: src
+    - include:
+        - "*.js"
+        - package.json
+        - util/*.js
+liferay-sample-node-oauth-application-user-agent:
+    .serviceAddress: localhost:3000
+    .serviceScheme: http
+    name: Liferay Sample Node OAuth Application User Agent
+    scopes:
+        - Liferay.Headless.Admin.Workflow.everything
+    type: oAuthApplicationUserAgent
