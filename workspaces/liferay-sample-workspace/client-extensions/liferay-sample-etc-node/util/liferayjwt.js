@@ -1,11 +1,25 @@
 'use strict';
 
 const fetch = require('node-fetch');
+const fs = require('fs');
 const jsonwebtoken = require('jsonwebtoken');
 const jwktopem = require('jwk-to-pem');
 const log = require('./log');
+const path = require('path');
 
-const jwksURI = process.env.JWKS_URI || 'http://localhost:8080/o/oauth2/jwks';
+let jwksURI;
+let dxpMainDomain;
+
+const dxpMainDomainPath = path.join('/etc/liferay/lxc/dxp-metadata', 'com.liferay.lxc.dxp.mainDomain');
+const jwksURIPath = path.join('/etc/liferay/lxc/ext-init-metadata', 'liferay-sample-node-oauth-application-user-agent.oauth2.jwks.uri');
+
+if (fs.existsSync(dxpMainDomainPath) && fs.existsSync(jwksURIPath)) {
+	dxpMainDomain = fs.readFileSync(dxpMainDomainPath);
+	jwksURI = "https://" + dxpMainDomain + fs.readFileSync(jwksURIPath);
+}
+else {
+	jwksURI = process.env.JWKS_URI || 'http://localhost:8080/o/oauth2/jwks';
+}
 
 function liferayjwt(readyPath) {
 	return async (req, res, next) => {
@@ -32,7 +46,7 @@ function liferayjwt(readyPath) {
 					jwksPublicKey,
 					{algorithms: ['RS256']}
 				);
-				req.user = decoded;
+				req.jwt = decoded;
 				next();
 			}
 			else {

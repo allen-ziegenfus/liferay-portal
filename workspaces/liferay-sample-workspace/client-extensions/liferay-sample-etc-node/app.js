@@ -15,13 +15,13 @@ app.get(readyPath, (req, res) => {
 });
 
 app.get('/comic', async (req, res) => {
-	if (!req.user) {
+	if (!req.jwt) {
 		res.status(401).send('No authorization header');
 		return;
 	}
 
-	log.info('User %s is authorized', req.user.username);
-	log.info('User scopes: ' + req.user.scope);
+	log.info('User %s is authorized', req.jwt.username);
+	log.info('User scopes: ' + req.jwt.scope);
 
 	const comicResponse = await fetch('https://xkcd.com/info.0.json');
 
