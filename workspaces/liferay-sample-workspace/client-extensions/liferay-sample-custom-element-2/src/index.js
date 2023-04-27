@@ -27,11 +27,10 @@ const App = ({oAuth2Client1, oAuth2Client2, route}) => {
 			{Liferay.ThemeDisplay.isSignedIn() && (
 				<div>
 					<DadJoke oAuth2Client={oAuth2Client1} />
-					<hr/>
+					<hr />
 					<Comic oAuth2Client={oAuth2Client2} />
 				</div>
 			)}
-
 		</div>
 	);
 };

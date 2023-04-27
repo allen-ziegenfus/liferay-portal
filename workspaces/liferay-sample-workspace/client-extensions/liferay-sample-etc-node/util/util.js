@@ -1,11 +1,14 @@
 'use strict';
 
-const config = require('../config.json')
+const config = require('../config.json');
 const fs = require('fs');
 const path = require('path');
 
 function getExtInitMetadata(property, defaultValue) {
-	const configPath = path.join('/etc/liferay/lxc/ext-init-metadata', property);
+	const configPath = path.join(
+		'/etc/liferay/lxc/ext-init-metadata',
+		property
+	);
 	let extInitMetadata;
 	if (fs.existsSync(configPath)) {
 		extInitMetadata = fs.readFileSync(configPath, 'utf-8');
@@ -13,7 +16,7 @@ function getExtInitMetadata(property, defaultValue) {
 	else {
 		extInitMetadata = defaultValue;
 	}
-	return extInitMetadata;	
+	return extInitMetadata;
 }
 
 function getDXPMetadata(property) {
@@ -25,11 +28,11 @@ function getDXPMetadata(property) {
 	else {
 		dxpMetadata = config[property];
 	}
-  console.log('getDXPMetadata: ' + property + ' = ' + dxpMetadata);
+	console.log('getDXPMetadata: ' + property + ' = ' + dxpMetadata);
 	return dxpMetadata;
 }
 
 module.exports = {
-  getDXPMetadata,
-  getExtInitMetadata
-}
+	getDXPMetadata,
+	getExtInitMetadata,
+};
