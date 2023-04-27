@@ -8,7 +8,7 @@ function getExtInitMetadata(property, defaultValue) {
 	const configPath = path.join('/etc/liferay/lxc/ext-init-metadata', property);
 	let extInitMetadata;
 	if (fs.existsSync(configPath)) {
-		extInitMetadata = fs.readFileSync(configPath);
+		extInitMetadata = fs.readFileSync(configPath, 'utf-8');
 	}
 	else {
 		extInitMetadata = defaultValue;
@@ -20,11 +20,12 @@ function getDXPMetadata(property) {
 	const configPath = path.join('/etc/liferay/lxc/dxp-metadata', property);
 	let dxpMetadata;
 	if (fs.existsSync(configPath)) {
-		dxpMetadata = fs.readFileSync(configPath);
+		dxpMetadata = fs.readFileSync(configPath, 'utf-8');
 	}
 	else {
 		dxpMetadata = config[property];
 	}
+  console.log('getDXPMetadata: ' + property + ' = ' + dxpMetadata);
 	return dxpMetadata;
 }
 

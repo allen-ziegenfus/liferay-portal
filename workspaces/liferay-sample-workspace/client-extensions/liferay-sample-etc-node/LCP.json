@@ -10,17 +10,17 @@
 	"livenessProbe": {
 		"httpGet": {
 			"path": "/ready",
-			"port": 3000
+			"port": 3001
 		}
 	},
 	"loadBalancer": {
-		"targetPort": 3000
+		"targetPort": 3001
 	},
 	"memory": 512,
 	"readinessProbe": {
 		"httpGet": {
 			"path": "/ready",
-			"port": 3000
+			"port": 3001
 		}
 	},
 	"scale": 1

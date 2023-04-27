@@ -11,7 +11,7 @@ const {getDXPMetadata, getExtInitMetadata} = require('./util');
 const lxcDXPMainDomain = getDXPMetadata('com.liferay.lxc.dxp.mainDomain');
 const lxcDXPServerProtocol = getDXPMetadata('com.liferay.lxc.dxp.server.protocol');
 const erc = config["liferay.oauth.application.external.reference.codes"].split(',')[0];
-const oauth2JWKSURI = getExtInitMetadata(erc + '.oauth2.jwks.uri', lxcDXPServerProtocol + '://' + lxcDXPMainDomain + '/o/oauth2/jwks');
+const oauth2JWKSURI = lxcDXPServerProtocol + '://' + lxcDXPMainDomain + getExtInitMetadata(erc + '.oauth2.jwks.uri',  '/o/oauth2/jwks');
 log.info('oauth2JWKSURI: %s', oauth2JWKSURI);
 
 function liferayjwt(readyPath) {
@@ -39,8 +39,7 @@ function liferayjwt(readyPath) {
 					jwksPublicKey,
 					{
 						algorithms: ['RS256'],
-						ignoreExpiration: true,
-						//jwtid: 'id-e98917d5-11ea-46d3-f3f6-f0ce9c5aa1e2'
+						ignoreExpiration: true, // TODO we need to use refresh token 
 					}
 				);
 				const ercResponse = await fetch(lxcDXPServerProtocol + '://' + lxcDXPMainDomain + '/o/oauth2/application?externalReferenceCode=' + erc);

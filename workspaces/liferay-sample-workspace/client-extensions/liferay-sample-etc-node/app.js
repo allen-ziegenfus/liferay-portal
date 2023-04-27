@@ -17,7 +17,7 @@ const allowList = domains.split(',').map(v => lxcDXPServerProtocol + '://' + v);
 
 const corsOptions = {
   origin: function (origin, callback) {
-		console.log(origin);
+		console.log('origin=' + origin);
     if (allowList.includes(origin)) {
       callback(null, true);
     } else {
@@ -26,7 +26,16 @@ const corsOptions = {
   }
 };
 
-app.use(cors(corsOptions));
+const corsReady = function(req, res, next) {
+	console.log('req.originalUrl=' + req.originalUrl)
+	console.log('req.method=' + req.method)
+  if (req.originalUrl === readyPath) {
+    return next();
+  }
+  return cors(corsOptions)(req, res, next);
+};
+
+app.use(corsReady);
 app.use(liferayjwt(readyPath));
 
 app.get(readyPath, (req, res) => {
