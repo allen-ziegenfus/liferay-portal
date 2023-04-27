@@ -6,35 +6,14 @@ const fs = require('fs');
 const jsonwebtoken = require('jsonwebtoken');
 const jwktopem = require('jwk-to-pem');
 const log = require('./log');
-const path = require('path');
+const {getDXPMetadata, getExtInitMetadata} = require('./util');
 
 const lxcDXPMainDomain = getDXPMetadata('com.liferay.lxc.dxp.mainDomain');
+log.info('lxcDXPMainDomain: %s', lxcDXPMainDomain);
 const lxcDXPServerProtocol = getDXPMetadata('com.liferay.lxc.dxp.server.protocol');
-const oauth2JWKSURI = getExtInitMetadata('liferay-sample-node-oauth-application-user-agent.oauth2.jwks.uri', lxcDXPServerProtocol + lxcDXPMainDomain + '/o/oauth2/jwks');
-
-function getExtInitMetadata(property, defaultValue) {
-	const configPath = path.join('/etc/liferay/lxc/ext-init-metadata', property);
-	let extInitMetadata;
-	if (fs.existsSync(configPath)) {
-		extInitMetadata = fs.readFileSync(configPath);
-	}
-	else {
-		extInitMetadata = defaultValue;
-	}
-	return extInitMetadata;	
-}
-
-function getDXPMetadata(property) {
-	const configPath = path.join('/etc/liferay/lxc/dxp-metadata', property);
-	let dxpMetadata;
-	if (fs.existsSync(configPath)) {
-		dxpMetadata = fs.readFileSync(configPath);
-	}
-	else {
-		dxpMetadata = config[property];
-	}
-	return dxpMetadata;
-}
+log.info('lxcDXPServerProtocol: %s', lxcDXPServerProtocol);
+const oauth2JWKSURI = getExtInitMetadata('liferay-sample-node-oauth-application-user-agent.oauth2.jwks.uri', lxcDXPServerProtocol + '://' + lxcDXPMainDomain + '/o/oauth2/jwks');
+log.info('oauth2JWKSURI: %s', oauth2JWKSURI);
 
 function liferayjwt(readyPath) {
 	return async (req, res, next) => {
@@ -52,7 +31,7 @@ function liferayjwt(readyPath) {
 		const bearerToken = req.headers.authorization.split('Bearer ')[1];
 
 		try {
-			const jwksResponse = await fetch(jwksURI);
+			const jwksResponse = await fetch(oauth2JWKSURI);
 			if (jwksResponse.status == 200) {
 				const jwks = await jwksResponse.json();
 				const jwksPublicKey = jwktopem(jwks.keys[0]);

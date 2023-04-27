@@ -1,14 +1,32 @@
 'use strict';
 
 const config = require('./config.json');
+const cors = require('cors');
 const express = require('express');
 const fetch = require('node-fetch');
 const liferayjwt = require('./util/liferayjwt');
 const log = require('./util/log');
+const {getDXPMetadata} = require('./util/util')
 
 const app = express();
 const readyPath = '/ready';
 
+const domains = getDXPMetadata('com.liferay.lxc.dxp.domains');
+const lxcDXPServerProtocol = getDXPMetadata('com.liferay.lxc.dxp.server.protocol');
+const allowList = domains.split(',').map(v => lxcDXPServerProtocol + '://' + v);
+
+const corsOptions = {
+  origin: function (origin, callback) {
+		console.log(origin);
+    if (allowList.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+
+app.use(cors(corsOptions));
 app.use(liferayjwt(readyPath));
 
 app.get(readyPath, (req, res) => {
