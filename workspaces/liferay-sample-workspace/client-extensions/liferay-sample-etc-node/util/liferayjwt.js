@@ -1,5 +1,6 @@
 'use strict';
 
+const config = require('../config.json')
 const fetch = require('node-fetch');
 const fs = require('fs');
 const jsonwebtoken = require('jsonwebtoken');
@@ -7,18 +8,32 @@ const jwktopem = require('jwk-to-pem');
 const log = require('./log');
 const path = require('path');
 
-let jwksURI;
-let dxpMainDomain;
+const lxcDXPMainDomain = getDXPMetadata('com.liferay.lxc.dxp.mainDomain');
+const lxcDXPServerProtocol = getDXPMetadata('com.liferay.lxc.dxp.server.protocol');
+const oauth2JWKSURI = getExtInitMetadata('liferay-sample-node-oauth-application-user-agent.oauth2.jwks.uri', lxcDXPServerProtocol + lxcDXPMainDomain + '/o/oauth2/jwks');
 
-const dxpMainDomainPath = path.join('/etc/liferay/lxc/dxp-metadata', 'com.liferay.lxc.dxp.mainDomain');
-const jwksURIPath = path.join('/etc/liferay/lxc/ext-init-metadata', 'liferay-sample-node-oauth-application-user-agent.oauth2.jwks.uri');
-
-if (fs.existsSync(dxpMainDomainPath) && fs.existsSync(jwksURIPath)) {
-	dxpMainDomain = fs.readFileSync(dxpMainDomainPath);
-	jwksURI = "https://" + dxpMainDomain + fs.readFileSync(jwksURIPath);
+function getExtInitMetadata(property, defaultValue) {
+	const configPath = path.join('/etc/liferay/lxc/ext-init-metadata', property);
+	let extInitMetadata;
+	if (fs.existsSync(configPath)) {
+		extInitMetadata = fs.readFileSync(configPath);
+	}
+	else {
+		extInitMetadata = defaultValue;
+	}
+	return extInitMetadata;	
 }
-else {
-	jwksURI = process.env.JWKS_URI || 'http://localhost:8080/o/oauth2/jwks';
+
+function getDXPMetadata(property) {
+	const configPath = path.join('/etc/liferay/lxc/dxp-metadata', property);
+	let dxpMetadata;
+	if (fs.existsSync(configPath)) {
+		dxpMetadata = fs.readFileSync(configPath);
+	}
+	else {
+		dxpMetadata = config[property];
+	}
+	return dxpMetadata;
 }
 
 function liferayjwt(readyPath) {

@@ -1,5 +1,6 @@
 'use strict';
 
+const config = require('./config.json');
 const express = require('express');
 const fetch = require('node-fetch');
 const liferayjwt = require('./util/liferayjwt');
@@ -37,10 +38,10 @@ app.get('/comic', async (req, res) => {
 	res.status(200).json(comic);
 });
 
-const port = process.env.PORT || '3000';
+const serverPort = config["server.port"];
 
-app.listen(port, () => {
-	log.info('App listening on %s', port);
+app.listen(serverPort, () => {
+	log.info('App listening on %s', serverPort);
 });
 
 module.exports = app;

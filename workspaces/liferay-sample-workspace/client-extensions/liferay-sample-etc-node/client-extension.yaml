@@ -1,6 +1,7 @@
 assemble:
     - include:
-        - app.js
+        - "*.js"
+        - config.json
         - package.json
         - util/*.js
 liferay-sample-node-oauth-application-user-agent:
