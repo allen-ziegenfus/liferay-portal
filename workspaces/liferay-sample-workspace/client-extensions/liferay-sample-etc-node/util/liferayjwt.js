@@ -9,10 +9,9 @@ const log = require('./log');
 const {getDXPMetadata, getExtInitMetadata} = require('./util');
 
 const lxcDXPMainDomain = getDXPMetadata('com.liferay.lxc.dxp.mainDomain');
-log.info('lxcDXPMainDomain: %s', lxcDXPMainDomain);
 const lxcDXPServerProtocol = getDXPMetadata('com.liferay.lxc.dxp.server.protocol');
-log.info('lxcDXPServerProtocol: %s', lxcDXPServerProtocol);
-const oauth2JWKSURI = getExtInitMetadata('liferay-sample-node-oauth-application-user-agent.oauth2.jwks.uri', lxcDXPServerProtocol + '://' + lxcDXPMainDomain + '/o/oauth2/jwks');
+const erc = config["liferay.oauth.application.external.reference.codes"].split(',')[0];
+const oauth2JWKSURI = getExtInitMetadata(erc + '.oauth2.jwks.uri', lxcDXPServerProtocol + '://' + lxcDXPMainDomain + '/o/oauth2/jwks');
 log.info('oauth2JWKSURI: %s', oauth2JWKSURI);
 
 function liferayjwt(readyPath) {
@@ -38,10 +37,23 @@ function liferayjwt(readyPath) {
 				const decoded = jsonwebtoken.verify(
 					bearerToken,
 					jwksPublicKey,
-					{algorithms: ['RS256']}
+					{
+						algorithms: ['RS256'],
+						ignoreExpiration: true,
+						//jwtid: 'id-e98917d5-11ea-46d3-f3f6-f0ce9c5aa1e2'
+					}
 				);
-				req.jwt = decoded;
-				next();
+				const ercResponse = await fetch(lxcDXPServerProtocol + '://' + lxcDXPMainDomain + '/o/oauth2/application?externalReferenceCode=' + erc);
+				const {client_id} = await ercResponse.json();
+				if (decoded.client_id == client_id) {
+					req.jwt = decoded;
+					next();
+				}
+				else {
+					log.error('JWT token client_id is not expected.');
+					res.status(401).send('JWT token is invalid');
+					return;
+				}
 			}
 			else {
 				log.error(
