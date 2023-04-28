@@ -8,7 +8,7 @@ liferay-sample-spring-boot-notification-type-1:
 liferay-sample-spring-boot-oauth-application-user-agent:
     .serviceAddress: localhost:58081
     .serviceScheme: http
-    name: Liferay Sample OAuth Application User Agent
+    name: Liferay Sample Spring Boot OAuth Application User Agent
     scopes:
         - Liferay.Headless.Admin.Workflow.everything
     type: oAuthApplicationUserAgent
