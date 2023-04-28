@@ -1,11 +1,11 @@
 'use strict';
 
-import config from '../config.json';
+import config from '../config.js';
 import {existsSync, readFileSync} from 'fs';
-import log from './log';
+import log from './log.js';
 import {join} from 'path';
 
-function getExtInitMetadata(property, defaultValue) {
+export function getExtInitMetadata(property, defaultValue) {
 	const configPath = join('/etc/liferay/lxc/ext-init-metadata', property);
 	let extInitMetadata;
 	if (existsSync(configPath)) {
@@ -18,7 +18,7 @@ function getExtInitMetadata(property, defaultValue) {
 	return extInitMetadata;
 }
 
-function getDXPMetadata(property) {
+export function getDXPMetadata(property) {
 	const configPath = join('/etc/liferay/lxc/dxp-metadata', property);
 	let dxpMetadata;
 	if (existsSync(configPath)) {
@@ -30,8 +30,3 @@ function getDXPMetadata(property) {
 	log.info('getDXPMetadata: ' + property + ' = ' + dxpMetadata);
 	return dxpMetadata;
 }
-
-export default {
-	getDXPMetadata,
-	getExtInitMetadata,
-};

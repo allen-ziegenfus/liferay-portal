@@ -10,7 +10,8 @@
 	"license": "LGPL",
 	"name": "liferay-sample-etc-node",
 	"scripts": {
-		"start": "node --trace-warnings app.js"
+		"start": "node app.js"
 	},
+	"type": "module",
 	"version": "1.0.0"
 }

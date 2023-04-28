@@ -1,10 +1,13 @@
 'use strict';
 
-import config from './config.json';
+import config from './config.js';
 import express from 'express';
 import fetch from 'node-fetch';
-import {corsWithReady, liferayJWT} from './util/liferay-oauth2-resource-server';
-import {info} from './util/log';
+import {
+	corsWithReady,
+	liferayJWT,
+} from './util/liferay-oauth2-resource-server.js';
+import log from './util/log.js';
 
 const app = express();
 const readyPath = '/ready';
@@ -17,8 +20,8 @@ app.get(readyPath, (req, res) => {
 });
 
 app.get('/comic', async (req, res) => {
-	info('User %s is authorized', req.jwt.username);
-	info('User scopes: ' + req.jwt.scope);
+	log.info('User %s is authorized', req.jwt.username);
+	log.info('User scopes: ' + req.jwt.scope);
 
 	const comicResponse = await fetch('https://xkcd.com/info.0.json');
 
@@ -29,7 +32,7 @@ app.get('/comic', async (req, res) => {
 
 	const comic = await comicResponse.json();
 
-	info('Comic fetched\n%s', JSON.stringify(comic, null, 2));
+	log.info('Comic fetched\n%s', JSON.stringify(comic, null, 2));
 
 	res.status(200).json(comic);
 });
@@ -49,7 +52,7 @@ app.get('/sample/workflow/action/1', async (req, res) => {
 });
 
 app.listen(serverPort, () => {
-	info('App listening on %s', serverPort);
+	log.info('App listening on %s', serverPort);
 });
 
 export default app;

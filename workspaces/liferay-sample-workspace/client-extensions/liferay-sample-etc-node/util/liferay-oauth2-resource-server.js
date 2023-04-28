@@ -1,12 +1,12 @@
 'use strict';
 
-import config from '../config.json';
+import config from '../config.js';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import {verify} from 'jsonwebtoken';
 import jwktopem from 'jwk-to-pem';
-import {error} from './log';
-import {getDXPMetadata, getExtInitMetadata} from './util';
+import log from './log.js';
+import {getDXPMetadata, getExtInitMetadata} from './util.js';
 
 const domains = getDXPMetadata('com.liferay.lxc.dxp.domains');
 const externalReferenceCode =
@@ -39,7 +39,7 @@ const corsOptions = {
 	},
 };
 
-function corsWithReady(readyPath) {
+export function corsWithReady(readyPath) {
 	return function (req, res, next) {
 		if (req.originalUrl === readyPath) {
 			return next();
@@ -48,7 +48,7 @@ function corsWithReady(readyPath) {
 	};
 }
 
-function liferayJWT(readyPath) {
+export function liferayJWT(readyPath) {
 	return async (req, res, next) => {
 		if (req.path === readyPath) {
 			return next();
@@ -85,7 +85,7 @@ function liferayJWT(readyPath) {
 					next();
 				}
 				else {
-					error('JWT token client_id is not expected.');
+					log.error('JWT token client_id is not expected.');
 					res.status(401).send('JWT token is invalid');
 					return;
 				}
@@ -107,8 +107,3 @@ function liferayJWT(readyPath) {
 		}
 	};
 }
-
-export default {
-	corsWithReady,
-	liferayJWT,
-};
