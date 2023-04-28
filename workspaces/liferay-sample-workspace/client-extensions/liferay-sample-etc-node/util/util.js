@@ -2,6 +2,7 @@
 
 const config = require('../config.json');
 const fs = require('fs');
+const log = require('./log');
 const path = require('path');
 
 function getExtInitMetadata(property, defaultValue) {
@@ -28,7 +29,7 @@ function getDXPMetadata(property) {
 	else {
 		dxpMetadata = config[property];
 	}
-	console.log('getDXPMetadata: ' + property + ' = ' + dxpMetadata);
+	log.info('getDXPMetadata: ' + property + ' = ' + dxpMetadata);
 	return dxpMetadata;
 }
 

@@ -9,22 +9,24 @@ const log = require('./log');
 const {getDXPMetadata, getExtInitMetadata} = require('./util');
 
 const domains = getDXPMetadata('com.liferay.lxc.dxp.domains');
+const externalReferenceCode =
+	config['liferay.oauth.application.external.reference.codes'].split(',')[0];
 const lxcDXPMainDomain = getDXPMetadata('com.liferay.lxc.dxp.mainDomain');
 const lxcDXPServerProtocol = getDXPMetadata(
 	'com.liferay.lxc.dxp.server.protocol'
 );
-const erc =
-	config['liferay.oauth.application.external.reference.codes'].split(',')[0];
 const oauth2JWKSURI =
 	lxcDXPServerProtocol +
 	'://' +
 	lxcDXPMainDomain +
-	getExtInitMetadata(erc + '.oauth2.jwks.uri', '/o/oauth2/jwks');
-log.info('oauth2JWKSURI: %s', oauth2JWKSURI);
+	getExtInitMetadata(
+		externalReferenceCode + '.oauth2.jwks.uri',
+		'/o/oauth2/jwks'
+	);
 
 const allowList = domains
 	.split(',')
-	.map((v) => lxcDXPServerProtocol + '://' + v);
+	.map((domain) => lxcDXPServerProtocol + '://' + domain);
 
 const corsOptions = {
 	origin: function (origin, callback) {
@@ -79,7 +81,7 @@ function liferayJWT(readyPath) {
 						'://' +
 						lxcDXPMainDomain +
 						'/o/oauth2/application?externalReferenceCode=' +
-						erc
+						externalReferenceCode
 				);
 				const {client_id} = await ercResponse.json();
 				if (decoded.client_id == client_id) {
