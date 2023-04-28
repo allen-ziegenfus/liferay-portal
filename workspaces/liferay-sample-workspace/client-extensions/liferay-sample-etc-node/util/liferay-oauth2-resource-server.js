@@ -2,12 +2,12 @@
 
 const config = require('../config.json');
 const fetch = require('node-fetch');
-const fs = require('fs');
 const jsonwebtoken = require('jsonwebtoken');
 const jwktopem = require('jwk-to-pem');
 const log = require('./log');
 const {getDXPMetadata, getExtInitMetadata} = require('./util');
 
+const domains = getDXPMetadata('com.liferay.lxc.dxp.domains');
 const lxcDXPMainDomain = getDXPMetadata('com.liferay.lxc.dxp.mainDomain');
 const lxcDXPServerProtocol = getDXPMetadata(
 	'com.liferay.lxc.dxp.server.protocol'
@@ -21,7 +21,31 @@ const oauth2JWKSURI =
 	getExtInitMetadata(erc + '.oauth2.jwks.uri', '/o/oauth2/jwks');
 log.info('oauth2JWKSURI: %s', oauth2JWKSURI);
 
-function liferayjwt(readyPath) {
+const allowList = domains
+	.split(',')
+	.map((v) => lxcDXPServerProtocol + '://' + v);
+
+const corsOptions = {
+	origin: function (origin, callback) {
+		if (allowList.includes(origin)) {
+			callback(null, true);
+		}
+		else {
+			callback(new Error('Not allowed by CORS'));
+		}
+	},
+};
+
+function corsWithReady(readyPath) {
+	return function (req, res, next) {
+		if (req.originalUrl === readyPath) {
+			return next();
+		}
+		return cors(corsOptions)(req, res, next);
+	}
+}
+
+function liferayJWT(readyPath) {
 	return async (req, res, next) => {
 		if (req.path === readyPath) {
 			return next();
@@ -85,4 +109,7 @@ function liferayjwt(readyPath) {
 	};
 }
 
-module.exports = liferayjwt;
+module.exports = {
+	corsWithReady,
+	liferayJWT
+}

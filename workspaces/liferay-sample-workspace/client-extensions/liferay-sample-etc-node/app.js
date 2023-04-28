@@ -1,47 +1,16 @@
 'use strict';
 
 const config = require('./config.json');
-const cors = require('cors');
 const express = require('express');
 const fetch = require('node-fetch');
-const liferayjwt = require('./util/liferayjwt');
+const {corsWithReady, liferayJWT} = require('./util/liferay-oauth2-resource-server');
 const log = require('./util/log');
-const {getDXPMetadata} = require('./util/util');
 
 const app = express();
 const readyPath = '/ready';
 
-const domains = getDXPMetadata('com.liferay.lxc.dxp.domains');
-const lxcDXPServerProtocol = getDXPMetadata(
-	'com.liferay.lxc.dxp.server.protocol'
-);
-const allowList = domains
-	.split(',')
-	.map((v) => lxcDXPServerProtocol + '://' + v);
-
-const corsOptions = {
-	origin: function (origin, callback) {
-		console.log('origin=' + origin);
-		if (allowList.includes(origin)) {
-			callback(null, true);
-		}
-		else {
-			callback(new Error('Not allowed by CORS'));
-		}
-	},
-};
-
-const corsReady = function (req, res, next) {
-	console.log('req.originalUrl=' + req.originalUrl);
-	console.log('req.method=' + req.method);
-	if (req.originalUrl === readyPath) {
-		return next();
-	}
-	return cors(corsOptions)(req, res, next);
-};
-
-app.use(corsReady);
-app.use(liferayjwt(readyPath));
+app.use(corsWithReady(readyPath));
+app.use(liferayJWT(readyPath));
 
 app.get(readyPath, (req, res) => {
 	res.send('READY');
