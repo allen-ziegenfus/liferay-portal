@@ -3,7 +3,10 @@
 const config = require('./config.json');
 const express = require('express');
 const fetch = require('node-fetch');
-const {corsWithReady, liferayJWT} = require('./util/liferay-oauth2-resource-server');
+const {
+	corsWithReady,
+	liferayJWT,
+} = require('./util/liferay-oauth2-resource-server');
 const log = require('./util/log');
 
 const app = express();
@@ -17,10 +20,11 @@ app.get(readyPath, (req, res) => {
 });
 
 app.get('/comic', async (req, res) => {
-	if (!req.jwt) {
-		res.status(401).send('No authorization header');
-		return;
-	}
+
+	//if (!req.jwt) {
+	//res.status(401).send('No authorization header');
+	//return;
+	//}
 
 	log.info('User %s is authorized', req.jwt.username);
 	log.info('User scopes: ' + req.jwt.scope);
@@ -34,12 +38,24 @@ app.get('/comic', async (req, res) => {
 
 	const comic = await comicResponse.json();
 
-	log.info('Comic fetched\n%s', JSON.stringify(comic));
+	log.info('Comic fetched\n%s', JSON.stringify(comic, null, 2));
 
 	res.status(200).json(comic);
 });
 
 const serverPort = config['server.port'];
+
+app.get('/sample/object/action/1', async (req, res) => {
+	res.status(200).send('OK');
+});
+
+app.get('/sample/object/action/2', async (req, res) => {
+	res.status(200).send('OK');
+});
+
+app.get('/sample/workflow/action/1', async (req, res) => {
+	res.status(200).send('OK');
+});
 
 app.listen(serverPort, () => {
 	log.info('App listening on %s', serverPort);

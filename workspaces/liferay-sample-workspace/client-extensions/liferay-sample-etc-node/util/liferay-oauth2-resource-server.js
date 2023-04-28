@@ -1,6 +1,7 @@
 'use strict';
 
 const config = require('../config.json');
+const cors = require('cors');
 const fetch = require('node-fetch');
 const jsonwebtoken = require('jsonwebtoken');
 const jwktopem = require('jwk-to-pem');
@@ -31,7 +32,7 @@ const corsOptions = {
 			callback(null, true);
 		}
 		else {
-			callback(new Error('Not allowed by CORS'));
+			callback(null, false);
 		}
 	},
 };
@@ -42,7 +43,7 @@ function corsWithReady(readyPath) {
 			return next();
 		}
 		return cors(corsOptions)(req, res, next);
-	}
+	};
 }
 
 function liferayJWT(readyPath) {
@@ -111,5 +112,5 @@ function liferayJWT(readyPath) {
 
 module.exports = {
 	corsWithReady,
-	liferayJWT
-}
+	liferayJWT,
+};

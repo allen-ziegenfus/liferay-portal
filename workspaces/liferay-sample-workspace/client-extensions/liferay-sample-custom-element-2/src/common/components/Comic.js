@@ -38,8 +38,10 @@ class Comic extends React.Component {
 		else {
 			return (
 				<div>
-					<img alt={this.state.alt} src={this.state.img} />
-					{this.state.title}
+					<h2>{this.state.title}</h2>
+					<p>
+						<img alt={this.state.alt} src={this.state.img} />
+					</p>
 				</div>
 			);
 		}
