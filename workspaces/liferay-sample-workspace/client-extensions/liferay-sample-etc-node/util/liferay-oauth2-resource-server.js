@@ -1,12 +1,12 @@
 'use strict';
 
-const config = require('../config.json');
-const cors = require('cors');
-const fetch = require('node-fetch');
-const jsonwebtoken = require('jsonwebtoken');
-const jwktopem = require('jwk-to-pem');
-const log = require('./log');
-const {getDXPMetadata, getExtInitMetadata} = require('./util');
+import config from '../config.json';
+import cors from 'cors';
+import fetch from 'node-fetch';
+import {verify} from 'jsonwebtoken';
+import jwktopem from 'jwk-to-pem';
+import {error} from './log';
+import {getDXPMetadata, getExtInitMetadata} from './util';
 
 const domains = getDXPMetadata('com.liferay.lxc.dxp.domains');
 const externalReferenceCode =
@@ -68,14 +68,10 @@ function liferayJWT(readyPath) {
 			if (jwksResponse.status == 200) {
 				const jwks = await jwksResponse.json();
 				const jwksPublicKey = jwktopem(jwks.keys[0]);
-				const decoded = jsonwebtoken.verify(
-					bearerToken,
-					jwksPublicKey,
-					{
-						algorithms: ['RS256'],
-						ignoreExpiration: true, // TODO we need to use refresh token
-					}
-				);
+				const decoded = verify(bearerToken, jwksPublicKey, {
+					algorithms: ['RS256'],
+					ignoreExpiration: true, // TODO we need to use refresh token
+				});
 				const ercResponse = await fetch(
 					lxcDXPServerProtocol +
 						'://' +
@@ -89,13 +85,13 @@ function liferayJWT(readyPath) {
 					next();
 				}
 				else {
-					log.error('JWT token client_id is not expected.');
+					error('JWT token client_id is not expected.');
 					res.status(401).send('JWT token is invalid');
 					return;
 				}
 			}
 			else {
-				log.error(
+				error(
 					'Error fetching JWKS %s %s',
 					jwksResponse.status,
 					jwksResponse.statusText
@@ -105,14 +101,14 @@ function liferayJWT(readyPath) {
 			}
 		}
 		catch (err) {
-			log.error('Error validating JWT token\n%s', err);
+			error('Error validating JWT token\n%s', err);
 			res.status(401).send('JWT token is invalid');
 			return;
 		}
 	};
 }
 
-module.exports = {
+export default {
 	corsWithReady,
 	liferayJWT,
 };

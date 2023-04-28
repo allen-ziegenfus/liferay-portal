@@ -1,30 +1,28 @@
 'use strict';
 
-const config = require('../config.json');
-const fs = require('fs');
-const log = require('./log');
-const path = require('path');
+import config from '../config.json';
+import {existsSync, readFileSync} from 'fs';
+import log from './log';
+import {join} from 'path';
 
 function getExtInitMetadata(property, defaultValue) {
-	const configPath = path.join(
-		'/etc/liferay/lxc/ext-init-metadata',
-		property
-	);
+	const configPath = join('/etc/liferay/lxc/ext-init-metadata', property);
 	let extInitMetadata;
-	if (fs.existsSync(configPath)) {
-		extInitMetadata = fs.readFileSync(configPath, 'utf-8');
+	if (existsSync(configPath)) {
+		extInitMetadata = readFileSync(configPath, 'utf-8');
 	}
 	else {
 		extInitMetadata = defaultValue;
 	}
+	log.info('getExtInitMetadata: ' + property + ' = ' + extInitMetadata);
 	return extInitMetadata;
 }
 
 function getDXPMetadata(property) {
-	const configPath = path.join('/etc/liferay/lxc/dxp-metadata', property);
+	const configPath = join('/etc/liferay/lxc/dxp-metadata', property);
 	let dxpMetadata;
-	if (fs.existsSync(configPath)) {
-		dxpMetadata = fs.readFileSync(configPath, 'utf-8');
+	if (existsSync(configPath)) {
+		dxpMetadata = readFileSync(configPath, 'utf-8');
 	}
 	else {
 		dxpMetadata = config[property];
@@ -33,7 +31,7 @@ function getDXPMetadata(property) {
 	return dxpMetadata;
 }
 
-module.exports = {
+export default {
 	getDXPMetadata,
 	getExtInitMetadata,
 };

@@ -1,6 +1,6 @@
 'use strict';
 
-const {createLogger, format, transports} = require('winston');
+import {createLogger, format, transports} from 'winston';
 
 let logger;
 
@@ -11,4 +11,4 @@ let logger;
 	});
 })();
 
-module.exports = logger;
+export default logger;

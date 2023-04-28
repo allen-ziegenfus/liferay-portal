@@ -1,13 +1,10 @@
 'use strict';
 
-const config = require('./config.json');
-const express = require('express');
-const fetch = require('node-fetch');
-const {
-	corsWithReady,
-	liferayJWT,
-} = require('./util/liferay-oauth2-resource-server');
-const log = require('./util/log');
+import config from './config.json';
+import express from 'express';
+import fetch from 'node-fetch';
+import {corsWithReady, liferayJWT} from './util/liferay-oauth2-resource-server';
+import {info} from './util/log';
 
 const app = express();
 const readyPath = '/ready';
@@ -20,14 +17,8 @@ app.get(readyPath, (req, res) => {
 });
 
 app.get('/comic', async (req, res) => {
-
-	//if (!req.jwt) {
-	//res.status(401).send('No authorization header');
-	//return;
-	//}
-
-	log.info('User %s is authorized', req.jwt.username);
-	log.info('User scopes: ' + req.jwt.scope);
+	info('User %s is authorized', req.jwt.username);
+	info('User scopes: ' + req.jwt.scope);
 
 	const comicResponse = await fetch('https://xkcd.com/info.0.json');
 
@@ -38,7 +29,7 @@ app.get('/comic', async (req, res) => {
 
 	const comic = await comicResponse.json();
 
-	log.info('Comic fetched\n%s', JSON.stringify(comic, null, 2));
+	info('Comic fetched\n%s', JSON.stringify(comic, null, 2));
 
 	res.status(200).json(comic);
 });
@@ -58,7 +49,7 @@ app.get('/sample/workflow/action/1', async (req, res) => {
 });
 
 app.listen(serverPort, () => {
-	log.info('App listening on %s', serverPort);
+	info('App listening on %s', serverPort);
 });
 
-module.exports = app;
+export default app;
