@@ -3,6 +3,7 @@ assemble:
         - "*.js"
         - package.json
         - util/*.js
+        - config/*.json
 liferay-sample-node-oauth-application-user-agent:
     .serviceAddress: localhost:3001
     .serviceScheme: http

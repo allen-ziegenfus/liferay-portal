@@ -5,7 +5,8 @@
 		"jsonwebtoken": "^9.0.0",
 		"jwk-to-pem": "^2.0.5",
 		"node-fetch": "^2.6.9",
-		"winston": "^3.8.2"
+		"winston": "^3.8.2",
+		"config": "^3.3.9"
 	},
 	"license": "LGPL",
 	"name": "liferay-sample-etc-node",

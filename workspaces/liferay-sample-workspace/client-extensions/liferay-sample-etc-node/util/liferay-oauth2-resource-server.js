@@ -1,28 +1,30 @@
 'use strict';
 
-import config from '../config.js';
+import config from './configMap.js';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import {verify} from 'jsonwebtoken';
 import jwktopem from 'jwk-to-pem';
 import log from './log.js';
-import {getDXPMetadata, getExtInitMetadata} from './util.js';
 
-const domains = getDXPMetadata('com.liferay.lxc.dxp.domains');
+
+const domains = config['com.liferay.lxc.dxp.domains'];
 const externalReferenceCode =
 	config['liferay.oauth.application.external.reference.codes'].split(',')[0];
-const lxcDXPMainDomain = getDXPMetadata('com.liferay.lxc.dxp.mainDomain');
-const lxcDXPServerProtocol = getDXPMetadata(
+const lxcDXPMainDomain = config['com.liferay.lxc.dxp.mainDomain'];
+
+log.info(`Configuration: ${JSON.stringify(config, null, '\t')}`);
+const lxcDXPServerProtocol = config[
 	'com.liferay.lxc.dxp.server.protocol'
-);
+];
 const oauth2JWKSURI =
 	lxcDXPServerProtocol +
 	'://' +
 	lxcDXPMainDomain +
-	getExtInitMetadata(
-		externalReferenceCode + '.oauth2.jwks.uri',
+	config[
+		externalReferenceCode + '.oauth2.jwks.uri'] ||
 		'/o/oauth2/jwks'
-	);
+;
 
 const allowList = domains
 	.split(',')
