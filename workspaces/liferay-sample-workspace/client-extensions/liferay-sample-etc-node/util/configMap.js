@@ -2,8 +2,6 @@ import config from "config";
 import path from "path";
 import { readdir, readFile } from "fs/promises";
 
-// TODO don't read dont files
-
 const getConfigMapValues = async () => {
   const configMapValues = {};
 
