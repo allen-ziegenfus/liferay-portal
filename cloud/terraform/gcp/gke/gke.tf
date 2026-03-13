@@ -19,43 +19,57 @@ resource "google_project_iam_member" "node_permissions" {
 	role=each.key
 }
 resource "google_service_account_iam_member" "liferay_wi_binding" {
-	depends_on=[module.gke]
+	depends_on=[google_container_cluster.primary]
 	member="serviceAccount:${var.project_id}.svc.id.goog[${var.deployment_namespace}/liferay-default]"
 	role="roles/iam.workloadIdentityUser"
 	service_account_id=google_service_account.liferay_sa.name
 }
-module "gke" {
-	source="git::https://github.com/terraform-google-modules/terraform-google-kubernetes-engine.git//modules/private-cluster?ref=6084668832a89345091a0f8b725287f39446d64d"
-	depends_on=[google_compute_subnetwork.subnet]
+resource "google_container_cluster" "primary" {
+	addons_config {
+		gcs_fuse_csi_driver_config {
+			enabled=true
+		}
+		horizontal_pod_autoscaling {
+			disabled=false
+		}
+		http_load_balancing {
+			disabled=!var.http_load_balancing
+		}
+	}
 	deletion_protection=false
-	enable_private_endpoint=false
-	enable_private_nodes=true
-	gcs_fuse_csi_driver=true
-	horizontal_pod_autoscaling=true
-	http_load_balancing=var.http_load_balancing
-	identity_namespace="enabled"
+	depends_on=[google_compute_subnetwork.subnet]
 	initial_node_count=1
-	ip_range_pods="${var.deployment_name}-pods"
-	ip_range_services="${var.deployment_name}-services"
-	master_authorized_networks=[
-		{
+	ip_allocation_policy {
+		cluster_secondary_range_name="${var.deployment_name}-pods"
+		services_secondary_range_name="${var.deployment_name}-services"
+	}
+	location=var.regional_cluster ? var.region : "${var.region}-a"
+	master_authorized_networks_config {
+		cidr_blocks {
 			cidr_block=var.authorized_ipv4_cidr_block
 			display_name="Authorized-Access"
-		},
-	]
-	master_ipv4_cidr_block="172.16.0.0/28"
+		}
+	}
 	name="${var.deployment_name}-gke"
-	network=google_compute_network.vpc.name
-	project_id=var.project_id
-	region=var.region
-	regional=var.regional_cluster
+	network=google_compute_network.vpc.id
+	networking_mode="VPC_NATIVE"
+	private_cluster_config {
+		enable_private_endpoint=false
+		enable_private_nodes=true
+		master_ipv4_cidr_block="172.16.0.0/28"
+	}
+	project=var.project_id
+	release_channel {
+		channel="REGULAR"
+	}
 	remove_default_node_pool=true
-	subnetwork=google_compute_subnetwork.subnet.name
-	zones=var.regional_cluster ? [] : ["${var.region}-a"]
+	subnetwork=google_compute_subnetwork.subnet.id
+	workload_identity_config {
+		workload_pool="${var.project_id}.svc.id.goog"
+	}
 }
 resource "google_container_node_pool" "general_purpose" {
-	depends_on=[module.gke]
-	cluster=module.gke.name
+	cluster=google_container_cluster.primary.name
 	location=var.regional_cluster ? var.region : "${var.region}-a"
 	name="general-purpose"
 	project=var.project_id
