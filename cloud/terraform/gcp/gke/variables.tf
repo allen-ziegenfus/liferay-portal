@@ -1,12 +1,12 @@
-variable "authorized_ipv4_cidr_block" {
-	default="0.0.0.0/0"
-	type=string
-}
 variable "deployment_name" {
 	type=string
 }
 variable "deployment_namespace" {
 	default="liferay"
+	type=string
+}
+variable "gke_security_group" {
+	default=null
 	type=string
 }
 variable "http_load_balancing" {
@@ -16,6 +16,18 @@ variable "http_load_balancing" {
 variable "machine_type" {
 	default="e2-standard-4"
 	type=string
+}
+variable "master_authorized_networks" {
+	default=[
+		{
+			cidr_block="10.0.0.0/16"
+			display_name="VPC-Internal"
+		},
+	]
+	type=list(object({
+		cidr_block=string
+		display_name=string
+	}))
 }
 variable "max_node_count" {
 	default=3

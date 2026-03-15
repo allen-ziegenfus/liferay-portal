@@ -7,6 +7,8 @@ resource "google_project_service" "apis" {
 		"compute.googleapis.com",
 		"config.googleapis.com",
 		"container.googleapis.com",
+		"gkehub.googleapis.com",
+		"connectgateway.googleapis.com",
 		"iam.googleapis.com",
 		"iamcredentials.googleapis.com",
 		"secretmanager.googleapis.com",
