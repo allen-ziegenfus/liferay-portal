@@ -129,14 +129,6 @@ resource "google_gke_hub_membership" "membership" {
 	membership_id="${var.deployment_name}-membership"
 	project=var.project_id
 }
-resource "google_service_account" "liferay_sa" {
-	account_id="${var.deployment_name}-sa"
-	project=var.project_id
-}
-resource "google_service_account" "node_sa" {
-	account_id="${var.deployment_name}-node-sa"
-	project=var.project_id
-}
 resource "google_project_iam_member" "node_permissions" {
 	for_each=toset([
 		"roles/artifactregistry.reader",
@@ -149,9 +141,7 @@ resource "google_project_iam_member" "node_permissions" {
 	project=var.project_id
 	role=each.key
 }
-resource "google_service_account_iam_member" "liferay_wi_binding" {
-	depends_on=[google_container_cluster.primary]
-	member="serviceAccount:${var.project_id}.svc.id.goog[${var.deployment_namespace}/liferay-default]"
-	role="roles/iam.workloadIdentityUser"
-	service_account_id=google_service_account.liferay_sa.name
+resource "google_service_account" "node_sa" {
+	account_id="${var.deployment_name}-node-sa"
+	project=var.project_id
 }
