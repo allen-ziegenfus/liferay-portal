@@ -13,18 +13,20 @@ resource "google_container_cluster" "primary" {
 			disabled=false
 		}
 	}
-	dynamic "authenticator_groups_config" {
-		for_each=var.gke_security_group!=null ? [1] : []
-		content {
-			security_group=var.gke_security_group
-		}
-	}
 	binary_authorization {
 		evaluation_mode="PROJECT_SINGLETON_POLICY_ENFORCE"
 	}
+	datapath_provider="ADVANCED_DATAPATH"
 	deletion_protection=false
 	depends_on=[google_compute_subnetwork.subnet]
+	dynamic "authenticator_groups_config" {
+		content {
+			security_group=var.gke_security_group
+		}
+		for_each=var.gke_security_group!=null ? [1] : []
+	}
 	enable_intranode_visibility=true
+	enable_shielded_nodes=true
 	initial_node_count=1
 	ip_allocation_policy {
 		cluster_secondary_range_name="${var.deployment_name}-pods"
@@ -38,10 +40,10 @@ resource "google_container_cluster" "primary" {
 	}
 	master_authorized_networks_config {
 		dynamic "cidr_blocks" {
-			for_each=var.master_authorized_networks
 			content {
 				cidr_block=cidr_blocks.value
 			}
+			for_each=var.master_authorized_networks
 		}
 	}
 	name="${var.deployment_name}-gke"
@@ -60,6 +62,11 @@ resource "google_container_cluster" "primary" {
 			mode="GKE_METADATA"
 		}
 	}
+	node_pool_defaults {
+		node_config_defaults {
+			logging_variant="DEFAULT"
+		}
+	}
 	private_cluster_config {
 		enable_private_endpoint=true
 		enable_private_nodes=true
@@ -76,6 +83,10 @@ resource "google_container_cluster" "primary" {
 	resource_labels={
 		deployment_name=var.deployment_name
 		managed_by="terraform"
+	}
+	security_posture_config {
+		mode="BASIC"
+		vulnerability_mode="VULNERABILITY_BASIC"
 	}
 	subnetwork=google_compute_subnetwork.subnet.id
 	workload_identity_config {
