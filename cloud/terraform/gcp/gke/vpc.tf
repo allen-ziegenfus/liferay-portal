@@ -34,6 +34,12 @@ resource "google_compute_firewall" "allow_internal" {
 		protocol="udp"
 	}
 	allow {
+		ports=[
+			"0",
+			"3",
+			"8",
+			"11",
+		]
 		protocol="icmp"
 	}
 	name="${var.deployment_name}-allow-internal"
