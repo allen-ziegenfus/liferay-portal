@@ -100,6 +100,9 @@ resource "google_container_node_pool" "general_purpose" {
 		disk_type="pd-balanced"
 		image_type="COS_CONTAINERD"
 		machine_type=var.machine_type
+		metadata={
+			disable-legacy-endpoints="true"
+		}
 		oauth_scopes=["https://www.googleapis.com/auth/cloud-platform",]
 		preemptible=var.spot_instances
 		service_account=google_service_account.node_sa.email
