@@ -18,7 +18,7 @@ variable "master_authorized_networks" {
 	type=list(string)
 }
 variable "max_node_count" {
-	default=3
+	default=1
 	type=number
 }
 variable "min_node_count" {
@@ -36,7 +36,7 @@ variable "region" {
 	type=string
 }
 variable "regional_cluster" {
-	default=true
+	default=false
 	type=bool
 }
 variable "service_cidr" {
@@ -44,7 +44,7 @@ variable "service_cidr" {
 	type=string
 }
 variable "spot_instances" {
-	default=false
+	default=true
 	type=bool
 }
 variable "vpc_cidr" {
