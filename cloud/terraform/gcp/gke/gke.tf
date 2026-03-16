@@ -1,20 +1,18 @@
 resource "google_service_account" "liferay_sa" {
 	account_id="${var.deployment_name}-sa"
-	display_name="Liferay workload service account"
 	project=var.project_id
 }
 resource "google_service_account" "node_sa" {
 	account_id="${var.deployment_name}-node-sa"
-	display_name="gke node service account"
 	project=var.project_id
 }
 resource "google_project_iam_member" "node_permissions" {
 	for_each=toset([
-		"roles/logging.logWriter",
-		"roles/monitoring.metricWriter",
 		"roles/artifactregistry.reader",
 		"roles/gkehub.gatewayAdmin",
 		"roles/gkehub.viewer",
+		"roles/logging.logWriter",
+		"roles/monitoring.metricWriter",
 	])
 	member="serviceAccount:${google_service_account.node_sa.email}"
 	project=var.project_id
