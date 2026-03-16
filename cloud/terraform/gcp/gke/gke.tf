@@ -1,29 +1,3 @@
-resource "google_service_account" "liferay_sa" {
-	account_id="${var.deployment_name}-sa"
-	project=var.project_id
-}
-resource "google_service_account" "node_sa" {
-	account_id="${var.deployment_name}-node-sa"
-	project=var.project_id
-}
-resource "google_project_iam_member" "node_permissions" {
-	for_each=toset([
-		"roles/artifactregistry.reader",
-		"roles/gkehub.gatewayAdmin",
-		"roles/gkehub.viewer",
-		"roles/logging.logWriter",
-		"roles/monitoring.metricWriter",
-	])
-	member="serviceAccount:${google_service_account.node_sa.email}"
-	project=var.project_id
-	role=each.key
-}
-resource "google_service_account_iam_member" "liferay_wi_binding" {
-	depends_on=[google_container_cluster.primary]
-	member="serviceAccount:${var.project_id}.svc.id.goog[${var.deployment_namespace}/liferay-default]"
-	role="roles/iam.workloadIdentityUser"
-	service_account_id=google_service_account.liferay_sa.name
-}
 resource "google_container_cluster" "primary" {
 	addons_config {
 		gcs_fuse_csi_driver_config {
@@ -138,6 +112,11 @@ resource "google_container_node_pool" "general_purpose" {
 		}
 	}
 }
+resource "google_gke_hub_feature" "gateway" {
+	location="global"
+	name="connectgateway"
+	project=var.project_id
+}
 resource "google_gke_hub_membership" "membership" {
 	endpoint {
 		gke_cluster {
@@ -147,8 +126,29 @@ resource "google_gke_hub_membership" "membership" {
 	membership_id="${var.deployment_name}-membership"
 	project=var.project_id
 }
-resource "google_gke_hub_feature" "gateway" {
-	location="global"
-	name="connectgateway"
+resource "google_service_account" "liferay_sa" {
+	account_id="${var.deployment_name}-sa"
 	project=var.project_id
+}
+resource "google_service_account" "node_sa" {
+	account_id="${var.deployment_name}-node-sa"
+	project=var.project_id
+}
+resource "google_project_iam_member" "node_permissions" {
+	for_each=toset([
+		"roles/artifactregistry.reader",
+		"roles/gkehub.gatewayAdmin",
+		"roles/gkehub.viewer",
+		"roles/logging.logWriter",
+		"roles/monitoring.metricWriter",
+	])
+	member="serviceAccount:${google_service_account.node_sa.email}"
+	project=var.project_id
+	role=each.key
+}
+resource "google_service_account_iam_member" "liferay_wi_binding" {
+	depends_on=[google_container_cluster.primary]
+	member="serviceAccount:${var.project_id}.svc.id.goog[${var.deployment_namespace}/liferay-default]"
+	role="roles/iam.workloadIdentityUser"
+	service_account_id=google_service_account.liferay_sa.name
 }
