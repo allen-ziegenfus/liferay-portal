@@ -1,11 +1,11 @@
 resource "google_service_account" "liferay_sa" {
 	account_id="${var.deployment_name}-sa"
-	display_name="Liferay Workload Service Account"
+	display_name="Liferay workload service account"
 	project=var.project_id
 }
 resource "google_service_account" "node_sa" {
 	account_id="${var.deployment_name}-node-sa"
-	display_name="GKE Node Service Account"
+	display_name="gke node service account"
 	project=var.project_id
 }
 resource "google_project_iam_member" "node_permissions" {
@@ -35,7 +35,7 @@ resource "google_container_cluster" "primary" {
 			disabled=false
 		}
 		http_load_balancing {
-			disabled=!var.http_load_balancing
+			disabled=true
 		}
 		network_policy_config {
 			disabled=false
@@ -68,8 +68,7 @@ resource "google_container_cluster" "primary" {
 		dynamic "cidr_blocks" {
 			for_each=var.master_authorized_networks
 			content {
-				cidr_block=cidr_blocks.value.cidr_block
-				display_name=cidr_blocks.value.display_name
+				cidr_block=cidr_blocks.value
 			}
 		}
 	}

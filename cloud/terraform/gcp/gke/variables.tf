@@ -1,33 +1,29 @@
 variable "deployment_name" {
 	type=string
+	validation {
+		condition=can(regex("^[a-z0-9-]*$", var.deployment_name))
+		error_message="The deployment_name must contain only lowercase letters, numbers, and hyphens."
+	}
 }
 variable "deployment_namespace" {
-	default="liferay"
+	default="liferay-system"
 	type=string
+	validation {
+		condition=can(regex("^[a-z0-9-]*$", var.deployment_namespace))
+		error_message="The deployment_namespace must contain only lowercase letters, numbers, and hyphens."
+	}
 }
 variable "gke_security_group" {
 	default=null
 	type=string
-}
-variable "http_load_balancing" {
-	default=true
-	type=bool
 }
 variable "machine_type" {
 	default="e2-standard-4"
 	type=string
 }
 variable "master_authorized_networks" {
-	default=[
-		{
-			cidr_block="10.0.0.0/16"
-			display_name="VPC-Internal"
-		},
-	]
-	type=list(object({
-		cidr_block=string
-		display_name=string
-	}))
+	default=["10.0.0.0/16",]
+	type=list(string)
 }
 variable "max_node_count" {
 	default=3
