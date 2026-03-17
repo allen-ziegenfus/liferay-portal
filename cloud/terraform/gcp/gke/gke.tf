@@ -122,12 +122,8 @@ resource "google_container_node_pool" "general_purpose" {
 		}
 	}
 }
-resource "google_gke_hub_feature" "gateway" {
-	location="global"
-	name="connectgateway"
-	project=var.project_id
-}
 resource "google_gke_hub_membership" "membership" {
+	depends_on = [google_container_cluster.primary]
 	endpoint {
 		gke_cluster {
 			resource_link="//container.googleapis.com/${google_container_cluster.primary.id}"
