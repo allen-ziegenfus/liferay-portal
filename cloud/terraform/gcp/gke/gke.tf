@@ -10,7 +10,7 @@ resource "google_container_cluster" "primary" {
 			disabled=true
 		}
 		network_policy_config {
-			disabled=false
+			disabled=true
 		}
 	}
 	binary_authorization {
@@ -48,10 +48,6 @@ resource "google_container_cluster" "primary" {
 	}
 	name="${var.deployment_name}-gke"
 	network=google_compute_network.vpc.id
-	network_policy {
-		enabled=true
-		provider="CALICO"
-	}
 	networking_mode="VPC_NATIVE"
 	node_config {
 		shielded_instance_config {
