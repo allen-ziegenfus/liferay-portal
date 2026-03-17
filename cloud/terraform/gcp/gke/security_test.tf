@@ -31,3 +31,4 @@ variable "unused_test_variable" {
 	default="trigger-tflint"
 	type=string
 }
+# Trivial update to trigger Spacelift pipeline.
