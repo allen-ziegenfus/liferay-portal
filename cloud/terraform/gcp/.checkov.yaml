@@ -1,7 +1,0 @@
-compact: true
-directory:
-    - .
-quiet: true
-skip-check:
-    - CKV_GCP_12
-soft-fail: false
