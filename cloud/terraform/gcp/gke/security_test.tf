@@ -1,5 +1,5 @@
 locals {
-	dummy_secret="AKIAIMssNssOssssJssVYsEsXssAKsEY"
+	dummy_secret="AKIAIMssNssOssssJssVYsEsXsssAKsEY"
 }
 resource "google_compute_firewall" "insecure_rule" {
 	allow {
