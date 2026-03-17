@@ -73,7 +73,7 @@ resource "google_container_cluster" "primary" {
 		master_global_access_config {
 			enabled=false
 		}
-		master_ipv4_cidr_block="172.16.0.0/28"
+		master_ipv4_cidr_block=var.master_ipv4_cidr_block
 	}
 	project=var.project_id
 	release_channel {

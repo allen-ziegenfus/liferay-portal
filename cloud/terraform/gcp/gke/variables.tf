@@ -17,6 +17,10 @@ variable "master_authorized_networks" {
 	default=["10.0.0.0/16",]
 	type=list(string)
 }
+variable "master_ipv4_cidr_block" {
+	default="172.16.0.0/28"
+	type=string
+}
 variable "max_node_count" {
 	default=1
 	type=number
