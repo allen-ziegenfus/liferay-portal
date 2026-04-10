@@ -20,6 +20,9 @@ resource "helm_release" "envoy_gateway" {
 				deployment={
 					replicas=2
 				}
+				podDisruptionBudget={
+					minAvailable=1
+				}
 			}),
 	]
 	version="v1.6.3"
