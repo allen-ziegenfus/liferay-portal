@@ -16,8 +16,20 @@ resource "helm_release" "envoy_gateway" {
 							enableBackend=false
 						}
 					}
+					envoyProxy={
+						deployment={
+							pdb={
+								enabled=true
+								minAvailable=1
+							}
+						}
+					}
 				}
 				deployment={
+					pdb={
+						enabled=true
+						minAvailable=1
+					}
 					replicas=2
 				}
 				podDisruptionBudget={
