@@ -33,10 +33,6 @@ resource "helm_release" "envoy_gateway" {
 					}
 				}
 				deployment={
-					pdb={
-						enabled=true
-						minAvailable=1
-					}
 					replicas=2
 				}
 				podDisruptionBudget={
