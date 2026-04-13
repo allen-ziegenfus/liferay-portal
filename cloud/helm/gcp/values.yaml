@@ -78,12 +78,20 @@ liferay-default:
                     -   sh
                     -   -c
                     -   |
-                        echo "Waiting for Elasticsearch health to be green or yellow at ${ELASTICSEARCH_URL}/_cluster/health..."
-                        until wget -qO- "${ELASTICSEARCH_URL}/_cluster/health" | grep -qE '"status":"(green|yellow)"'; do
-                            echo "Waiting for ES (current status: Red or Unreachable)..."
-                            sleep 5
-                        done
-                        echo "Elasticsearch is READY!"
+                        function main {
+                            echo "Waiting for Elasticsearch health to be \"green\" or \"yellow\" at \"${ELASTICSEARCH_URL}/_cluster/health\"."
+
+                            until wget -qO- "${ELASTICSEARCH_URL}/_cluster/health" | grep -qE "\"status\":\"(green|yellow)\""
+                            do
+                                echo "Waiting for ES (current status: \"Red\" or \"Unreachable\")."
+
+                                sleep 5
+                            done
+
+                            echo "Elasticsearch is ready."
+                        }
+
+                        main
                 envFrom:
                     -   secretRef:
                             name: elasticsearch-connection-details
