@@ -43,7 +43,7 @@ metadata:
         gotemplating.fn.crossplane.io/composition-resource-name: liferay-db
     labels:
         {{- $labels | toYaml | nindent 8 }}
-    name: {{ $xr.metadata.name }}-db
+    name: {{ $prefixedName }}-db
 spec:
     forProvider:
         charset: UTF8
@@ -60,7 +60,7 @@ metadata:
         gotemplating.fn.crossplane.io/composition-resource-name: liferay-iam-user
     labels:
         {{- $labels | toYaml | nindent 8 }}
-    name: {{ $xr.metadata.name }}-db-user
+    name: {{ $prefixedName }}-db-user
 spec:
     forProvider:
         instanceSelector:
@@ -73,14 +73,14 @@ kind: Usage
 metadata:
     annotations:
         gotemplating.fn.crossplane.io/composition-resource-name: usage-instance-by-database
-    name: {{ $xr.metadata.name }}-instance-by-database
+    name: {{ $prefixedName }}-instance-by-database
     namespace: {{ $namespace }}
 spec:
     by:
         apiVersion: sql.gcp.m.upbound.io/v1beta1
         kind: Database
         resourceRef:
-            name: {{ $xr.metadata.name }}-db
+            name: {{ $prefixedName }}-db
     of:
         apiVersion: sql.gcp.m.upbound.io/v1beta1
         kind: DatabaseInstance
@@ -92,14 +92,14 @@ kind: Usage
 metadata:
     annotations:
         gotemplating.fn.crossplane.io/composition-resource-name: usage-instance-by-user
-    name: {{ $xr.metadata.name }}-instance-by-user
+    name: {{ $prefixedName }}-instance-by-user
     namespace: {{ $namespace }}
 spec:
     by:
         apiVersion: sql.gcp.m.upbound.io/v1beta1
         kind: User
         resourceRef:
-            name: {{ $xr.metadata.name }}-db-user
+            name: {{ $prefixedName }}-db-user
     of:
         apiVersion: sql.gcp.m.upbound.io/v1beta1
         kind: DatabaseInstance

@@ -5,7 +5,7 @@ metadata:
         gotemplating.fn.crossplane.io/composition-resource-name: liferay-ksa
     labels:
         {{- $labels | toYaml | nindent 8 }}
-    name: {{ $xr.metadata.name }}-ksa
+    name: {{ $prefixedName }}-ksa
 spec:
     forProvider:
         manifest:

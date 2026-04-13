@@ -29,6 +29,7 @@ metadata:
         gotemplating.fn.crossplane.io/composition-resource-name: liferay-gcs-iam
     labels:
         {{- $labels | toYaml | nindent 8 }}
+    name: {{ $prefixedName }}-gcs-iam
 spec:
     forProvider:
         bucketRef:

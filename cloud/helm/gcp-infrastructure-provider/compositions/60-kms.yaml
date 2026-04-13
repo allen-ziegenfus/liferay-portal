@@ -35,6 +35,7 @@ metadata:
         gotemplating.fn.crossplane.io/composition-resource-name: liferay-sql-kms-binding
     labels:
         {{- $labels | toYaml | nindent 8 }}
+    name: {{ $prefixedName }}-sql-kms-binding
 spec:
     forProvider:
         cryptoKeyIdRef:
@@ -50,6 +51,7 @@ metadata:
         gotemplating.fn.crossplane.io/composition-resource-name: liferay-storage-kms-binding
     labels:
         {{- $labels | toYaml | nindent 8 }}
+    name: {{ $prefixedName }}-storage-kms-binding
 spec:
     forProvider:
         cryptoKeyIdRef:
