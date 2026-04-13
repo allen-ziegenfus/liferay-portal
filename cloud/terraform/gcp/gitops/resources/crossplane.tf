@@ -15,7 +15,7 @@ resource "google_service_account" "cloudplatform_gsa" {
 	project=var.project_id
 }
 resource "google_service_account_iam_member" "cloudplatform_wi_binding" {
-	member="serviceAccount:${var.project_id}.svc.id.goog[${var.crossplane_namespace}/provider-gcp-cloudplatform]"
+	member="principalSet://iam.googleapis.com/projects/${data.google_project.project.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/attribute.cluster_name/${var.deployment_name}-gke/ns/${var.crossplane_namespace}/sa/provider-gcp-cloudplatform"
 	role="roles/iam.workloadIdentityUser"
 	service_account_id=google_service_account.cloudplatform_gsa.name
 }

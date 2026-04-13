@@ -70,7 +70,7 @@ locals {
 	git_repo_infrastructure_separate_from_liferay=local.infrastructure_git_repo_url != var.liferay_git_repo_url
 	infrastructure_appproject_name="liferay-infrastructure"
 	infrastructure_git_repo_url=coalesce(var.infrastructure_git_repo_config.url, var.liferay_git_repo_url)
-	ksa_principal_base="principal://iam.googleapis.com/projects/${data.google_project.project.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/subject/ns/${var.crossplane_namespace}/sa"
+	ksa_principal_base="principalSet://iam.googleapis.com/projects/${data.google_project.project.number}/locations/global/workloadIdentityPools/${var.project_id}.svc.id.goog/attribute.cluster_name/${var.deployment_name}-gke/ns/${var.crossplane_namespace}/sa"
 	liferay_appproject_name="liferay-application"
 	liferay_helm_chart_config=merge(
 		var.liferay_helm_chart_config,
