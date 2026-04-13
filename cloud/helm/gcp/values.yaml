@@ -73,6 +73,31 @@ liferay-default:
                     runAsNonRoot: true
                     seccompProfile:
                         type: RuntimeDefault
+        x-wait-for-elasticsearch:
+            -   command:
+                    -   sh
+                    -   -c
+                    -   |
+                        echo "Waiting for Elasticsearch health to be green or yellow at ${ELASTICSEARCH_URL}/_cluster/health..."
+                        until wget -qO- "${ELASTICSEARCH_URL}/_cluster/health" | grep -qE '"status":"(green|yellow)"'; do
+                            echo "Waiting for ES (current status: Red or Unreachable)..."
+                            sleep 5
+                        done
+                        echo "Elasticsearch is READY!"
+                envFrom:
+                    -   secretRef:
+                            name: elasticsearch-connection-details
+                image: busybox:1.36
+                name: wait-for-elasticsearch
+                securityContext:
+                    allowPrivilegeEscalation: false
+                    capabilities:
+                        drop:
+                            -   ALL
+                    runAsNonRoot: true
+                    runAsUser: 1000
+                    seccompProfile:
+                        type: RuntimeDefault
     customLabels:
         origin: liferay-gcp
     customVolumeMounts:
