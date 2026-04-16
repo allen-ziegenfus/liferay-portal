@@ -17,17 +17,10 @@ _config_data = {
     "region": cv.region
 }
 
-_ctx_res_map = cv.obs["resources"] if "resources" in cv.obs else {}
+_status = cv.obs?.resources?["liferay-db-grant-job"]?.resource?.status or {}
+_conditions = _status?.conditions or []
 
-_job_entry_ctx = _ctx_res_map["liferay-db-grant-job"] if "liferay-db-grant-job" in _ctx_res_map else {}
-
-_job_obj_ctx = _job_entry_ctx["resource"] if "resource" in _job_entry_ctx else {}
-
-_job_status_ctx = _job_obj_ctx["status"] if "status" in _job_obj_ctx else {}
-
-_conditions_ctx = _job_status_ctx["conditions"] if "conditions" in _job_status_ctx else []
-
-_is_ready_ctx = any c in _conditions_ctx {c.type == "Ready" and c.status == "True"}
+_is_ready_ctx = any c in _conditions {c.type == "Ready" and c.status == "True"}
 
 _init_items = [
     {
@@ -49,7 +42,7 @@ _init_items = [
             "forceDestroy": cv.forceDestroy
             "gsaEmail": cv.gsaEmail
             "gsaName": cv.gsaName
-            "hash": crypto.sha256("{}-{}".format(cv.databaseName, cv.env["projectId"] if "projectId" in cv.env else ""))[:7:]
+            "hash": crypto.sha256("{}-{}".format(cv.databaseName, cv.env?.projectId or ""))[:7:]
             "instanceConnectionName": cv.instanceConnectionName
             "isReady": False
             "isSearchReady": False
@@ -67,13 +60,13 @@ _init_items = [
             "searchNamespace": cv.searchNamespace
             "searchSecretName": cv.searchSecretName
             "storage": cv.storage_spec
-            "uidHash": crypto.sha256("{}-{}".format(cv.env["projectNumber"] if "projectNumber" in cv.env else "", cv.projectIdFull))[:6:]
+            "uidHash": crypto.sha256("{}-{}".format(cv.env?.projectNumber or "", cv.projectIdFull))[:6:]
         }
     },
     kubernetes.Object {
         metadata = {
             annotations = {"crossplane.io/composition-resource-name": "composition-context"}
-            name = "{}-composition-context".format(cv.metadata["name"] if "name" in cv.metadata else "")
+            name = "{}-composition-context".format(cv.metadata?.name or "")
         }
         spec = {
             forProvider = {

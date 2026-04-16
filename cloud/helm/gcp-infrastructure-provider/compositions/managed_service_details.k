@@ -3,15 +3,13 @@ import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 import k8s.api.core.v1 as k8s_core
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _is_ready = False
-    _items = []
+    _status = obs?.resources?["liferay-db-grant-job"]?.resource?.status or {}
 
-    if obs and "resources" in obs and "liferay-db-grant-job" in obs["resources"]:
-        _job = obs["resources"]["liferay-db-grant-job"]
-        _res = _job["resource"] if "resource" in _job else {}
-        _status = _res["status"] if "status" in _res else {}
-        _conditions = _status["conditions"] if "conditions" in _status else []
-        _is_ready = any c in _conditions {c.type == "Ready" and c.status == "True"}
+    _conditions = _status?.conditions or []
+
+    _is_ready = any c in _conditions {c.type == "Ready" and c.status == "True"}
+
+    _items = []
 
     if _is_ready:
         _secret_manifest = k8s_core.Secret {
