@@ -25,7 +25,6 @@ lint:
 
 # Run unit tests.
 test:
-	kcl run init_test.k
 	cd tests && kcl test ./...
 
 # Generate a preview of the combined output of all layers.

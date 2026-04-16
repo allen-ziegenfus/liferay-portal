@@ -1,7 +1,9 @@
 import .context_variables as cv
 import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as storage_bucket
+import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
 import k8s.api.core.v1 as k8s_core
+import k8s.api.rbac.v1 as k8s_rbac
 
 _backup_items: [any] = []
 
@@ -27,20 +29,18 @@ if cv.backup.get("enabled"):
         }
     }]
 
-    _backup_items += [{
-        "apiVersion": "storage.gcp.upbound.io/v1beta1"
-        "kind": "BucketIAMMember"
-        "metadata": {
-            "annotations": {"crossplane.io/composition-resource-name": "liferay-gcs-backup-iam"}
-            "labels": cv.labels
+    _backup_items += [storage_iam.BucketIAMMember {
+        metadata = {
+            annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-backup-iam"}
+            labels = cv.labels
         }
-        "spec": {
-            "forProvider": {
-                "bucketRef": {"name": "{}-backup".format(cv.baseName)}
-                "member": "serviceAccount:{}".format(cv.gsaEmail)
-                "role": "roles/storage.admin"
+        spec = {
+            forProvider = {
+                bucketRef = {"name": "{}-backup".format(cv.baseName)}
+                member = "serviceAccount:{}".format(cv.gsaEmail)
+                role = "roles/storage.admin"
             }
-            "managementPolicies": cv.managementPolicies
+            managementPolicies = cv.managementPolicies
         }
     }]
 
@@ -52,22 +52,20 @@ if cv.backup.get("enabled"):
         }
     }
 
-    _backup_rb = {
-        "apiVersion": "rbac.authorization.k8s.io/v1"
-        "kind": "RoleBinding"
-        "metadata": {
-            "name": "backup-create-role-binding"
-            "namespace": cv.namespace
+    _backup_rb = k8s_rbac.RoleBinding {
+        metadata = {
+            name = "backup-create-role-binding"
+            namespace = cv.namespace
         }
-        "roleRef": {
-            "apiGroup": "rbac.authorization.k8s.io"
-            "kind": "ClusterRole"
-            "name": "backup-creator"
+        roleRef = {
+            apiGroup = "rbac.authorization.k8s.io"
+            kind = "ClusterRole"
+            name = "backup-creator"
         }
-        "subjects": [{
-            "kind": "ServiceAccount"
-            "name": "backup-creator"
-            "namespace": cv.namespace
+        subjects = [{
+            kind = "ServiceAccount"
+            name = "backup-creator"
+            namespace = cv.namespace
         }]
     }
 

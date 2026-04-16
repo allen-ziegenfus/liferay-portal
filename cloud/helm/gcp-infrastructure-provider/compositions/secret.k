@@ -1,6 +1,6 @@
 import .context_variables as cv
 import crossplane_provider_upjet_gcp.v1beta1.secretmanager_gcp_upbound_io_v1beta1_secret as gcp_secret
-import crossplane_provider_upjet_gcp.v1beta1.secretmanager_gcp_upbound_io_v1beta1_secret_iam_member as gcp_secret_iam
+import crossplane_provider_upjet_gcp.v1beta1.secretmanager_gcp_upbound_io_v1beta1_secret_i_a_m_member as gcp_secret_iam
 
 _liferay_secret = gcp_secret.Secret {
     metadata = {
@@ -18,21 +18,19 @@ _liferay_secret = gcp_secret.Secret {
     }
 }
 
-_secret_iam = {
-    "apiVersion": "secretmanager.gcp.upbound.io/v1beta1"
-    "kind": "SecretIAMMember"
-    "metadata": {
-        "annotations": {"crossplane.io/composition-resource-name": "liferay-secret-iam"}
-        "labels": cv.labels
-        "name": "{}-secret-iam".format(cv.baseName)
+_secret_iam = gcp_secret_iam.SecretIAMMember {
+    metadata = {
+        annotations = {"crossplane.io/composition-resource-name": "liferay-secret-iam"}
+        labels = cv.labels
+        name = "{}-secret-iam".format(cv.baseName)
     }
-    "spec": {
-        "forProvider": {
-            "member": "serviceAccount:{}".format(cv.gsaEmail)
-            "role": "roles/secretmanager.secretAccessor"
-            "secretIdRef": {"name": "{}-secret".format(cv.baseName)}
+    spec = {
+        forProvider = {
+            member = "serviceAccount:{}".format(cv.gsaEmail)
+            role = "roles/secretmanager.secretAccessor"
+            secretIdRef = {"name": "{}-secret".format(cv.baseName)}
         }
-        "managementPolicies": cv.managementPolicies
+        managementPolicies = cv.managementPolicies
     }
 }
 
