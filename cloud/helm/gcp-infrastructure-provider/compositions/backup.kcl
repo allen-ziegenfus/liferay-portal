@@ -1,0 +1,91 @@
+import .logic as l
+import crossplane_provider_kubernetes.v1alpha1 as kubernetes
+import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as storage_bucket
+import k8s.api.core.v1 as k8s_core
+import k8s.api.rbac.v1 as k8s_rbac
+
+_items: [any] = []
+
+if l.backup.enabled:
+    _backup_vault_labels = {**l.labels, "is-backup-vault": "true"}
+
+    _items += [storage_bucket.Bucket {
+        metadata = {
+            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "{}-vault".format(l.baseName)}
+            labels = _backup_vault_labels
+            name = "{}-vault".format(l.baseName)
+        }
+        spec = {
+            forProvider = {
+                forceDestroy = l.forceDestroy
+                if l.cmkEnabled:
+                    encryption = [{
+                        defaultKmsKeyName = l.cmkKeyName
+                    }]
+                labels = _backup_vault_labels
+                lifecycleRule = [{
+                    action = [{"type": "Delete"}]
+                    condition = [{"age": l.backup.retentionDays + 2}]
+                }]
+                location = l.backup.get("region") or l.region
+                storageClass = l.backup.storageClass
+                uniformBucketLevelAccess = True
+            }
+            managementPolicies = l.managementPolicies
+        }
+    }]
+
+    # Typed K8s ServiceAccount
+    _backup_sa = k8s_core.ServiceAccount {
+        metadata = {
+            labels = l.labels
+            name = "backup-create-service-account"
+            namespace = l.namespace
+        }
+    }
+
+    # Typed K8s RoleBinding
+    _backup_rb = k8s_rbac.RoleBinding {
+        metadata = {
+            labels = l.labels
+            name = "backup-create-role-binding"
+            namespace = l.namespace
+        }
+        roleRef = {
+            apiGroup = "rbac.authorization.k8s.io"
+            kind = "ClusterRole"
+            name = "backup-create-cluster-role"
+        }
+        subjects = [{
+            kind = "ServiceAccount"
+            name = "backup-create-service-account"
+            namespace = l.namespace
+        }]
+    }
+
+    # Typed Crossplane Objects
+    _items += [kubernetes.Object {
+        metadata = {
+            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "backup-create-service-account"}
+            labels = l.labels
+            name = "backup-create-service-account"
+        }
+        spec = {
+            forProvider = {"manifest": _backup_sa}
+            managementPolicy = l.managementPolicy
+        }
+    }]
+
+    _items += [kubernetes.Object {
+        metadata = {
+            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "backup-create-role-binding"}
+            labels = l.labels
+            name = "backup-create-role-binding"
+        }
+        spec = {
+            forProvider = {"manifest": _backup_rb}
+            managementPolicy = l.managementPolicy
+        }
+    }]
+
+items = {"items": _items}

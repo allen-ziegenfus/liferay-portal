@@ -1,0 +1,95 @@
+import .logic as l
+import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_project_i_a_m_member as project_iam
+import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_service_account as sa
+import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_service_account_i_a_m_member as sa_iam
+import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_crypto_key as kms_key
+import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_crypto_key_i_a_m_member as kms_iam
+import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_key_ring as kms_keyring
+
+_items: [any] = [
+    sa.ServiceAccount {
+        metadata = {
+            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-gsa"}
+            labels = l.labels
+            name = l.gsaName
+        }
+        spec.forProvider = {
+            displayName = "Liferay {} Service Account".format(l.gsaName)
+        }
+    }
+    sa_iam.ServiceAccountIAMMember {
+        metadata = {
+            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-wi-binding"}
+            labels = l.labels
+        }
+        spec.forProvider = {
+            member = "serviceAccount:{}.svc.id.goog[{}/liferay-default]".format(l.projectId, l.namespace)
+            role = "roles/iam.workloadIdentityUser"
+            serviceAccountIdRef = {"name": l.gsaName}
+        }
+    }
+]
+
+# Correcting the forProvider structure for ProjectIAMMember
+_items += [project_iam.ProjectIAMMember {
+    metadata = {
+        annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-sql-{}-role".format(r.split('.')[-1])}
+        labels = l.labels
+    }
+    spec.forProvider = {
+        member = "serviceAccount:{}".format(l.gsaEmail)
+        project = l.projectId
+        role = r
+    }
+} for r in ["roles/cloudsql.instanceUser", "roles/cloudsql.client"]]
+
+if l.cmkEnabled:
+    _items += [
+        kms_keyring.KeyRing {
+            metadata = {
+                annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-keyring"}
+                labels = l.labels
+                name = "{}-keyring".format(l.baseName)
+            }
+            spec = {
+                forProvider = {"location": l.region}
+                managementPolicies = l.managementPolicies
+            }
+        }
+        kms_key.CryptoKey {
+            metadata = {
+                annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-cryptokey"}
+                labels = l.labels
+                name = "{}-key".format(l.baseName)
+            }
+            spec = {
+                forProvider = {
+                    keyRingSelector = {"matchControllerRef": True}
+                    purpose = "ENCRYPT_DECRYPT"
+                    rotationPeriod = "86400s"
+                }
+                managementPolicies = l.managementPolicies
+            }
+        }
+    ]
+
+    _kms_targets = [
+        {"name": "sql", "svc": "gcp-sa-cloud-sql"}
+        {"name": "storage", "svc": "gs-project-accounts"}
+    ]
+    _items += [kms_iam.CryptoKeyIAMMember {
+        metadata = {
+            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-{}-kms-binding".format(t.name)}
+            labels = l.labels
+        }
+        spec = {
+            forProvider = {
+                cryptoKeyIdRef = {"name": "{}-key".format(l.baseName)}
+                member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(l._environment_data.projectNumber, t.svc)
+                role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+            }
+            managementPolicies = l.managementPolicies
+        }
+    } for t in _kms_targets]
+
+items = {"items": _items}

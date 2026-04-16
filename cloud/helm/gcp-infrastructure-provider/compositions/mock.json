@@ -1,0 +1,50 @@
+{
+  "params": {
+    "oxr": {
+      "metadata": {
+        "name": "liferay-demo",
+        "namespace": "liferay-instance"
+      },
+      "spec": {
+        "projectId": "liferay-gcp-project",
+        "environmentId": "prod",
+        "region": "us-central1",
+        "database": {
+          "name": "liferay_db",
+          "rootPasswordSecretName": "sql-password",
+          "storageGB": 20
+        },
+        "storage": {
+          "enableVersioning": true
+        },
+        "cmk": {
+          "enabled": true
+        }
+      }
+    },
+    "ctx": {
+      "apiextensions.crossplane.io/environment": {
+        "projectId": "gcp-infra-project",
+        "projectNumber": "987654321",
+        "deploymentName": "liferay-cluster",
+        "vpcName": "liferay-vpc"
+      }
+    },
+    "obs": {
+      "resources": {
+        "liferay-db-grant-job": {
+          "resource": {
+            "status": {
+              "conditions": [
+                {
+                  "type": "Ready",
+                  "status": "True"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

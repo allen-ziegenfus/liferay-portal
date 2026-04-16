@@ -36,19 +36,55 @@ spec:
                             type: Reference
             step: environment-configs
         -   functionRef:
-                name: function-go-templating
+                name: function-kcl
             input:
-                apiVersion: gotemplating.fn.crossplane.io/v1beta1
-                inline:
-                    template: |
-                        {{- .Files.Get "compositions/00-globals.gotmpl" | nindent 24 }}
-                        {{- range $path, $_ := .Files.Glob "compositions/[1-9]*" }}
-                        ---
-                        {{ $.Files.Get $path | nindent 24 }}
-                        {{- end }}
-                kind: Input
-                source: Inline
-            step: go-templating
+                apiVersion: kcl.fn.crossplane.io/v1beta1
+                kind: KCLInput
+                source: |
+                    {{- .Files.Get "compositions/init.kcl" | nindent 20 }}
+            step: init-context
+        -   functionRef:
+                name: function-kcl
+            input:
+                apiVersion: kcl.fn.crossplane.io/v1beta1
+                kind: KCLInput
+                source: |
+                    {{- .Files.Get "compositions/security.kcl" | nindent 20 }}
+            step: security-layer
+        -   functionRef:
+                name: function-kcl
+            input:
+                apiVersion: kcl.fn.crossplane.io/v1beta1
+                kind: KCLInput
+                source: |
+                    {{- .Files.Get "compositions/sql.kcl" | nindent 20 }}
+                    ---
+                    {{- .Files.Get "compositions/storage.kcl" | nindent 20 }}
+                    ---
+                    {{- .Files.Get "compositions/overlay.kcl" | nindent 20 }}
+            step: stateful-layer
+        -   functionRef:
+                name: function-kcl
+            input:
+                apiVersion: kcl.fn.crossplane.io/v1beta1
+                kind: KCLInput
+                source: |
+                    {{- .Files.Get "compositions/k8s.kcl" | nindent 20 }}
+                    ---
+                    {{- .Files.Get "compositions/elasticsearch.kcl" | nindent 20 }}
+                    ---
+                    {{- .Files.Get "compositions/backup.kcl" | nindent 20 }}
+                    ---
+                    {{- .Files.Get "compositions/application.kcl" | nindent 20 }}
+            step: application-layer
+        -   functionRef:
+                name: function-kcl
+            input:
+                apiVersion: kcl.fn.crossplane.io/v1beta1
+                kind: KCLInput
+                source: |
+                    {{- .Files.Get "compositions/context.kcl" | nindent 20 }}
+            step: configmap-and-status-layer
         -   functionRef:
                 name: function-auto-ready
             step: auto-detect-ready-composed-resources

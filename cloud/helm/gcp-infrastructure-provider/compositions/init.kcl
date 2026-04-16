@@ -1,0 +1,44 @@
+import .logic as l
+import crypto
+
+# This layer only outputs the Context resource
+items = {"items": [{
+    "apiVersion": "apiextensions.crossplane.io/v1alpha1"
+    "kind": "Context"
+    "data": {
+        "backup": l.backup
+        "backupTargetLabels": l.backupTargetLabels
+        "baseName": l.baseName
+        "cmkEnabled": l.cmkEnabled
+        "cmkKeyName": l.cmkKeyName
+        "databaseIamUser": l.databaseIamUser
+        "databaseInstanceName": l.databaseInstanceName
+        "databaseName": l.databaseName
+        "databasePort": l.databasePort
+        "databaseSpec": l.databaseSpec
+        "elasticsearchHealth": ""
+        "environmentId": l.environmentId
+        "forceDestroy": l.forceDestroy
+        "gsaEmail": l.gsaEmail
+        "gsaName": l.gsaName
+        "hash": crypto.sha256("{}-{}".format(l.databaseName, l._environment_data.get("projectId") or ""))[:7:]
+        "instanceConnectionName": l.instanceConnectionName
+        "isReady": False
+        "isSearchReady": False
+        "jobName": l.jobName
+        "labels": l.labels
+        "managementPolicies": l.managementPolicies
+        "managementPoliciesNoUpdate": l.managementPoliciesNoUpdate
+        "managementPoliciesOnce": l.managementPoliciesOnce
+        "namespace": l.namespace
+        "overlay": l.overlay
+        "projectId": l.projectId
+        "projectIdFull": l.projectIdFull
+        "region": l.region
+        "searchName": l.searchName
+        "searchNamespace": l.searchNamespace
+        "searchSecretName": l.searchSecretName
+        "storage": l.storage_spec
+        "uidHash": crypto.sha256("{}-{}".format(l._environment_data.get("projectNumber") or "", l.projectIdFull))[:6:]
+    }
+}]}

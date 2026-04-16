@@ -1,0 +1,112 @@
+import .logic as l
+import crossplane_provider_upjet_gcp.v1beta1.sql_gcp_upbound_io_v1beta1_database as sql_db
+import crossplane_provider_upjet_gcp.v1beta1.sql_gcp_upbound_io_v1beta1_database_instance as sql_instance
+import crossplane_provider_upjet_gcp.v1beta1.sql_gcp_upbound_io_v1beta1_user as sql_user
+
+_sql_items: [any] = [
+    # Database Instance
+    sql_instance.DatabaseInstance {
+        metadata = {
+            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "database-primary"}
+            labels = l.labels
+            name = l.databaseInstanceName
+        }
+        spec = {
+            forProvider = {
+                databaseVersion = l.databaseSpec.get("databaseVersion") or "POSTGRES_18"
+                deletionProtection = l.databaseSpec.get("deletionProtection") or (not l.forceDestroy)
+                if l.cmkEnabled:
+                    encryptionKeyName = l.cmkKeyName
+                region = l.region
+                rootPasswordSecretRef = {
+                    key = "password"
+                    name = l.databaseSpec.get("rootPasswordSecretName") or "placeholder"
+                    namespace = l.namespace
+                }
+                settings = [{
+                    databaseFlags = [{"name": "cloudsql.iam_authentication", "value": "on"}]
+                    diskSize = l.databaseSpec.get("storageGB") or 10
+                    diskType = "PD_SSD"
+                    edition = "ENTERPRISE"
+                    insightsConfig = [{
+                        queryInsightsEnabled = l.databaseSpec.get("queryInsightsEnabled") or True
+                    }]
+                    ipConfiguration = [{
+                        ipv4Enabled = False
+                        privateNetwork = "projects/{}/global/networks/{}".format(l.projectId, l._environment_data.get("vpcName") or "")
+                        sslMode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+                    }]
+                    tier = l.databaseSpec.get("instanceType") or "db-custom-1-3840"
+                    userLabels = l.backupTargetLabels
+                }]
+            }
+            managementPolicies = l.managementPolicies
+        }
+    }
+    # Database
+    sql_db.Database {
+        metadata = {
+            annotations = {
+                "crossplane.io/external-name": l.databaseName
+                "gotemplating.fn.crossplane.io/composition-resource-name": "liferay-db"
+            }
+            labels = l.labels
+            name = "{}-db".format(l._metadata.get("name") or "")
+        }
+        spec = {
+            forProvider = {
+                charset = "UTF8"
+                collation = "en_US.UTF8"
+                instanceSelector = {"matchControllerRef": True}
+            }
+            managementPolicies = l.managementPolicies
+        }
+    }
+    # IAM User
+    sql_user.User {
+        metadata = {
+            annotations = {
+                "crossplane.io/external-name": l.databaseIamUser
+                "gotemplating.fn.crossplane.io/composition-resource-name": "liferay-iam-user"
+            }
+            labels = l.labels
+            name = "{}-db-user".format(l._metadata.get("name") or "")
+        }
+        spec = {
+            forProvider = {
+                instanceSelector = {"matchControllerRef": True}
+                type = "CLOUD_IAM_SERVICE_ACCOUNT"
+            }
+            managementPolicies = l.managementPolicies
+        }
+    }
+]
+
+# Protection Usage
+_sql_items += [{
+    "apiVersion": "protection.crossplane.io/v1beta1"
+    "kind": "Usage"
+    "metadata": {
+        "annotations": {
+            "gotemplating.fn.crossplane.io/composition-resource-name": "usage-instance-by-{}".format(t)
+        }
+        "name": "{}-instance-by-{}".format(l._metadata.get("name") or "", t)
+        "namespace": l.namespace
+    }
+    "spec": {
+        "by": {
+            "apiVersion": "sql.gcp.upbound.io/v1beta1"
+            "kind": "Database" if t == "db" else "User"
+            "resourceRef": {"name": "{}-{}".format(l._metadata.get("name") or "", t)}
+        }
+        "of": {
+            "apiVersion": "sql.gcp.upbound.io/v1beta1"
+            "kind": "DatabaseInstance"
+            "resourceRef": {"name": l.databaseInstanceName}
+        }
+    }
+} for t in ["db", "db-user"]]
+
+if option("combined", "false") != "true":
+    items = {"items": _sql_items}
+
