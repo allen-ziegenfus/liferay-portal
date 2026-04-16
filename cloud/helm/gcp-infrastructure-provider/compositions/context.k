@@ -1,4 +1,5 @@
 import .context_variables as cv
+import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 import yaml
 
 _config_data = {
@@ -22,16 +23,14 @@ _conditions_ctx = _job_status_ctx["conditions"] if "conditions" in _job_status_c
 _is_ready_ctx = any c in _conditions_ctx {c.type == "Ready" and c.status == "True"}
 
 _context_items: [any] = [
-    {
-        "apiVersion": "kubernetes.m.crossplane.io/v1alpha1"
-        "kind": "Object"
-        "metadata": {
-            "annotations": {"crossplane.io/composition-resource-name": "composition-context"}
-            "name": "{}-composition-context".format(cv.metadata["name"] if "name" in cv.metadata else "")
+    kubernetes.Object {
+        metadata = {
+            annotations = {"crossplane.io/composition-resource-name": "composition-context"}
+            name = "{}-composition-context".format(cv.metadata["name"] if "name" in cv.metadata else "")
         }
-        "spec": {
-            "forProvider": {
-                "manifest": {
+        spec = {
+            forProvider = {
+                manifest = {
                     "apiVersion": "v1"
                     "data": {
                         "variables": yaml.encode(_config_data)
@@ -43,7 +42,7 @@ _context_items: [any] = [
                     }
                 }
             }
-            "managementPolicies": cv.managementPolicies
+            managementPolicy = cv.managementPolicy
         }
     }
 ]
@@ -54,4 +53,3 @@ _context_status = {
 
 if option("combined", "false") != "true":
     items = {"items": _context_items, **_context_status}
-
