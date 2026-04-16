@@ -3,7 +3,7 @@
 MOCK ?= mock.json
 
 # Layer list sorted by ASCII (Uppercase before lowercase)
-LAYERS = backup context elasticsearch init k8s managed_service_details overlay security sql storage
+LAYERS = backup elasticsearch init k8s managed_service_details overlay security sql storage
 
 .PHONY: all fmt lint test run-all pkg clean $(LAYERS)
 
