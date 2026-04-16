@@ -37,7 +37,19 @@ _liferay_job = k8s_batch.Job {
             spec = {
                 containers = [{
                     args = [
-                        "set -e\nuntil pg_isready -h 127.0.0.1 -p {} -U postgres; do sleep 2; done\npsql -h 127.0.0.1 -v \"ON_ERROR_STOP=1\" -U postgres -d {} <<EOF\nGRANT ALL PRIVILEGES ON DATABASE \"{}\" TO \"{}\";\nGRANT ALL ON ALL TABLES IN SCHEMA public TO \"{}\";\nGRANT cloudsqlsuperuser TO \"{}\";\nEOF\n".format(cv.databasePort, cv.databaseName, cv.databaseName, cv.databaseIamUser, cv.databaseIamUser, cv.databaseIamUser)
+                        """\
+set -e
+until pg_isready -h 127.0.0.1 -p {port} -U postgres; do sleep 2; done
+psql -h 127.0.0.1 -v "ON_ERROR_STOP=1" -U postgres -d {db} <<EOF
+GRANT ALL PRIVILEGES ON DATABASE "{db}" TO "{user}";
+GRANT ALL ON ALL TABLES IN SCHEMA public TO "{user}";
+GRANT cloudsqlsuperuser TO "{user}";
+EOF
+""".format(
+                            port = cv.databasePort,
+                            db = cv.databaseName,
+                            user = cv.databaseIamUser,
+                        )
                     ]
                     command = ["/bin/sh", "-c"]
                     env = [{
@@ -62,11 +74,11 @@ _liferay_job = k8s_batch.Job {
                 }]
                 initContainers = [{
                     args = [
-                        "--auto-iam-authn"
-                        "--port={}".format(cv.databasePort)
-                        "--private-ip"
-                        "--structured-logs"
-                        cv.instanceConnectionName
+                        "--auto-iam-authn",
+                        "--port={}".format(cv.databasePort),
+                        "--private-ip",
+                        "--structured-logs",
+                        cv.instanceConnectionName,
                     ]
                     image = "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1"
                     name = "cloud-sql-proxy"
@@ -110,4 +122,3 @@ _k8s_items += [kubernetes.Object {
 
 if not option("combined") or option("combined") == "false":
     items = {"items": _k8s_items}
-

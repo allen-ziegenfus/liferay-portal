@@ -1,6 +1,6 @@
 import compositions.managed_service_details as msd
 
-_vars = {
+_vars: {str:any} = {
     "baseName": "test-base"
     "databaseIamUser": "test-user@test.iam"
     "databasePort": "5432"

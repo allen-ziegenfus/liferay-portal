@@ -1,6 +1,6 @@
 import compositions.elasticsearch as es
 
-_vars = {
+_vars: {str:any} = {
     "labels": {"app": "liferay"}
     "managementPolicy": "Default"
     "metadata": {"name": "test-liferay"}

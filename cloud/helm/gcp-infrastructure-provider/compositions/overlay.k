@@ -1,27 +1,41 @@
 import .context_variables as cv
+import crossplane_provider_kubernetes.v1alpha1 as kubernetes
+import k8s.api.core.v1 as k8s_core
 
-_overlay_items = [{
-    "apiVersion": "kubernetes.crossplane.io/v1alpha1"
-    "kind": "Object"
-    "metadata": {
-        "annotations": {"crossplane.io/composition-resource-name": "liferay-overlay-cm"}
-        "labels": cv.labels
-        "name": "{}-overlay".format(cv.metadata["name"] if "name" in cv.metadata else "")
-    }
-    "spec": {
-        "forProvider": {
-            "manifest": {
-                "apiVersion": "v1"
-                "kind": "ConfigMap"
-                "metadata": {
-                    "name": "{}-overlay".format(cv.metadata["name"] if "name" in cv.metadata else "")
-                    "namespace": cv.namespace
-                }
-                "data": cv.overlay.get("data") or {}
+get_items = lambda obs: any, vars: {str:any} -> [any] {
+    _overlay = vars?.overlay or {}
+    _items = []
+
+    if _overlay?.enabled:
+        _items += [kubernetes.Object {
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-overlay-cm"}
+                labels = vars["labels"]
+                name = "{}-overlay".format(vars["metadata"]?.name or "")
             }
-        }
-        "managementPolicy": cv.managementPolicy
-    }
-}] if cv.overlay.get("enabled") else []
+            spec = {
+                forProvider = {
+                    manifest = k8s_core.ConfigMap {
+                        data = _overlay?.data or {}
+                        metadata = {
+                            name = "{}-overlay".format(vars["metadata"]?.name or "")
+                            namespace = vars["namespace"]
+                        }
+                    }
+                }
+                managementPolicy = vars["managementPolicy"]
+            }
+        }]
 
-items = {"items": _overlay_items}
+    _items
+}
+
+_vars = {
+    "labels": cv.labels
+    "managementPolicy": cv.managementPolicy
+    "metadata": cv.metadata
+    "namespace": cv.namespace
+    "overlay": cv.overlay
+}
+
+items = {"items": get_items(cv.obs, _vars)}

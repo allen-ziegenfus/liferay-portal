@@ -35,7 +35,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 }
                 managementPolicy = "Observe"
             }
-        },
+        }
         kubernetes.Object {
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "elasticsearch-secret-observer"}
