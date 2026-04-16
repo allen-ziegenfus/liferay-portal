@@ -26,7 +26,7 @@ _context_items: [any] = [
         "apiVersion": "kubernetes.m.crossplane.io/v1alpha1"
         "kind": "Object"
         "metadata": {
-            "annotations": {"gotemplating.fn.crossplane.io/composition-resource-name": "composition-context"}
+            "annotations": {"crossplane.io/composition-resource-name": "composition-context"}
             "name": "{}-composition-context".format(cv.metadata["name"] if "name" in cv.metadata else "")
         }
         "spec": {

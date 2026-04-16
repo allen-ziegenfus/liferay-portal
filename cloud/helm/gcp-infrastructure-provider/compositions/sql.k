@@ -6,7 +6,7 @@ import crossplane_provider_upjet_gcp.v1beta1.sql_gcp_upbound_io_v1beta1_user as 
 _sql_items: [any] = [
     sql_instance.DatabaseInstance {
         metadata = {
-            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "database-primary"}
+            annotations = {"crossplane.io/composition-resource-name": "database-primary"}
             labels = cv.labels
             name = cv.databaseInstanceName
         }
@@ -46,7 +46,7 @@ _sql_items: [any] = [
         metadata = {
             annotations = {
                 "crossplane.io/external-name": cv.databaseName
-                "gotemplating.fn.crossplane.io/composition-resource-name": "liferay-db"
+                "crossplane.io/composition-resource-name": "liferay-db"
             }
             labels = cv.labels
             name = "{}-db".format(cv.metadata["name"] if "name" in cv.metadata else "")
@@ -64,7 +64,7 @@ _sql_items: [any] = [
         metadata = {
             annotations = {
                 "crossplane.io/external-name": cv.databaseIamUser
-                "gotemplating.fn.crossplane.io/composition-resource-name": "liferay-iam-user"
+                "crossplane.io/composition-resource-name": "liferay-iam-user"
             }
             labels = cv.labels
             name = "{}-db-user".format(cv.metadata["name"] if "name" in cv.metadata else "")
@@ -84,7 +84,7 @@ _sql_items += [{
     "kind": "Usage"
     "metadata": {
         "annotations": {
-            "gotemplating.fn.crossplane.io/composition-resource-name": "usage-instance-by-{}".format(t)
+            "crossplane.io/composition-resource-name": "usage-instance-by-{}".format(t)
         }
         "name": "{}-instance-by-{}".format(cv.metadata["name"] if "name" in cv.metadata else "", t)
         "namespace": cv.namespace

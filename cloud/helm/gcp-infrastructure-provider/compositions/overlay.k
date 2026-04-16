@@ -1,10 +1,10 @@
 import .context_variables as cv
 
-_items = [{
+_overlay_items = [{
     "apiVersion": "kubernetes.crossplane.io/v1alpha1"
     "kind": "Object"
     "metadata": {
-        "annotations": {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-overlay-cm"}
+        "annotations": {"crossplane.io/composition-resource-name": "liferay-overlay-cm"}
         "labels": cv.labels
         "name": "{}-overlay".format(cv.metadata["name"] if "name" in cv.metadata else "")
     }
@@ -24,4 +24,4 @@ _items = [{
     }
 }] if cv.overlay.get("enabled") else []
 
-items = {"items": _items}
+items = {"items": _overlay_items}

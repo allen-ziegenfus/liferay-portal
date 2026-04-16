@@ -15,7 +15,7 @@ _liferay_sa = k8s_core.ServiceAccount {
 _k8s_items: [any] = [
     kubernetes.Object {
         metadata = {
-            annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-ksa"}
+            annotations = {"crossplane.io/composition-resource-name": "liferay-ksa"}
             labels = cv.labels
             name = "{}-ksa".format(cv.metadata["name"] if "name" in cv.metadata else "")
         }
@@ -98,7 +98,7 @@ _liferay_job = k8s_batch.Job {
 
 _k8s_items += [kubernetes.Object {
     metadata = {
-        annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-db-grant-job"}
+        annotations = {"crossplane.io/composition-resource-name": "liferay-db-grant-job"}
         labels = cv.labels
         name = cv.jobName
     }

@@ -1,4 +1,4 @@
-import .context_variables as l
+import .context_variables as cv
 import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as gcp
 
 schema LiferayBucket:
@@ -8,51 +8,50 @@ schema LiferayBucket:
     _bucket = gcp.Bucket {
         metadata = {
             annotations = {
-                "gotemplating.fn.crossplane.io/composition-resource-name": "liferay-gcs-{}".format(suffix)
+                "crossplane.io/composition-resource-name": "liferay-gcs-{}".format(suffix)
             }
-            labels = l.backupTargetLabels if is_backup else l.labels
-            name = "{}-{}".format(l.baseName, suffix)
+            labels = cv.backupTargetLabels if is_backup else cv.labels
+            name = "{}-{}".format(cv.baseName, suffix)
         }
         spec = {
             forProvider = {
-                forceDestroy = l.forceDestroy
-                location = l.storage_spec.get("region") or l.region
+                forceDestroy = cv.forceDestroy
+                location = cv.storage_spec["region"] if "region" in cv.storage_spec else cv.region
                 storageClass = "STANDARD"
-                versioning = [{enabled = l.storage_spec.get("enableVersioning") or True}]
+                versioning = [{enabled = cv.storage_spec["enableVersioning"] if "enableVersioning" in cv.storage_spec else True}]
             }
-            if l.cmkEnabled:
+            if cv.cmkEnabled:
                 forProvider.encryption = [{
-                    defaultKmsKeyName = l.cmkKeyName
+                    defaultKmsKeyName = cv.cmkKeyName
                 }]
-            managementPolicies = l.managementPolicies
+            managementPolicies = cv.managementPolicies
         }
     }
 
     resource: gcp.Bucket = _bucket
 
-_items: [any] = [
+_storage_items: [any] = [
     LiferayBucket {
         is_backup = True
         suffix = "dl"
     }.resource
 ]
 
-# Add Bucket IAM Member
-_items += [{
+_storage_items += [{
     "apiVersion": "storage.gcp.m.upbound.io/v1beta1"
     "kind": "BucketIAMMember"
     "metadata": {
-        "annotations": {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-gcs-iam"}
-        "labels": l.labels
+        "annotations": {"crossplane.io/composition-resource-name": "liferay-gcs-iam"}
+        "labels": cv.labels
     }
     "spec": {
         "forProvider": {
-            "bucketRef": {"name": "{}-dl".format(l.baseName)}
-            "member": "serviceAccount:{}".format(l.gsaEmail)
+            "bucketRef": {"name": "{}-dl".format(cv.baseName)}
+            "member": "serviceAccount:{}".format(cv.gsaEmail)
             "role": "roles/storage.admin"
         }
-        "managementPolicies": l.managementPolicies
+        "managementPolicies": cv.managementPolicies
     }
 }]
 
-items = {"items": _items}
+items = {"items": _storage_items}

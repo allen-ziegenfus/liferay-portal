@@ -3,7 +3,7 @@
 MOCK ?= mock.json
 
 # Layer list sorted by ASCII (Uppercase before lowercase)
-LAYERS = application backup context elasticsearch init k8s overlay security sql storage
+LAYERS = backup context elasticsearch init k8s managed_service_details overlay security sql storage
 
 .PHONY: all fmt lint test run-all pkg clean $(LAYERS)
 
@@ -13,6 +13,7 @@ all: fmt lint test
 # Format all KCL files.
 fmt:
 	kcl fmt *.k
+	kcl fmt tests/*.k
 
 # Lint each file individually.
 lint:
@@ -25,6 +26,7 @@ lint:
 # Run unit tests.
 test:
 	kcl run init_test.k
+	cd tests && kcl test ./...
 
 # Generate a preview of the combined output of all layers.
 run-all:

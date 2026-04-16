@@ -3,7 +3,7 @@ import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 
 _elasticsearch_items: [any] = [kubernetes.Object {
     metadata = {
-        annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "elasticsearch-observer"}
+        annotations = {"crossplane.io/composition-resource-name": "elasticsearch-observer"}
         name = "{}-observer".format(cv.searchName)
     }
     spec = {
@@ -23,7 +23,7 @@ _elasticsearch_items: [any] = [kubernetes.Object {
 
 _elasticsearch_items += [kubernetes.Object {
     metadata = {
-        annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "elasticsearch-secret-observer"}
+        annotations = {"crossplane.io/composition-resource-name": "elasticsearch-secret-observer"}
         name = "{}-observer".format(cv.searchSecretName)
     }
     spec = {
@@ -63,7 +63,7 @@ if _is_search_ready and _es_password:
         metadata = {
             annotations = {
                 "crossplane.io/external-name": "elasticsearch-connection-details"
-                "gotemplating.fn.crossplane.io/composition-resource-name": "elasticsearch-connection-details-secret"
+                "crossplane.io/composition-resource-name": "elasticsearch-connection-details-secret"
             }
             labels = cv.labels
             name = "{}-elasticsearch-connection-details-secret".format(cv.metadata["name"] if "name" in cv.metadata else "")
