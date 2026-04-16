@@ -1,15 +1,14 @@
-import .logic as l
+import .context_variables as cv
 import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 import k8s.api.batch.v1 as k8s_batch
 import k8s.api.core.v1 as k8s_core
 
-# Typed Liferay KSA
 _liferay_sa = k8s_core.ServiceAccount {
     metadata = {
-        annotations = {"iam.gke.io/gcp-service-account": l.gsaEmail}
-        labels = l.labels
+        annotations = {"iam.gke.io/gcp-service-account": cv.gsaEmail}
+        labels = cv.labels
         name = "liferay-default"
-        namespace = l.namespace
+        namespace = cv.namespace
     }
 }
 
@@ -17,35 +16,34 @@ _k8s_items: [any] = [
     kubernetes.Object {
         metadata = {
             annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-ksa"}
-            labels = l.labels
-            name = "{}-ksa".format(l._metadata.get("name") or "")
+            labels = cv.labels
+            name = "{}-ksa".format(cv.metadata["name"] if "name" in cv.metadata else "")
         }
         spec = {
             forProvider = {"manifest": _liferay_sa}
-            managementPolicy = l.managementPolicy
+            managementPolicy = cv.managementPolicy
         }
     }
 ]
 
-# Typed Liferay DB Grant Job
 _liferay_job = k8s_batch.Job {
     metadata = {
-        labels = l.labels
-        name = l.jobName
-        namespace = l.namespace
+        labels = cv.labels
+        name = cv.jobName
+        namespace = cv.namespace
     }
     spec = {
         template = {
             spec = {
                 containers = [{
                     args = [
-                        "set -e\nuntil pg_isready -h 127.0.0.1 -p {} -U postgres; do sleep 2; done\npsql -h 127.0.0.1 -v \"ON_ERROR_STOP=1\" -U postgres -d {} <<EOF\nGRANT ALL PRIVILEGES ON DATABASE \"{}\" TO \"{}\";\nGRANT ALL ON ALL TABLES IN SCHEMA public TO \"{}\";\nGRANT cloudsqlsuperuser TO \"{}\";\nEOF\n".format(l.databasePort, l.databaseName, l.databaseName, l.databaseIamUser, l.databaseIamUser, l.databaseIamUser)
+                        "set -e\nuntil pg_isready -h 127.0.0.1 -p {} -U postgres; do sleep 2; done\npsql -h 127.0.0.1 -v \"ON_ERROR_STOP=1\" -U postgres -d {} <<EOF\nGRANT ALL PRIVILEGES ON DATABASE \"{}\" TO \"{}\";\nGRANT ALL ON ALL TABLES IN SCHEMA public TO \"{}\";\nGRANT cloudsqlsuperuser TO \"{}\";\nEOF\n".format(cv.databasePort, cv.databaseName, cv.databaseName, cv.databaseIamUser, cv.databaseIamUser, cv.databaseIamUser)
                     ]
                     command = ["/bin/sh", "-c"]
                     env = [{
                         name = "PGPASSWORD"
                         valueFrom = {
-                            "secretKeyRef": {"key": "password", "name": l.databaseSpec.get("rootPasswordSecretName") or ""}
+                            "secretKeyRef": {"key": "password", "name": cv.databaseSpec["rootPasswordSecretName"] if "rootPasswordSecretName" in cv.databaseSpec else ""}
                         }
                     }]
                     image = "postgres:18-alpine"
@@ -65,10 +63,10 @@ _liferay_job = k8s_batch.Job {
                 initContainers = [{
                     args = [
                         "--auto-iam-authn"
-                        "--port={}".format(l.databasePort)
+                        "--port={}".format(cv.databasePort)
                         "--private-ip"
                         "--structured-logs"
-                        l.instanceConnectionName
+                        cv.instanceConnectionName
                     ]
                     image = "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1"
                     name = "cloud-sql-proxy"
@@ -101,12 +99,12 @@ _liferay_job = k8s_batch.Job {
 _k8s_items += [kubernetes.Object {
     metadata = {
         annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-db-grant-job"}
-        labels = l.labels
-        name = l.jobName
+        labels = cv.labels
+        name = cv.jobName
     }
     spec = {
         forProvider = {"manifest": _liferay_job}
-        managementPolicy = l.managementPolicy
+        managementPolicy = cv.managementPolicy
     }
 }]
 

@@ -1,9 +1,8 @@
-import .logic as l
+import .context_variables as cv
 import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 import k8s.api.core.v1 as k8s_core
 
-# Logic for readiness with extremely safe lookups
-_app_res_map = l.obs.get("resources") or {}
+_app_res_map = cv.obs.get("resources") or {}
 _job_entry = _app_res_map.get("liferay-db-grant-job") or {}
 _job_obj = _job_entry.get("resource") if _job_entry else {}
 _job_status = _job_obj.get("status") if _job_obj else {}
@@ -13,39 +12,37 @@ _is_ready = any c in _conditions {c.type == "Ready" and c.status == "True"}
 _items: [any] = []
 
 if _is_ready:
-    # Typed K8s Secret
     _secret_manifest = k8s_core.Secret {
         metadata = {
-            labels = l.labels
+            labels = cv.labels
             name = "managed-service-details"
-            namespace = l.namespace
+            namespace = cv.namespace
         }
         stringData = {
             "DATABASE_ENDPOINT": "localhost"
-            "DATABASE_INSTANCE_NAME": l.instanceConnectionName
-            "DATABASE_PORT": str(l.databasePort)
-            "DATABASE_USERNAME": str(l.databaseIamUser)
-            "LIFERAY_GCS_BUCKET_NAME": "{}-dl".format(l.baseName)
-            "LIFERAY_OVERLAY_BUCKET_NAME": "{}-overlay".format(l.baseName)
+            "DATABASE_INSTANCE_NAME": cv.instanceConnectionName
+            "DATABASE_PORT": str(cv.databasePort)
+            "DATABASE_USERNAME": str(cv.databaseIamUser)
+            "LIFERAY_GCS_BUCKET_NAME": "{}-dl".format(cv.baseName)
+            "LIFERAY_OVERLAY_BUCKET_NAME": "{}-overlay".format(cv.baseName)
         }
         type = "Opaque"
     }
 
-    # Reference the typed manifest inside the Crossplane Object
     _items += [kubernetes.Object {
         metadata = {
             annotations = {
-                "crossplane.io/external-name": "{}-managed-service-details-secret".format(l.baseName)
+                "crossplane.io/external-name": "{}-managed-service-details-secret".format(cv.baseName)
                 "gotemplating.fn.crossplane.io/composition-resource-name": "managed-service-details-secret"
             }
-            labels = l.labels
-            name = "{}-managed-service-details-secret".format(l.baseName)
+            labels = cv.labels
+            name = "{}-managed-service-details-secret".format(cv.baseName)
         }
         spec = {
             forProvider = {
                 manifest = _secret_manifest
             }
-            managementPolicy = l.managementPolicy
+            managementPolicy = cv.managementPolicy
         }
     }]
 

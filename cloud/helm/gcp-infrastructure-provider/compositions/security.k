@@ -1,4 +1,4 @@
-import .logic as l
+import .context_variables as cv
 import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_project_i_a_m_member as project_iam
 import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_service_account as sa
 import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_service_account_i_a_m_member as sa_iam
@@ -10,57 +10,56 @@ _items: [any] = [
     sa.ServiceAccount {
         metadata = {
             annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-gsa"}
-            labels = l.labels
-            name = l.gsaName
+            labels = cv.labels
+            name = cv.gsaName
         }
         spec.forProvider = {
-            displayName = "Liferay {} Service Account".format(l.gsaName)
+            displayName = "Liferay {} Service Account".format(cv.gsaName)
         }
     }
     sa_iam.ServiceAccountIAMMember {
         metadata = {
             annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-wi-binding"}
-            labels = l.labels
+            labels = cv.labels
         }
         spec.forProvider = {
-            member = "serviceAccount:{}.svc.id.goog[{}/liferay-default]".format(l.projectId, l.namespace)
+            member = "serviceAccount:{}.svc.id.goog[{}/liferay-default]".format(cv.env["projectId"] if "projectId" in cv.env else "", cv.namespace)
             role = "roles/iam.workloadIdentityUser"
-            serviceAccountIdRef = {"name": l.gsaName}
+            serviceAccountIdRef = {"name": cv.gsaName}
         }
     }
 ]
 
-# Correcting the forProvider structure for ProjectIAMMember
 _items += [project_iam.ProjectIAMMember {
     metadata = {
         annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-sql-{}-role".format(r.split('.')[-1])}
-        labels = l.labels
+        labels = cv.labels
     }
     spec.forProvider = {
-        member = "serviceAccount:{}".format(l.gsaEmail)
-        project = l.projectId
+        member = "serviceAccount:{}".format(cv.gsaEmail)
+        project = cv.env["projectId"] if "projectId" in cv.env else ""
         role = r
     }
 } for r in ["roles/cloudsql.instanceUser", "roles/cloudsql.client"]]
 
-if l.cmkEnabled:
+if cv.cmkEnabled:
     _items += [
         kms_keyring.KeyRing {
             metadata = {
                 annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-keyring"}
-                labels = l.labels
-                name = "{}-keyring".format(l.baseName)
+                labels = cv.labels
+                name = "{}-keyring".format(cv.baseName)
             }
             spec = {
-                forProvider = {"location": l.region}
-                managementPolicies = l.managementPolicies
+                forProvider = {"location": cv.region}
+                managementPolicies = cv.managementPolicies
             }
         }
         kms_key.CryptoKey {
             metadata = {
                 annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-cryptokey"}
-                labels = l.labels
-                name = "{}-key".format(l.baseName)
+                labels = cv.labels
+                name = "{}-key".format(cv.baseName)
             }
             spec = {
                 forProvider = {
@@ -68,7 +67,7 @@ if l.cmkEnabled:
                     purpose = "ENCRYPT_DECRYPT"
                     rotationPeriod = "86400s"
                 }
-                managementPolicies = l.managementPolicies
+                managementPolicies = cv.managementPolicies
             }
         }
     ]
@@ -80,15 +79,15 @@ if l.cmkEnabled:
     _items += [kms_iam.CryptoKeyIAMMember {
         metadata = {
             annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "liferay-{}-kms-binding".format(t.name)}
-            labels = l.labels
+            labels = cv.labels
         }
         spec = {
             forProvider = {
-                cryptoKeyIdRef = {"name": "{}-key".format(l.baseName)}
-                member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(l._environment_data.projectNumber, t.svc)
+                cryptoKeyIdRef = {"name": "{}-key".format(cv.baseName)}
+                member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(cv.env["projectNumber"] if "projectNumber" in cv.env else "", t.svc)
                 role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
             }
-            managementPolicies = l.managementPolicies
+            managementPolicies = cv.managementPolicies
         }
     } for t in _kms_targets]
 

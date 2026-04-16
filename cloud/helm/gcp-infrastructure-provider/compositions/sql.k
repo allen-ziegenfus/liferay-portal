@@ -1,57 +1,55 @@
-import .logic as l
+import .context_variables as cv
 import crossplane_provider_upjet_gcp.v1beta1.sql_gcp_upbound_io_v1beta1_database as sql_db
 import crossplane_provider_upjet_gcp.v1beta1.sql_gcp_upbound_io_v1beta1_database_instance as sql_instance
 import crossplane_provider_upjet_gcp.v1beta1.sql_gcp_upbound_io_v1beta1_user as sql_user
 
 _sql_items: [any] = [
-    # Database Instance
     sql_instance.DatabaseInstance {
         metadata = {
             annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "database-primary"}
-            labels = l.labels
-            name = l.databaseInstanceName
+            labels = cv.labels
+            name = cv.databaseInstanceName
         }
         spec = {
             forProvider = {
-                databaseVersion = l.databaseSpec.get("databaseVersion") or "POSTGRES_18"
-                deletionProtection = l.databaseSpec.get("deletionProtection") or (not l.forceDestroy)
-                if l.cmkEnabled:
-                    encryptionKeyName = l.cmkKeyName
-                region = l.region
+                databaseVersion = cv.databaseSpec["databaseVersion"] if "databaseVersion" in cv.databaseSpec else "POSTGRES_15"
+                deletionProtection = cv.databaseSpec["deletionProtection"] if "deletionProtection" in cv.databaseSpec else (not cv.forceDestroy)
+                if cv.cmkEnabled:
+                    encryptionKeyName = cv.cmkKeyName
+                region = cv.region
                 rootPasswordSecretRef = {
                     key = "password"
-                    name = l.databaseSpec.get("rootPasswordSecretName") or "placeholder"
-                    namespace = l.namespace
+                    name = cv.databaseSpec["rootPasswordSecretName"] if "rootPasswordSecretName" in cv.databaseSpec else "placeholder"
+                    namespace = cv.namespace
                 }
                 settings = [{
                     databaseFlags = [{"name": "cloudsql.iam_authentication", "value": "on"}]
-                    diskSize = l.databaseSpec.get("storageGB") or 10
+                    diskSize = cv.databaseSpec["storageGB"] if "storageGB" in cv.databaseSpec else 10
                     diskType = "PD_SSD"
                     edition = "ENTERPRISE"
                     insightsConfig = [{
-                        queryInsightsEnabled = l.databaseSpec.get("queryInsightsEnabled") or True
+                        queryInsightsEnabled = cv.databaseSpec["queryInsightsEnabled"] if "queryInsightsEnabled" in cv.databaseSpec else True
                     }]
                     ipConfiguration = [{
                         ipv4Enabled = False
-                        privateNetwork = "projects/{}/global/networks/{}".format(l.projectId, l._environment_data.get("vpcName") or "")
+                        privateNetwork = "projects/{}/global/networks/{}".format(cv.projectId, cv.env["vpcName"] if "vpcName" in cv.env else "")
                         sslMode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
                     }]
-                    tier = l.databaseSpec.get("instanceType") or "db-custom-1-3840"
-                    userLabels = l.backupTargetLabels
+                    tier = cv.databaseSpec["instanceType"] if "instanceType" in cv.databaseSpec else "db-custom-1-3840"
+                    userLabels = cv.backupTargetLabels
                 }]
             }
-            managementPolicies = l.managementPolicies
+            managementPolicies = cv.managementPolicies
         }
     }
-    # Database
     sql_db.Database {
         metadata = {
             annotations = {
-                "crossplane.io/external-name": l.databaseName
+                "crossplane.io/external-name": cv.databaseName
                 "gotemplating.fn.crossplane.io/composition-resource-name": "liferay-db"
             }
-            labels = l.labels
-            name = "{}-db".format(l._metadata.get("name") or "")
+            labels = cv.labels
+            name = "{}-db".format(cv.metadata["name"] if "name" in cv.metadata else "")
         }
         spec = {
             forProvider = {
@@ -59,30 +57,28 @@ _sql_items: [any] = [
                 collation = "en_US.UTF8"
                 instanceSelector = {"matchControllerRef": True}
             }
-            managementPolicies = l.managementPolicies
+            managementPolicies = cv.managementPolicies
         }
     }
-    # IAM User
     sql_user.User {
         metadata = {
             annotations = {
-                "crossplane.io/external-name": l.databaseIamUser
+                "crossplane.io/external-name": cv.databaseIamUser
                 "gotemplating.fn.crossplane.io/composition-resource-name": "liferay-iam-user"
             }
-            labels = l.labels
-            name = "{}-db-user".format(l._metadata.get("name") or "")
+            labels = cv.labels
+            name = "{}-db-user".format(cv.metadata["name"] if "name" in cv.metadata else "")
         }
         spec = {
             forProvider = {
                 instanceSelector = {"matchControllerRef": True}
                 type = "CLOUD_IAM_SERVICE_ACCOUNT"
             }
-            managementPolicies = l.managementPolicies
+            managementPolicies = cv.managementPolicies
         }
     }
 ]
 
-# Protection Usage
 _sql_items += [{
     "apiVersion": "protection.crossplane.io/v1beta1"
     "kind": "Usage"
@@ -90,19 +86,19 @@ _sql_items += [{
         "annotations": {
             "gotemplating.fn.crossplane.io/composition-resource-name": "usage-instance-by-{}".format(t)
         }
-        "name": "{}-instance-by-{}".format(l._metadata.get("name") or "", t)
-        "namespace": l.namespace
+        "name": "{}-instance-by-{}".format(cv.metadata["name"] if "name" in cv.metadata else "", t)
+        "namespace": cv.namespace
     }
     "spec": {
         "by": {
             "apiVersion": "sql.gcp.upbound.io/v1beta1"
             "kind": "Database" if t == "db" else "User"
-            "resourceRef": {"name": "{}-{}".format(l._metadata.get("name") or "", t)}
+            "resourceRef": {"name": "{}-{}".format(cv.metadata["name"] if "name" in cv.metadata else "", t)}
         }
         "of": {
             "apiVersion": "sql.gcp.upbound.io/v1beta1"
             "kind": "DatabaseInstance"
-            "resourceRef": {"name": l.databaseInstanceName}
+            "resourceRef": {"name": cv.databaseInstanceName}
         }
     }
 } for t in ["db", "db-user"]]

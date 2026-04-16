@@ -1,11 +1,10 @@
-import .logic as l
+import .context_variables as cv
 import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 
-# Elasticsearch Observer
 _elasticsearch_items: [any] = [kubernetes.Object {
     metadata = {
         annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "elasticsearch-observer"}
-        name = "{}-observer".format(l.searchName)
+        name = "{}-observer".format(cv.searchName)
     }
     spec = {
         forProvider = {
@@ -13,8 +12,8 @@ _elasticsearch_items: [any] = [kubernetes.Object {
                 "apiVersion": "elasticsearch.k8s.elastic.co/v1"
                 "kind": "Elasticsearch"
                 "metadata": {
-                    "name": l.searchName
-                    "namespace": l.searchNamespace
+                    "name": cv.searchName
+                    "namespace": cv.searchNamespace
                 }
             }
         }
@@ -22,11 +21,10 @@ _elasticsearch_items: [any] = [kubernetes.Object {
     }
 }]
 
-# Elasticsearch Secret Observer
 _elasticsearch_items += [kubernetes.Object {
     metadata = {
         annotations = {"gotemplating.fn.crossplane.io/composition-resource-name": "elasticsearch-secret-observer"}
-        name = "{}-observer".format(l.searchSecretName)
+        name = "{}-observer".format(cv.searchSecretName)
     }
     spec = {
         forProvider = {
@@ -34,8 +32,8 @@ _elasticsearch_items += [kubernetes.Object {
                 "apiVersion": "v1"
                 "kind": "Secret"
                 "metadata": {
-                    "name": l.searchSecretName
-                    "namespace": l.searchNamespace
+                    "name": cv.searchSecretName
+                    "namespace": cv.searchNamespace
                 }
             }
         }
@@ -43,23 +41,22 @@ _elasticsearch_items += [kubernetes.Object {
     }
 }]
 
-# Observation Logic with extremely safe lookups
-_obs_res = l.obs.get("resources") or {}
+_obs_res = cv.obs["resources"] if "resources" in cv.obs else {}
 
-_es_obs_entry = _obs_res.get("elasticsearch-observer") or {}
-_es_obj = _es_obs_entry.get("resource") if _es_obs_entry else {}
-_es_status_raw = _es_obj.get("status") if _es_obj else {}
-_es_at_provider = _es_status_raw.get("atProvider") if _es_status_raw else {}
-_es_manifest_status = _es_at_provider.get("manifest", {}).get("status") if _es_at_provider else {}
-_es_health = _es_manifest_status.get("health") if _es_manifest_status else ""
+_es_obs_entry = _obs_res["elasticsearch-observer"] if "elasticsearch-observer" in _obs_res else {}
+_es_obj = _es_obs_entry["resource"] if "resource" in _es_obs_entry else {}
+_es_status_raw = _es_obj["status"] if "status" in _es_obj else {}
+_es_at_provider = _es_status_raw["atProvider"] if "atProvider" in _es_status_raw else {}
+_es_manifest_status = _es_at_provider["manifest"]["status"] if "manifest" in _es_at_provider and "status" in _es_at_provider["manifest"] else {}
+_es_health = _es_manifest_status["health"] if "health" in _es_manifest_status else ""
 _is_search_ready = _es_health in ["green", "yellow"]
 
-_sec_obs_entry = _obs_res.get("elasticsearch-secret-observer") or {}
-_sec_obj = _sec_obs_entry.get("resource") if _sec_obs_entry else {}
-_sec_status_raw = _sec_obj.get("status") if _sec_obj else {}
-_sec_at_provider = _sec_status_raw.get("atProvider") if _sec_status_raw else {}
-_sec_manifest_data = _sec_at_provider.get("manifest", {}).get("data") if _sec_at_provider else {}
-_es_password = _sec_manifest_data.get("elastic") if _sec_manifest_data else ""
+_sec_obs_entry = _obs_res["elasticsearch-secret-observer"] if "elasticsearch-secret-observer" in _obs_res else {}
+_sec_obj = _sec_obs_entry["resource"] if "resource" in _sec_obs_entry else {}
+_sec_status_raw = _sec_obj["status"] if "status" in _sec_obj else {}
+_sec_at_provider = _sec_status_raw["atProvider"] if "atProvider" in _sec_status_raw else {}
+_sec_manifest_data = _sec_at_provider["manifest"]["data"] if "manifest" in _sec_at_provider and "data" in _sec_at_provider["manifest"] else {}
+_es_password = _sec_manifest_data["elastic"] if "elastic" in _sec_manifest_data else ""
 
 if _is_search_ready and _es_password:
     _elasticsearch_items += [kubernetes.Object {
@@ -68,8 +65,8 @@ if _is_search_ready and _es_password:
                 "crossplane.io/external-name": "elasticsearch-connection-details"
                 "gotemplating.fn.crossplane.io/composition-resource-name": "elasticsearch-connection-details-secret"
             }
-            labels = l.labels
-            name = "{}-elasticsearch-connection-details-secret".format(l._metadata.get("name") or "")
+            labels = cv.labels
+            name = "{}-elasticsearch-connection-details-secret".format(cv.metadata["name"] if "name" in cv.metadata else "")
         }
         spec = {
             forProvider = {
@@ -78,18 +75,18 @@ if _is_search_ready and _es_password:
                     "data": {"ELASTICSEARCH_PASSWORD": _es_password}
                     "kind": "Secret"
                     "metadata": {
-                        "labels": l.labels
+                        "labels": cv.labels
                         "name": "elasticsearch-connection-details"
-                        "namespace": l.namespace
+                        "namespace": cv.namespace
                     }
                     "stringData": {
-                        "ELASTICSEARCH_URL": "http://{}-es-http.{}.svc:9200".format(l.searchName, l.searchNamespace)
+                        "ELASTICSEARCH_URL": "http://{}-es-http.{}.svc:9200".format(cv.searchName, cv.searchNamespace)
                         "ELASTICSEARCH_USERNAME": "elastic"
                     }
                     "type": "Opaque"
                 }
             }
-            managementPolicy = l.managementPolicy
+            managementPolicy = cv.managementPolicy
         }
     }]
 

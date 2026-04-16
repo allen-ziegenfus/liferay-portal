@@ -1,4 +1,4 @@
-import .logic as l
+import .context_variables as l
 import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as gcp
 
 schema LiferayBucket:
