@@ -2,9 +2,6 @@ import compositions.context_variables as cv
 import crypto
 
 test_base_name_truncation = lambda {
-    # Re-testing the logic from cv.baseName (which uses crypto and projectId/environmentId)
-    # Since we can't easily mock the 'option' inside a module for a unit test of the module itself,
-    # we test the same deterministic algorithm.
     _get_base_name = lambda project_id: str, env_id: str, project_num: str -> str {
         _project_id_full = "{}-{}".format(project_id, env_id)
         _uid_hash = crypto.sha256("{}-{}".format(project_num, _project_id_full))[:6:]
@@ -25,7 +22,7 @@ test_hash_determinism = lambda {
     _res1 = _get_base_name("liferay", "dev", "111")
     _res2 = _get_base_name("liferay", "dev", "111")
     _res3 = _get_base_name("liferay", "prod", "111")
-
+    
     assert _res1 == _res2, "Hash must be deterministic"
     assert _res1 != _res3, "Hash must be different for different environments"
 }

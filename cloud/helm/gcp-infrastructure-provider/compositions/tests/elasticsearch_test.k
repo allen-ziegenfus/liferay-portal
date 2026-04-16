@@ -1,23 +1,38 @@
 import compositions.elasticsearch as es
 
-_vars: {str:any} = {
-    "labels": {"app": "liferay"}
-    "managementPolicy": "Default"
-    "metadata": {"name": "test-liferay"}
-    "namespace": "test-ns"
-    "searchName": "test-es"
-    "searchNamespace": "test-es-ns"
-    "searchSecretName": "test-es-secret"
-}
-
 test_secret_created_when_green_and_password_present = lambda {
+    _vars: {str:any} = {
+        "labels": {"app": "liferay"}
+        "managementPolicy": "Default"
+        "metadata": {"name": "test-liferay"}
+        "namespace": "test-ns"
+        "searchName": "test-es"
+        "searchNamespace": "test-es-ns"
+        "searchSecretName": "test-es-secret"
+    }
     _obs = {
         "resources": {
             "elasticsearch-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"status": {"health": "green"}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "status": {"health": "green"}
+                            }
+                        }
+                    }
+                }
             }
             "elasticsearch-secret-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"data": {"elastic": "dGVzdC1wYXNzd29yZA=="}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "data": {"elastic": "dGVzdC1wYXNzd29yZA=="}
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -27,13 +42,38 @@ test_secret_created_when_green_and_password_present = lambda {
 }
 
 test_secret_created_when_yellow_and_password_present = lambda {
+    _vars: {str:any} = {
+        "labels": {"app": "liferay"}
+        "managementPolicy": "Default"
+        "metadata": {"name": "test-liferay"}
+        "namespace": "test-ns"
+        "searchName": "test-es"
+        "searchNamespace": "test-es-ns"
+        "searchSecretName": "test-es-secret"
+    }
     _obs = {
         "resources": {
             "elasticsearch-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"status": {"health": "yellow"}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "status": {"health": "yellow"}
+                            }
+                        }
+                    }
+                }
             }
             "elasticsearch-secret-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"data": {"elastic": "dGVzdC1wYXNzd29yZA=="}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "data": {"elastic": "dGVzdC1wYXNzd29yZA=="}
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -42,13 +82,38 @@ test_secret_created_when_yellow_and_password_present = lambda {
 }
 
 test_secret_not_created_when_red = lambda {
+    _vars: {str:any} = {
+        "labels": {"app": "liferay"}
+        "managementPolicy": "Default"
+        "metadata": {"name": "test-liferay"}
+        "namespace": "test-ns"
+        "searchName": "test-es"
+        "searchNamespace": "test-es-ns"
+        "searchSecretName": "test-es-secret"
+    }
     _obs = {
         "resources": {
             "elasticsearch-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"status": {"health": "red"}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "status": {"health": "red"}
+                            }
+                        }
+                    }
+                }
             }
             "elasticsearch-secret-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"data": {"elastic": "dGVzdC1wYXNzd29yZA=="}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "data": {"elastic": "dGVzdC1wYXNzd29yZA=="}
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -57,13 +122,38 @@ test_secret_not_created_when_red = lambda {
 }
 
 test_secret_not_created_when_password_missing = lambda {
+    _vars: {str:any} = {
+        "labels": {"app": "liferay"}
+        "managementPolicy": "Default"
+        "metadata": {"name": "test-liferay"}
+        "namespace": "test-ns"
+        "searchName": "test-es"
+        "searchNamespace": "test-es-ns"
+        "searchSecretName": "test-es-secret"
+    }
     _obs = {
         "resources": {
             "elasticsearch-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"status": {"health": "green"}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "status": {"health": "green"}
+                            }
+                        }
+                    }
+                }
             }
             "elasticsearch-secret-observer": {
-                "resource": {"status": {"atProvider": {"manifest": {"data": {}}}}}
+                "resource": {
+                    "status": {
+                        "atProvider": {
+                            "manifest": {
+                                "data": {}
+                            }
+                        }
+                    }
+                }
             }
         }
     }

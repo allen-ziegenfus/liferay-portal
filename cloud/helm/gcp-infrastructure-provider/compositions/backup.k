@@ -1,97 +1,107 @@
 import .context_variables as cv
 import crossplane_provider_kubernetes.v1alpha1 as kubernetes
 import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as storage_bucket
-import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
 import k8s.api.core.v1 as k8s_core
 import k8s.api.rbac.v1 as k8s_rbac
 
-_backup_items: [any] = []
+get_items = lambda obs: any, vars: {str:any} -> [any] {
+    _backup = vars.get("backup") or {}
+    _backup_items: [any] = []
 
-if cv.backup.get("enabled"):
-    _backup_items += [storage_bucket.Bucket {
-        metadata = {
-            annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-backup"}
-            labels = cv.backupTargetLabels
-            name = "{}-backup".format(cv.baseName)
-        }
-        spec = {
-            forProvider = {
-                forceDestroy = cv.forceDestroy
-                location = cv.backup.get("region") or cv.region
-                storageClass = "NEARLINE"
-                versioning = [{enabled = True}]
+    if _backup.get("enabled"):
+        _backup_vault_labels = (vars.get("labels") or {}) | {"is-backup-vault": "true"}
+
+        _backup_items += [storage_bucket.Bucket {
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "{}-vault".format(vars.get("baseName") or "")}
+                labels = _backup_vault_labels
+                name = "{}-vault".format(vars.get("baseName") or "")
             }
-            if cv.cmkEnabled:
-                forProvider.encryption = [{
-                    defaultKmsKeyName = cv.cmkKeyName
-                }]
-            managementPolicies = cv.managementPolicies
-        }
-    }]
-
-    _backup_items += [storage_iam.BucketIAMMember {
-        metadata = {
-            annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-backup-iam"}
-            labels = cv.labels
-        }
-        spec = {
-            forProvider = {
-                bucketRef = {"name": "{}-backup".format(cv.baseName)}
-                member = "serviceAccount:{}".format(cv.gsaEmail)
-                role = "roles/storage.admin"
+            spec = {
+                forProvider = {
+                    forceDestroy = vars.get("forceDestroy") or False
+                    labels = _backup_vault_labels
+                    lifecycleRule = [{
+                        action = [{type = "Delete"}]
+                        condition = [{age = (_backup.get("retentionDays") or 30) + 2}]
+                    }]
+                    location = _backup.get("region") or vars.get("region") or ""
+                    storageClass = _backup.get("storageClass") or "NEARLINE"
+                    uniformBucketLevelAccess = True
+                }
+                if vars.get("cmkEnabled"):
+                    forProvider.encryption = [{
+                        defaultKmsKeyName = vars.get("cmkKeyName") or ""
+                    }]
+                managementPolicies = vars.get("managementPolicies") or ["*"]
             }
-            managementPolicies = cv.managementPolicies
-        }
-    }]
-
-    _backup_sa = k8s_core.ServiceAccount {
-        metadata = {
-            labels = cv.labels
-            name = "backup-creator"
-            namespace = cv.namespace
-        }
-    }
-
-    _backup_rb = k8s_rbac.RoleBinding {
-        metadata = {
-            name = "backup-create-role-binding"
-            namespace = cv.namespace
-        }
-        roleRef = {
-            apiGroup = "rbac.authorization.k8s.io"
-            kind = "ClusterRole"
-            name = "backup-creator"
-        }
-        subjects = [{
-            kind = "ServiceAccount"
-            name = "backup-creator"
-            namespace = cv.namespace
         }]
-    }
 
-    _backup_items += [
-        kubernetes.Object {
+        _backup_sa = k8s_core.ServiceAccount {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "backup-creator-sa"}
-                labels = cv.labels
-                name = "backup-creator-sa"
-            }
-            spec = {
-                forProvider = {"manifest": _backup_sa}
-                managementPolicy = cv.managementPolicy
+                labels = vars.get("labels") or {}
+                name = "backup-create-service-account"
+                namespace = vars.get("namespace") or ""
             }
         }
-        kubernetes.Object {
+
+        _backup_rb = k8s_rbac.RoleBinding {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "backup-create-role-binding"}
-                labels = cv.labels
+                labels = vars.get("labels") or {}
                 name = "backup-create-role-binding"
+                namespace = vars.get("namespace") or ""
             }
-            spec = {
-                forProvider = {"manifest": _backup_rb}
-                managementPolicy = cv.managementPolicy
+            roleRef = {
+                apiGroup = "rbac.authorization.k8s.io"
+                kind = "ClusterRole"
+                name = "backup-create-cluster-role"
             }
+            subjects = [{
+                kind = "ServiceAccount"
+                name = "backup-create-service-account"
+                namespace = vars.get("namespace") or ""
+            }]
         }
-    ]
 
-items = {"items": _backup_items}
+        _backup_items += [
+            kubernetes.Object {
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "backup-create-service-account"}
+                    labels = vars.get("labels") or {}
+                    name = "backup-create-service-account"
+                }
+                spec = {
+                    forProvider = {"manifest": _backup_sa}
+                    managementPolicy = vars.get("managementPolicy") or "Default"
+                }
+            }
+            kubernetes.Object {
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "backup-create-role-binding"}
+                    labels = vars.get("labels") or {}
+                    name = "backup-create-role-binding"
+                }
+                spec = {
+                    forProvider = {"manifest": _backup_rb}
+                    managementPolicy = vars.get("managementPolicy") or "Default"
+                }
+            }
+        ]
+
+    _backup_items
+}
+
+_vars = {
+    "backup": cv.backup
+    "baseName": cv.baseName
+    "cmkEnabled": cv.cmkEnabled
+    "cmkKeyName": cv.cmkKeyName
+    "forceDestroy": cv.forceDestroy
+    "labels": cv.labels
+    "managementPolicies": cv.managementPolicies
+    "managementPolicy": cv.managementPolicy
+    "namespace": cv.namespace
+    "region": cv.region
+}
+
+items = {"items": get_items(cv.obs, _vars)}

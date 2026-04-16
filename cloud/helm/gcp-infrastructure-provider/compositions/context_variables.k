@@ -1,11 +1,11 @@
 import crypto
 
-_params = option("params") or {}
-ctx = _params["ctx"] if "ctx" in _params else {}
-obs = _params["obs"] if "obs" in _params else {
+params = option("params") or {}
+ctx = params["ctx"] if "ctx" in params else {}
+obs = params["obs"] if "obs" in params else {
     "resources": {}
 }
-oxr = _params["oxr"] if "oxr" in _params else {}
+oxr = params["oxr"] if "oxr" in params else {}
 
 env = ctx["apiextensions.crossplane.io/environment"] if "apiextensions.crossplane.io/environment" in ctx else {}
 metadata = oxr["metadata"] if "metadata" in oxr else {}
@@ -23,24 +23,26 @@ projectId = spec["projectId"] if "projectId" in spec else ""
 region = databaseSpec["region"] if "region" in databaseSpec else (spec["region"] if "region" in spec else "")
 storage_spec = spec["storage"] if "storage" in spec else {}
 
-baseName = "{}-{}".format("{}-{}".format(projectId, environmentId)[:18:], crypto.sha256("{}-{}-{}".format(env["projectNumber"] if "projectNumber" in env else "", projectId, environmentId))[:6:])
-cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env["projectId"] if "projectId" in env else "", region, baseName, baseName)
-databaseIamUser = "{}@{}.iam".format("{}-sa".format(metadata["name"] if "name" in metadata else ""), env["projectId"] if "projectId" in env else "")
-databaseInstanceName = "{}-db-instance".format(metadata["name"] if "name" in metadata else "")
-databaseName = databaseSpec["name"] if "name" in databaseSpec else "lportal"
-databasePort = "5432"
-gsaEmail = "{}@{}.iam.gserviceaccount.com".format("{}-sa".format(metadata["name"] if "name" in metadata else ""), env["projectId"] if "projectId" in env else "")
-gsaName = "{}-sa".format(metadata["name"] if "name" in metadata else "")
-instanceConnectionName = "{}:{}:{}".format(env["projectId"] if "projectId" in env else "", region, databaseInstanceName)
-jobName = "{}-db-grant".format(metadata["name"] if "name" in metadata else "")
 projectIdFull = "{}-{}".format(projectId, environmentId)
-searchName = "{}-es".format(metadata["name"] if "name" in metadata else "")
+uidHash = crypto.sha256("{}-{}".format(env.get("projectNumber") or "", projectIdFull))[:6:]
+
+baseName = "{}-{}".format(projectIdFull[:18:], uidHash)
+cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env.get("projectId") or "", region, baseName, baseName)
+databaseIamUser = "{}@{}.iam".format("{}-sa".format(metadata.get("name") or ""), env.get("projectId") or "")
+databaseInstanceName = "{}-db-instance".format(metadata.get("name") or "")
+databaseName = databaseSpec.get("name") or "lportal"
+databasePort = "5432"
+gsaEmail = "{}@{}.iam.gserviceaccount.com".format("{}-sa".format(metadata.get("name") or ""), env.get("projectId") or "")
+gsaName = "{}-sa".format(metadata.get("name") or "")
+instanceConnectionName = "{}:{}:{}".format(env.get("projectId") or "", region, databaseInstanceName)
+jobName = "{}-db-grant".format(metadata.get("name") or "")
+searchName = "{}-es".format(metadata.get("name") or "")
 searchNamespace = "{}-elasticsearch".format(namespace)
 searchSecretName = "{}-es-elastic-user".format(searchName)
 
 labels = {
     "app": "liferay"
-    "deployment-name": env["deploymentName"] if "deploymentName" in env else ""
+    "deployment-name": env.get("deploymentName") or ""
     "environment-id": environmentId
     "project-id": projectId
 }
@@ -48,7 +50,7 @@ if "commonTags" in spec and spec["commonTags"]:
     labels.update(spec["commonTags"])
 
 backupTargetLabels = {**labels, "active": "true", "should-back-up": "true"}
-orphan = spec["orphanOnDelete"] if "orphanOnDelete" in spec else False
+orphan = spec.get("orphanOnDelete") or False
 managementPolicies = ["Create", "Observe", "Update"] if orphan else ["*"]
 managementPolicy = "ObserveCreateUpdate" if orphan else "Default"
 managementPoliciesNoUpdate = ["Create", "Observe"] if orphan else ["Create", "Delete", "Observe"]

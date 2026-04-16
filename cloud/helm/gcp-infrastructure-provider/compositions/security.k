@@ -6,130 +6,141 @@ import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_crypto_k
 import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_crypto_key_i_a_m_member as kms_iam
 import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_key_ring as kms_keyring
 
-_gsa = sa.ServiceAccount {
-    metadata = {
-        annotations = {"crossplane.io/composition-resource-name": "liferay-gsa"}
-        labels = cv.labels
-        name = cv.gsaName
-    }
-    spec = {
-        forProvider = {
-            displayName = "Liferay Service Account for {}".format(cv.baseName)
-        }
-        managementPolicies = cv.managementPolicies
-    }
-}
+get_items = lambda obs: any, vars: {str:any} -> [any] {
+    _env = vars["env"] if "env" in vars else {}
+    _labels = vars["labels"] if "labels" in vars else {}
+    _gsaName = str(vars["gsaName"] if "gsaName" in vars else "")
+    _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
+    _baseName = str(vars["baseName"] if "baseName" in vars else "")
+    _projectId = str(_env["projectId"] if "projectId" in _env else "")
+    _namespace = str(vars["namespace"] if "namespace" in vars else "")
+    _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
 
-_wi_iam = [sa_iam.ServiceAccountIAMMember {
-    metadata = {
-        annotations = {"crossplane.io/composition-resource-name": "liferay-wi-iam"}
-        labels = cv.labels
-        name = "{}-wi-iam".format(cv.gsaName)
-    }
-    spec = {
-        forProvider = {
-            member = "principal://iam.googleapis.com/projects/{}/locations/global/workloadIdentityPools/{}.svc.id.goog/subject/ns/{}/sa/liferay-default".format(cv.env["projectNumber"] if "projectNumber" in cv.env else "", cv.env["projectId"] if "projectId" in cv.env else "", cv.namespace)
-            role = "roles/iam.workloadIdentityUser"
-            serviceAccountIdRef = {"name": cv.gsaName}
-        }
-        managementPolicies = cv.managementPolicies
-    }
-}]
-
-_sql_client_iam = [project_iam.ProjectIAMMember {
-    metadata = {
-        annotations = {"crossplane.io/composition-resource-name": "liferay-sql-client-iam"}
-        labels = cv.labels
-    }
-    spec = {
-        forProvider = {
-            member = "serviceAccount:{}".format(cv.gsaEmail)
-            project = cv.env["projectId"] if "projectId" in cv.env else ""
-            role = "roles/cloudsql.client"
-        }
-        managementPolicies = cv.managementPolicies
-    }
-}]
-
-_sql_instance_user_iam = [project_iam.ProjectIAMMember {
-    metadata = {
-        annotations = {"crossplane.io/composition-resource-name": "liferay-sql-instance-user-iam"}
-        labels = cv.labels
-    }
-    spec = {
-        forProvider = {
-            member = "serviceAccount:{}".format(cv.gsaEmail)
-            project = cv.env["projectId"] if "projectId" in cv.env else ""
-            role = "roles/cloudsql.instanceUser"
-        }
-        managementPolicies = cv.managementPolicies
-    }
-}]
-
-_profiler_iam = [project_iam.ProjectIAMMember {
-    metadata = {
-        annotations = {"crossplane.io/composition-resource-name": "liferay-profiler-iam"}
-        labels = cv.labels
-    }
-    spec = {
-        forProvider = {
-            member = "serviceAccount:{}".format(cv.gsaEmail)
-            project = cv.env["projectId"] if "projectId" in cv.env else ""
-            role = "roles/cloudprofiler.agent"
-        }
-        managementPolicies = cv.managementPolicies
-    }
-}]
-
-_kms_items = []
-if cv.cmkEnabled:
-    _kms_items += [
-        kms_keyring.KeyRing {
+    _security_items: [any] = [
+        sa.ServiceAccount {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-keyring"}
-                labels = cv.labels
-                name = "{}-keyring".format(cv.baseName)
-            }
-            spec = {
-                forProvider = {"location": cv.region}
-                managementPolicies = cv.managementPolicies
-            }
-        }
-        kms_key.CryptoKey {
-            metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-cryptokey"}
-                labels = cv.labels
-                name = "{}-key".format(cv.baseName)
+                annotations = {"crossplane.io/composition-resource-name": "liferay-gsa"}
+                labels = _labels
+                name = _gsaName
             }
             spec = {
                 forProvider = {
-                    keyRingSelector = {"matchControllerRef": True}
-                    purpose = "ENCRYPT_DECRYPT"
-                    rotationPeriod = "86400s"
+                    displayName = "Liferay {} Service Account".format(_gsaName)
                 }
-                managementPolicies = cv.managementPolicies
+                managementPolicies = _managementPolicies
+            }
+        },
+        sa_iam.ServiceAccountIAMMember {
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-wi-binding"}
+                labels = _labels
+            }
+            spec = {
+                forProvider = {
+                    member = "serviceAccount:{}.svc.id.goog[{}/liferay-default]".format(_projectId, _namespace)
+                    role = "roles/iam.workloadIdentityUser"
+                    serviceAccountIdRef = {
+                        name = _gsaName
+                    }
+                }
+                managementPolicies = _managementPolicies
             }
         }
     ]
-    _kms_targets = [
-        {"name": "sql", "svc": "gcp-sa-cloud-sql"}
-        {"name": "storage", "svc": "gs-project-accounts"}
-    ]
-    _kms_items += [kms_iam.CryptoKeyIAMMember {
+
+    _security_items += [project_iam.ProjectIAMMember {
         metadata = {
-            annotations = {"crossplane.io/composition-resource-name": "liferay-{}-kms-binding".format(t["name"])}
-            labels = cv.labels
+            annotations = {"crossplane.io/composition-resource-name": "liferay-sql-instance-user-role"}
+            labels = _labels
         }
         spec = {
             forProvider = {
-                cryptoKeyIdRef = {"name": "{}-key".format(cv.baseName)}
-                member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(cv.env["projectNumber"] if "projectNumber" in cv.env else "", t["svc"])
-                role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+                member = "serviceAccount:{}".format(_gsaEmail)
+                project = _projectId
+                role = "roles/cloudsql.instanceUser"
             }
-            managementPolicies = cv.managementPolicies
+            managementPolicies = _managementPolicies
         }
-    } for t in _kms_targets]
+    }]
 
-items = {"items": [
-    _gsa
-] + _wi_iam + _sql_client_iam + _sql_instance_user_iam + _profiler_iam + _kms_items}
+    _security_items += [project_iam.ProjectIAMMember {
+        metadata = {
+            annotations = {"crossplane.io/composition-resource-name": "liferay-sql-client-role"}
+            labels = _labels
+        }
+        spec = {
+            forProvider = {
+                member = "serviceAccount:{}".format(_gsaEmail)
+                project = _projectId
+                role = "roles/cloudsql.client"
+            }
+            managementPolicies = _managementPolicies
+        }
+    }]
+
+    if bool(vars["cmkEnabled"] if "cmkEnabled" in vars else False):
+        _security_items += [
+            kms_keyring.KeyRing {
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-keyring"}
+                    labels = _labels
+                    name = "{}-keyring".format(_baseName)
+                }
+                spec = {
+                    forProvider = {"location": str(vars["region"] if "region" in vars else "")}
+                    managementPolicies = _managementPolicies
+                }
+            },
+            kms_key.CryptoKey {
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-cryptokey"}
+                    labels = _labels
+                    name = "{}-key".format(_baseName)
+                }
+                spec = {
+                    forProvider = {
+                        keyRingSelector = {"matchControllerRef": True}
+                        purpose = "ENCRYPT_DECRYPT"
+                        rotationPeriod = "86400s"
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }
+        ]
+
+        _kms_targets = [
+            {"name": "sql", "svc": "gcp-sa-cloud-sql"}
+            {"name": "storage", "svc": "gs-project-accounts"}
+        ]
+        _security_items += [kms_iam.CryptoKeyIAMMember {
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-{}-kms-binding".format(t["name"])}
+                labels = _labels
+            }
+            spec = {
+                forProvider = {
+                    cryptoKeyIdRef = {"name": "{}-key".format(_baseName)}
+                    member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(str(_env["projectNumber"] if "projectNumber" in _env else ""), t["svc"])
+                    role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+                }
+                managementPolicies = _managementPolicies
+            }
+        } for t in _kms_targets]
+
+    _security_items
+}
+
+_vars = {
+    "baseName": cv.baseName
+    "cmkEnabled": cv.cmkEnabled
+    "cmkKeyName": cv.cmkKeyName
+    "env": cv.env
+    "gsaEmail": cv.gsaEmail
+    "gsaName": cv.gsaName
+    "labels": cv.labels
+    "managementPolicies": cv.managementPolicies
+    "namespace": cv.namespace
+    "region": cv.region
+}
+
+items = {"items": get_items(cv.obs, _vars)}
