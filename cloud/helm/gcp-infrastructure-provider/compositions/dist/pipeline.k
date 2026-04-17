@@ -3327,10 +3327,18 @@ projectId = spec?.projectId or ""
 region = databaseSpec?.region or spec?.region or ""
 storage_spec = spec?.storage or {}
 
+# Dual naming scheme, matching the legacy go-template composition:
+# - baseName = XR metadata.name — used for namespace-scoped Crossplane/K8s
+#   resources (ServiceAccount, Job, DatabaseInstance, Usage, etc.).
+# - hashedName = {projectIdFull[:18]}-{sha256(projectNumber+projectIdFull)[:6]}
+#   — used for GCP resources that need globally unique names (GCS buckets,
+#   KMS keyrings, the managed-service-details external-name).
+baseName = metadata?.name or ""
 projectIdFull = "{}-{}".format(projectId, environmentId)
 uidHash = crypto.sha256("{}-{}".format(env?.projectNumber or "", projectIdFull))[:6:]
-baseName = "{}-{}".format(projectIdFull[:18:], uidHash)
-cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env?.projectId or "", region, baseName, baseName)
+hashedName = "{}-{}".format(projectIdFull[:18:], uidHash)
+
+cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env?.projectId or "", region, hashedName, hashedName)
 databaseIamUser = "{}-sa@{}.iam".format(baseName, env?.projectId or "")
 databaseInstanceName = "{}-db-instance".format(baseName)
 databaseObjectName = "{}-db".format(baseName)
@@ -3344,6 +3352,12 @@ jobName = "{}-db-grant".format(baseName)
 searchName = "{}-es".format(baseName)
 searchNamespace = "{}-elasticsearch".format(namespace)
 searchSecretName = "{}-es-elastic-user".format(searchName)
+
+# Bucket names are globally unique across GCP, so use hashedName.
+bucketName = "{}-dl".format(hashedName)
+overlayBucketName = "{}-overlay".format(hashedName)
+backupBucketName = "{}-vault".format(hashedName)
+managedServiceDetailsExternalName = "{}-managed-service-details-secret".format(hashedName)
 
 labels = {
     "app": "liferay"
@@ -3375,14 +3389,14 @@ schema init_layer:
         "region": region
     }
 
-    _res = obs?.resources or {}
-    _status = _res?["managed-service-details-configmap"]?.resource?.status?.atProvider?.manifest?.status or {}
-    _conditions = _status?.conditions or []
-    _is_ready_ctx = any c in _conditions {c.type == "Ready" and c.status == "True"}
+    # managedServiceDetailsReady mirrors the db-grant-job readiness condition.
+    # Consumers (e.g. the liferay app) poll this flag on the composite status.
+    _grant_conditions = obs?.resources?["liferay-db-grant-job"]?.resource?.status?.conditions or []
+    _is_ready = any c in _grant_conditions { c.type == "Ready" and c.status == "True" }
 
     items: {str:any} = {
         "items": get_items(obs, _vars)
-        "status": {"managedServiceDetailsReady": _is_ready_ctx}
+        "status": {"managedServiceDetailsReady": _is_ready}
     }
 
 _init = init_layer {}
@@ -3395,7 +3409,9 @@ schema security_layer:
         _labels = vars?.labels or {}
         _gsaName = str(vars?.gsaName or "")
         _gsaEmail = str(vars?.gsaEmail or "")
-        _baseName = str(vars?.baseName or "")
+        # KMS resources are global in GCP — use hashedName for uniqueness across
+        # deployments that share a project.
+        _kmsName = str(vars?.hashedName or "")
         _projectId = str(_env?.projectId or "")
         _namespace = str(vars?.namespace or "")
         _managementPolicies = vars?.managementPolicies or ["*"]
@@ -3474,7 +3490,7 @@ schema security_layer:
                     metadata = {
                         annotations = {"crossplane.io/composition-resource-name": "liferay-keyring"}
                         labels = _labels
-                        name = "{}-keyring".format(_baseName)
+                        name = "{}-keyring".format(_kmsName)
                     }
                     spec = {
                         forProvider = {location = str(vars?.region or "")}
@@ -3487,7 +3503,7 @@ schema security_layer:
                     metadata = {
                         annotations = {"crossplane.io/composition-resource-name": "liferay-cryptokey"}
                         labels = _labels
-                        name = "{}-key".format(_baseName)
+                        name = "{}-key".format(_kmsName)
                     }
                     spec = {
                         forProvider = {
@@ -3513,7 +3529,7 @@ schema security_layer:
                 }
                 spec = {
                     forProvider = {
-                        cryptoKeyIdRef = {name = "{}-key".format(_baseName)}
+                        cryptoKeyIdRef = {name = "{}-key".format(_kmsName)}
                         member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(str(_env?.projectNumber or ""), t.svc)
                         role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
                     }
@@ -3525,12 +3541,12 @@ schema security_layer:
     }
 
     _vars = {
-        "baseName": baseName
         "cmkEnabled": cmkEnabled
         "cmkKeyName": cmkKeyName
         "env": env
         "gsaEmail": gsaEmail
         "gsaName": gsaName
+        "hashedName": hashedName
         "labels": labels
         "managementPolicies": managementPolicies
         "namespace": namespace
@@ -3550,50 +3566,57 @@ schema sql_layer:
         _labels = vars?.labels or {}
         _managementPolicies = vars?.managementPolicies or ["*"]
         _baseName = str(vars?.baseName or "")
+        _namespace = str(vars?.namespace or "")
         _projectId = str(vars?.projectId or "")
         _region = str(vars?.region or "")
         _instanceName = str(vars?.databaseInstanceName or "")
         _dbObjectName = str(vars?.databaseObjectName or "{}-db".format(_baseName))
         _userObjectName = str(vars?.databaseUserObjectName or "{}-db-user".format(_baseName))
+        _cmkEnabled = bool(vars?.cmkEnabled or False)
+        _cmkKeyName = str(vars?.cmkKeyName or "")
+
+        _instance = DatabaseInstance {
+            apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+            kind = "DatabaseInstance"
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "database-primary"}
+                labels = _labels
+                name = _instanceName
+            }
+            spec = {
+                forProvider = {
+                    databaseVersion = str(_db_spec?.databaseVersion or "POSTGRES_18")
+                    deletionProtection = bool(_db_spec?.deletionProtection or False)
+                    region = _region
+                    rootPasswordSecretRef = {
+                        key = "password"
+                        name = str(_db_spec?.rootPasswordSecretName or "placeholder")
+                    }
+                    settings = {
+                        databaseFlags = [{name = "cloudsql.iam_authentication", value = "on"}]
+                        diskSize = int(_db_spec?.storageGB or 10)
+                        diskType = "PD_SSD"
+                        edition = "ENTERPRISE"
+                        insightsConfig = {
+                            queryInsightsEnabled = bool(_db_spec?.queryInsightsEnabled if _db_spec?.queryInsightsEnabled != Undefined else True)
+                        }
+                        ipConfiguration = {
+                            ipv4Enabled = False
+                            privateNetwork = "projects/{}/global/networks/{}".format(_projectId, str(_env?.vpcName or ""))
+                            sslMode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+                        }
+                        tier = str(_db_spec?.instanceType or "db-custom-1-3840")
+                        userLabels = _labels | {"active": "true", "should-back-up": "true"}
+                    }
+                }
+                if _cmkEnabled:
+                    forProvider.encryptionKeyName = _cmkKeyName
+                managementPolicies = _managementPolicies
+            }
+        }
 
         [
-            DatabaseInstance {
-                apiVersion = "sql.gcp.m.upbound.io/v1beta1"
-                kind = "DatabaseInstance"
-                metadata = {
-                    annotations = {"crossplane.io/composition-resource-name": "database-primary"}
-                    labels = _labels
-                    name = _instanceName
-                }
-                spec = {
-                    forProvider = {
-                        databaseVersion = str(_db_spec?.databaseVersion or "POSTGRES_18")
-                        deletionProtection = bool(_db_spec?.deletionProtection or False)
-                        region = _region
-                        rootPasswordSecretRef = {
-                            key = "password"
-                            name = str(_db_spec?.rootPasswordSecretName or "placeholder")
-                        }
-                        settings = {
-                            databaseFlags = [{name = "cloudsql.iam_authentication", value = "on"}]
-                            diskSize = int(_db_spec?.storageGB or 10)
-                            diskType = "PD_SSD"
-                            edition = "ENTERPRISE"
-                            insightsConfig = {
-                                queryInsightsEnabled = bool(_db_spec?.queryInsightsEnabled if _db_spec?.queryInsightsEnabled != Undefined else True)
-                            }
-                            ipConfiguration = {
-                                ipv4Enabled = False
-                                privateNetwork = "projects/{}/global/networks/{}".format(_projectId, str(_env?.vpcName or ""))
-                                sslMode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
-                            }
-                            tier = str(_db_spec?.instanceType or "db-custom-1-3840")
-                            userLabels = _labels | {"active": "true", "should-back-up": "true"}
-                        }
-                    }
-                    managementPolicies = _managementPolicies
-                }
-            }
+            _instance
             Database {
                 apiVersion = "sql.gcp.m.upbound.io/v1beta1"
                 kind = "Database"
@@ -3607,8 +3630,9 @@ schema sql_layer:
                 }
                 spec = {
                     forProvider = {
-                        instanceRef = {name = _instanceName}
-                        project = _projectId
+                        charset = "UTF8"
+                        collation = "en_US.UTF8"
+                        instanceSelector = {matchControllerRef = True}
                     }
                     managementPolicies = _managementPolicies
                 }
@@ -3626,8 +3650,7 @@ schema sql_layer:
                 }
                 spec = {
                     forProvider = {
-                        instanceRef = {name = _instanceName}
-                        project = _projectId
+                        instanceSelector = {matchControllerRef = True}
                         $type = "CLOUD_IAM_SERVICE_ACCOUNT"
                     }
                     managementPolicies = _managementPolicies
@@ -3639,6 +3662,7 @@ schema sql_layer:
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-database"}
                     name = "{}-instance-by-database".format(_baseName)
+                    namespace = _namespace
                 }
                 spec = {
                     of = {
@@ -3659,6 +3683,7 @@ schema sql_layer:
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-user"}
                     name = "{}-instance-by-user".format(_baseName)
+                    namespace = _namespace
                 }
                 spec = {
                     of = {
@@ -3678,6 +3703,8 @@ schema sql_layer:
 
     _vars = {
         "baseName": baseName
+        "cmkEnabled": cmkEnabled
+        "cmkKeyName": cmkKeyName
         "database": databaseSpec
         "databaseIamUser": databaseIamUser
         "databaseInstanceName": databaseInstanceName
@@ -3687,6 +3714,7 @@ schema sql_layer:
         "env": env
         "labels": labels
         "managementPolicies": managementPolicies
+        "namespace": namespace
         "projectId": env?.projectId or ""
         "region": region
     }
@@ -3701,8 +3729,7 @@ schema storage_layer:
     get_items = lambda obs: any, vars: {str:any} -> [any] {
         _storage_spec = vars?.storage_spec or {}
         _labels = vars?.labels or {}
-        _baseName = str(vars?.baseName or "")
-        _bucket_name = str(vars?.bucketName or "{}-dl".format(_baseName))
+        _bucket_name = str(vars?.bucketName or "")
         _managementPolicies = vars?.managementPolicies or ["*"]
 
         [
@@ -3718,7 +3745,7 @@ schema storage_layer:
                     forProvider = {
                         forceDestroy = bool(vars?.forceDestroy or False)
                         labels = _labels | {"active": "true", "should-back-up": "true"}
-                        location = str(vars?.region or "")
+                        location = str(_storage_spec?.region or vars?.region or "")
                         storageClass = str(_storage_spec?.storageClass or "STANDARD")
                         uniformBucketLevelAccess = True
                         versioning = {enabled = bool(_storage_spec?.enableVersioning if _storage_spec?.enableVersioning != Undefined else True)}
@@ -3750,7 +3777,7 @@ schema storage_layer:
     }
 
     _vars = {
-        "baseName": baseName
+        "bucketName": bucketName
         "cmkEnabled": cmkEnabled
         "cmkKeyName": cmkKeyName
         "forceDestroy": forceDestroy
@@ -3770,8 +3797,7 @@ schema overlay_layer:
 
     get_items = lambda obs: any, vars: {str:any} -> [any] {
         _labels = vars?.labels or {}
-        _baseName = str(vars?.baseName or "")
-        _overlayBucketName = str(vars?.overlayBucketName or "{}-overlay".format(_baseName))
+        _overlayBucketName = str(vars?.overlayBucketName or "")
         _gsaEmail = str(vars?.gsaEmail or "")
         _managementPolicies = vars?.managementPolicies or ["*"]
 
@@ -3795,7 +3821,12 @@ schema overlay_layer:
                             project = str(vars?.projectId or "")
                             storageClass = "STANDARD"
                             uniformBucketLevelAccess = True
+                            versioning = {enabled = True}
                         }
+                        if vars?.cmkEnabled:
+                            forProvider.encryption = {
+                                defaultKmsKeyName = str(vars?.cmkKeyName or "")
+                            }
                         managementPolicies = _managementPolicies
                     }
                 }
@@ -3821,11 +3852,13 @@ schema overlay_layer:
     }
 
     _vars = {
-        "baseName": baseName
+        "cmkEnabled": cmkEnabled
+        "cmkKeyName": cmkKeyName
         "forceDestroy": forceDestroy
         "gsaEmail": gsaEmail
         "labels": labels
         "managementPolicies": managementPolicies
+        "overlayBucketName": overlayBucketName
         "overlayEnabled": overlayEnabled
         "overlayRegion": overlay?.region or ""
         "projectId": env?.projectId or ""
@@ -3965,6 +3998,12 @@ schema k8s_resources_layer:
                 spec = {
                     forProvider = {manifest = _liferay_job}
                     managementPolicies = _managementPoliciesOnce
+                    # Mark the Object Ready once the wrapped Job has succeeded —
+                    # managed_service_details depends on this signal.
+                    readiness = {
+                        celQuery = "object.status.succeeded == 1"
+                        policy = "DeriveFromCelQuery"
+                    }
                 }
             }
         ]
@@ -4104,7 +4143,6 @@ schema backup_layer:
 
     get_items = lambda obs: any, vars: {str:any} -> [any] {
         _backup = vars?.backup or {}
-        _baseName = str(vars?.baseName or "")
         _labels = vars?.labels or {}
         _meta_name = str(vars?.metadata?.name or "")
         _gsaEmail = str(vars?.gsaEmail or "")
@@ -4120,7 +4158,7 @@ schema backup_layer:
         _backup_items: [any] = []
         if _backup?.enabled:
             _backup_vault_labels = _labels | {"is-backup-vault": "true"}
-            _bucket_name = "{}-vault".format(_baseName)
+            _bucket_name = str(vars?.backupBucketName or "")
 
             _backup_items += [Bucket {
                 apiVersion = "storage.gcp.m.upbound.io/v1beta1"
@@ -4168,26 +4206,26 @@ schema backup_layer:
                 }
             }]
 
-            _backup_cr = k8s_rbac.ClusterRole {
-                apiVersion = "rbac.authorization.k8s.io/v1"
-                kind = "ClusterRole"
+            # The ClusterRole 'backup-create-cluster-role' is provisioned out-of-band
+            # (baseline RBAC chart); this composition only creates the per-namespace
+            # RoleBinding + ServiceAccount that use it.
+            _backup_sa = k8s_core.ServiceAccount {
+                apiVersion = "v1"
+                kind = "ServiceAccount"
                 metadata = {
                     labels = _labels
-                    name = "backup-create-cluster-role"
+                    name = "backup-create-service-account"
+                    namespace = _namespace
                 }
-                rules = [{
-                    apiGroups = [""]
-                    resources = ["serviceaccounts"]
-                    verbs = ["create", "delete", "get", "list", "watch"]
-                }]
             }
 
-            _backup_crb = k8s_rbac.ClusterRoleBinding {
+            _backup_rb = k8s_rbac.RoleBinding {
                 apiVersion = "rbac.authorization.k8s.io/v1"
-                kind = "ClusterRoleBinding"
+                kind = "RoleBinding"
                 metadata = {
                     labels = _labels
-                    name = "backup-create-cluster-role-binding"
+                    name = "backup-create-role-binding"
+                    namespace = _namespace
                 }
                 roleRef = {
                     apiGroup = "rbac.authorization.k8s.io"
@@ -4206,26 +4244,26 @@ schema backup_layer:
                     apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
                     kind = "Object"
                     metadata = {
-                        annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role"}
+                        annotations = {"crossplane.io/composition-resource-name": "backup-create-service-account"}
                         labels = _labels
-                        name = "backup-create-cluster-role"
+                        name = "backup-create-service-account"
                     }
                     spec = {
-                        forProvider = {"manifest": _backup_cr}
-                        managementPolicies = [_managementPolicy]
+                        forProvider = {"manifest": _backup_sa}
+                        managementPolicies = _managementPolicies
                     }
                 }
                 Object {
                     apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
                     kind = "Object"
                     metadata = {
-                        annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role-binding"}
+                        annotations = {"crossplane.io/composition-resource-name": "backup-create-role-binding"}
                         labels = _labels
-                        name = "backup-create-cluster-role-binding"
+                        name = "backup-create-role-binding"
                     }
                     spec = {
-                        forProvider = {"manifest": _backup_crb}
-                        managementPolicies = [_managementPolicy]
+                        forProvider = {"manifest": _backup_rb}
+                        managementPolicies = _managementPolicies
                     }
                 }
             ]
@@ -4235,7 +4273,7 @@ schema backup_layer:
 
     _vars = {
         "backup": backup
-        "baseName": baseName
+        "backupBucketName": backupBucketName
         "cmkEnabled": cmkEnabled
         "cmkKeyName": cmkKeyName
         "forceDestroy": forceDestroy
@@ -4256,53 +4294,72 @@ items_backup = _backup.items
 schema managed_service_details_layer:
 
     get_items = lambda obs: any, vars: {str:any} -> [any] {
+        # Gate on the grant-job Object being Ready. Until the Job has succeeded
+        # the DB user has no privileges, so any downstream consumer reading this
+        # secret would hit a broken DSN.
+        _res = obs?.resources or {}
+        _grant_conditions = _res?["liferay-db-grant-job"]?.resource?.status?.conditions or []
+        _is_ready = any c in _grant_conditions { c.type == "Ready" and c.status == "True" }
+
         _labels = vars?.labels or {}
         _namespace = str(vars?.namespace or "")
         _baseName = str(vars?.baseName or "")
-        _projectId = str(vars?.projectId or "")
+        _externalName = str(vars?.managedServiceDetailsExternalName or "")
         _managementPolicies = vars?.managementPolicies or ["*"]
 
-        _secret = k8s_core.Secret {
-            apiVersion = "v1"
-            kind = "Secret"
-            metadata = {
-                labels = _labels
-                name = "managed-service-details"
-                namespace = _namespace
+        _items: [any] = []
+        if _is_ready:
+            _secret = k8s_core.Secret {
+                apiVersion = "v1"
+                kind = "Secret"
+                metadata = {
+                    labels = _labels
+                    name = "managed-service-details"
+                    namespace = _namespace
+                }
+                stringData = {
+                    DATABASE_ENDPOINT = "localhost"
+                    DATABASE_INSTANCE_NAME = str(vars?.instanceConnectionName or "")
+                    DATABASE_PORT = str(vars?.databasePort or "5432")
+                    DATABASE_USERNAME = str(vars?.databaseIamUser or "")
+                    LIFERAY_GCS_BUCKET_NAME = str(vars?.bucketName or "")
+                    LIFERAY_OVERLAY_BUCKET_NAME = str(vars?.overlayBucketName or "")
+                }
+                $type = "Opaque"
             }
-            stringData = {
-                DATABASE_ENDPOINT = "localhost"
-                DATABASE_INSTANCE_NAME = "{}:us-central1:{}-db-instance".format(_projectId, _baseName)
-                DATABASE_PORT = "5432"
-                DATABASE_USERNAME = "{}-sa@{}.iam".format(_baseName, _projectId)
-                LIFERAY_GCS_BUCKET_NAME = str(vars?.bucketName or "{}-dl".format(_baseName))
-                LIFERAY_OVERLAY_BUCKET_NAME = str(vars?.overlayBucketName or "{}-overlay".format(_baseName))
-            }
-        }
 
-        [
-            Object {
+            _items += [Object {
                 apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
                 kind = "Object"
                 metadata = {
-                    annotations = {"crossplane.io/composition-resource-name": "managed-service-details-secret"}
+                    annotations = {
+                        "crossplane.io/composition-resource-name": "managed-service-details-secret"
+                        "crossplane.io/external-name": _externalName
+                    }
                     labels = _labels
-                    name = "{}-managed-service-details-secret".format(_baseName)
+                    name = _externalName
                 }
                 spec = {
                     forProvider = {manifest = _secret}
                     managementPolicies = _managementPolicies
                 }
-            }
-        ]
+            }]
+
+        _items
     }
 
     _vars = {
         "baseName": baseName
+        "bucketName": bucketName
+        "databaseIamUser": databaseIamUser
+        "databasePort": databasePort
         "gsaEmail": gsaEmail
+        "instanceConnectionName": instanceConnectionName
         "labels": labels
+        "managedServiceDetailsExternalName": managedServiceDetailsExternalName
         "managementPolicies": managementPolicies
         "namespace": namespace
+        "overlayBucketName": overlayBucketName
         "projectId": env?.projectId or ""
     }
 

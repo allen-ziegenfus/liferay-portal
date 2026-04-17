@@ -18,7 +18,12 @@ test_arz_dev2025_resource_names = lambda {
 
     _vars: {str:any} = {
         "backup": {"enabled": False}
-        "baseName": _baseName
+        "backupBucketName": "{}-vault".format(_baseName)
+        "baseName": _meta_name
+        "bucketName": "{}-dl".format(_baseName)
+        "overlayBucketName": "{}-overlay".format(_baseName)
+        "managedServiceDetailsExternalName": "{}-managed-service-details-secret".format(_baseName)
+        "hashedName": _baseName
         "cmkEnabled": False
         "cmkKeyName": ""
         "databaseIamUser": "{}-sa@{}".format(_baseName, _projectId)

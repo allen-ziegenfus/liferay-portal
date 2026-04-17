@@ -39,11 +39,14 @@ test_cluster_refs_match = lambda {
         
         _vars = {
             "backup": _backup
+            "backupBucketName": "{}-vault".format(_hashedName)
             "baseName": _baseName
             "bucketName": "{}-dl".format(_hashedName)
             "overlayBucketName": "{}-overlay".format(_hashedName)
+            "managedServiceDetailsExternalName": "{}-managed-service-details-secret".format(_hashedName)
+            "hashedName": _hashedName
             "cmkEnabled": _cmk["enabled"] if "enabled" in _cmk else False
-            "cmkKeyName": "projects/cne-development/locations/us-central1/keyRings/{}-keyring/cryptoKeys/{}-key".format(_baseName, _baseName)
+            "cmkKeyName": "projects/cne-development/locations/us-central1/keyRings/{}-keyring/cryptoKeys/{}-key".format(_hashedName, _hashedName)
             "database": _db
             "databaseIamUser": "{}-sa@cne-development.iam".format(_baseName)
             "databaseInstanceName": "{}-db-instance".format(_baseName)
@@ -112,7 +115,13 @@ test_cluster_refs_match = lambda {
             for r in _rendered_simplified
         ]
 
-        # Perform comparison
+        # Perform comparison. _is_subset(a, b) returns true iff b ⊆ a, so
+        # _is_subset(c.spec, r.spec) verifies rendered's non-Undefined fields
+        # don't conflict with cluster. This catches "wrong values set" but not
+        # "missing fields" — unset rendered attributes show up as Undefined,
+        # which the subset short-circuits over. Regressions where we stop
+        # setting a required field must be covered by dedicated unit tests
+        # (see sql_required_fields_test.k, overlay_cmk_test.k, etc).
         _filtered_cluster_refs = [
             c | {
                 "spec": {k: v for k, v in c.spec if k != "forProvider"} | ({"forProvider": {k: v for k, v in c.spec.forProvider if k != "manifest"} | {"manifest": {k: v for k, v in c.spec.forProvider.manifest if k != "data" and k != "stringData"}}} if c.kind == "Object" and c.spec?.forProvider?.manifest?.kind == "Secret" else ({"forProvider": c.spec.forProvider} if "forProvider" in c.spec else {}))
@@ -123,7 +132,7 @@ test_cluster_refs_match = lambda {
         
         if len(_missing_in_rendered) > 0:
             _failed_c = _missing_in_rendered[0]
-            _failed_r = [r for r in _rendered_simplified_clean if r.name == _failed_c.name and r.kind == _failed_c.kind][0]
+            _failed_r = [r for r in _rendered_simplified_clean if r.name == _failed_c.name and r.kind == _failed_c.kind][0] if any r in _rendered_simplified_clean { r.name == _failed_c.name and r.kind == _failed_c.kind } else {"metadata": "<not rendered>", "spec": "<not rendered>"}
             print("=== CLUSTER METADATA ===")
             print(_failed_c.metadata)
             print("=== KCL METADATA ===")

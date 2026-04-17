@@ -8,6 +8,7 @@ test_backup_enabled = lambda {
             "retentionDays": 10
             "storageClass": "COLDLINE"
         }
+        "backupBucketName": "test-liferay-123-vault"
         "baseName": "test-liferay-123"
         "cmkEnabled": True
         "cmkKeyName": "projects/p1/locations/global/keyRings/kr1/cryptoKeys/k1"

@@ -11,7 +11,9 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     _labels = vars?.labels or {}
     _gsaName = str(vars?.gsaName or "")
     _gsaEmail = str(vars?.gsaEmail or "")
-    _baseName = str(vars?.baseName or "")
+    # KMS resources are global in GCP — use hashedName for uniqueness across
+    # deployments that share a project.
+    _kmsName = str(vars?.hashedName or "")
     _projectId = str(_env?.projectId or "")
     _namespace = str(vars?.namespace or "")
     _managementPolicies = vars?.managementPolicies or ["*"]
@@ -90,7 +92,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "liferay-keyring"}
                     labels = _labels
-                    name = "{}-keyring".format(_baseName)
+                    name = "{}-keyring".format(_kmsName)
                 }
                 spec = {
                     forProvider = {location = str(vars?.region or "")}
@@ -103,7 +105,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "liferay-cryptokey"}
                     labels = _labels
-                    name = "{}-key".format(_baseName)
+                    name = "{}-key".format(_kmsName)
                 }
                 spec = {
                     forProvider = {
@@ -129,7 +131,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {
-                    cryptoKeyIdRef = {name = "{}-key".format(_baseName)}
+                    cryptoKeyIdRef = {name = "{}-key".format(_kmsName)}
                     member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(str(_env?.projectNumber or ""), t.svc)
                     role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
                 }
@@ -141,12 +143,12 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 }
 
 _vars = {
-    "baseName": cv.baseName
     "cmkEnabled": cv.cmkEnabled
     "cmkKeyName": cv.cmkKeyName
     "env": cv.env
     "gsaEmail": cv.gsaEmail
     "gsaName": cv.gsaName
+    "hashedName": cv.hashedName
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
     "namespace": cv.namespace

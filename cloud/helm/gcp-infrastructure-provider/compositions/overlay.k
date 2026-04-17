@@ -4,8 +4,7 @@ import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as gcp
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
     _labels = vars?.labels or {}
-    _baseName = str(vars?.baseName or "")
-    _overlayBucketName = str(vars?.overlayBucketName or "{}-overlay".format(_baseName))
+    _overlayBucketName = str(vars?.overlayBucketName or "")
     _gsaEmail = str(vars?.gsaEmail or "")
     _managementPolicies = vars?.managementPolicies or ["*"]
 
@@ -29,7 +28,12 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                         project = str(vars?.projectId or "")
                         storageClass = "STANDARD"
                         uniformBucketLevelAccess = True
+                        versioning = {enabled = True}
                     }
+                    if vars?.cmkEnabled:
+                        forProvider.encryption = {
+                            defaultKmsKeyName = str(vars?.cmkKeyName or "")
+                        }
                     managementPolicies = _managementPolicies
                 }
             }
@@ -55,11 +59,13 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 }
 
 _vars = {
-    "baseName": cv.baseName
+    "cmkEnabled": cv.cmkEnabled
+    "cmkKeyName": cv.cmkKeyName
     "forceDestroy": cv.forceDestroy
     "gsaEmail": cv.gsaEmail
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
+    "overlayBucketName": cv.overlayBucketName
     "overlayEnabled": cv.overlayEnabled
     "overlayRegion": cv.overlay?.region or ""
     "projectId": cv.env?.projectId or ""

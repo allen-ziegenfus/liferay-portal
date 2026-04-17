@@ -129,6 +129,12 @@ EOF
             spec = {
                 forProvider = {manifest = _liferay_job}
                 managementPolicies = _managementPoliciesOnce
+                # Mark the Object Ready once the wrapped Job has succeeded —
+                # managed_service_details depends on this signal.
+                readiness = {
+                    celQuery = "object.status.succeeded == 1"
+                    policy = "DeriveFromCelQuery"
+                }
             }
         }
     ]

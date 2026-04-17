@@ -9,50 +9,57 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     _labels = vars?.labels or {}
     _managementPolicies = vars?.managementPolicies or ["*"]
     _baseName = str(vars?.baseName or "")
+    _namespace = str(vars?.namespace or "")
     _projectId = str(vars?.projectId or "")
     _region = str(vars?.region or "")
     _instanceName = str(vars?.databaseInstanceName or "")
     _dbObjectName = str(vars?.databaseObjectName or "{}-db".format(_baseName))
     _userObjectName = str(vars?.databaseUserObjectName or "{}-db-user".format(_baseName))
+    _cmkEnabled = bool(vars?.cmkEnabled or False)
+    _cmkKeyName = str(vars?.cmkKeyName or "")
+
+    _instance = sql_instance.DatabaseInstance {
+        apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+        kind = "DatabaseInstance"
+        metadata = {
+            annotations = {"crossplane.io/composition-resource-name": "database-primary"}
+            labels = _labels
+            name = _instanceName
+        }
+        spec = {
+            forProvider = {
+                databaseVersion = str(_db_spec?.databaseVersion or "POSTGRES_18")
+                deletionProtection = bool(_db_spec?.deletionProtection or False)
+                region = _region
+                rootPasswordSecretRef = {
+                    key = "password"
+                    name = str(_db_spec?.rootPasswordSecretName or "placeholder")
+                }
+                settings = {
+                    databaseFlags = [{name = "cloudsql.iam_authentication", value = "on"}]
+                    diskSize = int(_db_spec?.storageGB or 10)
+                    diskType = "PD_SSD"
+                    edition = "ENTERPRISE"
+                    insightsConfig = {
+                        queryInsightsEnabled = bool(_db_spec?.queryInsightsEnabled if _db_spec?.queryInsightsEnabled != Undefined else True)
+                    }
+                    ipConfiguration = {
+                        ipv4Enabled = False
+                        privateNetwork = "projects/{}/global/networks/{}".format(_projectId, str(_env?.vpcName or ""))
+                        sslMode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+                    }
+                    tier = str(_db_spec?.instanceType or "db-custom-1-3840")
+                    userLabels = _labels | {"active": "true", "should-back-up": "true"}
+                }
+            }
+            if _cmkEnabled:
+                forProvider.encryptionKeyName = _cmkKeyName
+            managementPolicies = _managementPolicies
+        }
+    }
 
     [
-        sql_instance.DatabaseInstance {
-            apiVersion = "sql.gcp.m.upbound.io/v1beta1"
-            kind = "DatabaseInstance"
-            metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "database-primary"}
-                labels = _labels
-                name = _instanceName
-            }
-            spec = {
-                forProvider = {
-                    databaseVersion = str(_db_spec?.databaseVersion or "POSTGRES_18")
-                    deletionProtection = bool(_db_spec?.deletionProtection or False)
-                    region = _region
-                    rootPasswordSecretRef = {
-                        key = "password"
-                        name = str(_db_spec?.rootPasswordSecretName or "placeholder")
-                    }
-                    settings = {
-                        databaseFlags = [{name = "cloudsql.iam_authentication", value = "on"}]
-                        diskSize = int(_db_spec?.storageGB or 10)
-                        diskType = "PD_SSD"
-                        edition = "ENTERPRISE"
-                        insightsConfig = {
-                            queryInsightsEnabled = bool(_db_spec?.queryInsightsEnabled if _db_spec?.queryInsightsEnabled != Undefined else True)
-                        }
-                        ipConfiguration = {
-                            ipv4Enabled = False
-                            privateNetwork = "projects/{}/global/networks/{}".format(_projectId, str(_env?.vpcName or ""))
-                            sslMode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
-                        }
-                        tier = str(_db_spec?.instanceType or "db-custom-1-3840")
-                        userLabels = _labels | {"active": "true", "should-back-up": "true"}
-                    }
-                }
-                managementPolicies = _managementPolicies
-            }
-        }
+        _instance
         sql_db.Database {
             apiVersion = "sql.gcp.m.upbound.io/v1beta1"
             kind = "Database"
@@ -66,8 +73,9 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {
-                    instanceRef = {name = _instanceName}
-                    project = _projectId
+                    charset = "UTF8"
+                    collation = "en_US.UTF8"
+                    instanceSelector = {matchControllerRef = True}
                 }
                 managementPolicies = _managementPolicies
             }
@@ -85,8 +93,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {
-                    instanceRef = {name = _instanceName}
-                    project = _projectId
+                    instanceSelector = {matchControllerRef = True}
                     $type = "CLOUD_IAM_SERVICE_ACCOUNT"
                 }
                 managementPolicies = _managementPolicies
@@ -98,6 +105,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-database"}
                 name = "{}-instance-by-database".format(_baseName)
+                namespace = _namespace
             }
             spec = {
                 of = {
@@ -118,6 +126,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-user"}
                 name = "{}-instance-by-user".format(_baseName)
+                namespace = _namespace
             }
             spec = {
                 of = {
@@ -137,6 +146,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
 _vars = {
     "baseName": cv.baseName
+    "cmkEnabled": cv.cmkEnabled
+    "cmkKeyName": cv.cmkKeyName
     "database": cv.databaseSpec
     "databaseIamUser": cv.databaseIamUser
     "databaseInstanceName": cv.databaseInstanceName
@@ -146,6 +157,7 @@ _vars = {
     "env": cv.env
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
+    "namespace": cv.namespace
     "projectId": cv.env?.projectId or ""
     "region": cv.region
 }

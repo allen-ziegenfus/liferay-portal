@@ -2,12 +2,12 @@ import context_variables as cv
 import models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
 import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as storage_bucket
 import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
+import k8s.api.core.v1 as k8s_core
 import k8s.api.rbac.v1 as k8s_rbac
 import crypto
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
     _backup = vars?.backup or {}
-    _baseName = str(vars?.baseName or "")
     _labels = vars?.labels or {}
     _meta_name = str(vars?.metadata?.name or "")
     _gsaEmail = str(vars?.gsaEmail or "")
@@ -23,7 +23,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     _backup_items: [any] = []
     if _backup?.enabled:
         _backup_vault_labels = _labels | {"is-backup-vault": "true"}
-        _bucket_name = "{}-vault".format(_baseName)
+        _bucket_name = str(vars?.backupBucketName or "")
 
         _backup_items += [storage_bucket.Bucket {
             apiVersion = "storage.gcp.m.upbound.io/v1beta1"
@@ -71,26 +71,26 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
         }]
 
-        _backup_cr = k8s_rbac.ClusterRole {
-            apiVersion = "rbac.authorization.k8s.io/v1"
-            kind = "ClusterRole"
+        # The ClusterRole 'backup-create-cluster-role' is provisioned out-of-band
+        # (baseline RBAC chart); this composition only creates the per-namespace
+        # RoleBinding + ServiceAccount that use it.
+        _backup_sa = k8s_core.ServiceAccount {
+            apiVersion = "v1"
+            kind = "ServiceAccount"
             metadata = {
                 labels = _labels
-                name = "backup-create-cluster-role"
+                name = "backup-create-service-account"
+                namespace = _namespace
             }
-            rules = [{
-                apiGroups = [""]
-                resources = ["serviceaccounts"]
-                verbs = ["create", "delete", "get", "list", "watch"]
-            }]
         }
 
-        _backup_crb = k8s_rbac.ClusterRoleBinding {
+        _backup_rb = k8s_rbac.RoleBinding {
             apiVersion = "rbac.authorization.k8s.io/v1"
-            kind = "ClusterRoleBinding"
+            kind = "RoleBinding"
             metadata = {
                 labels = _labels
-                name = "backup-create-cluster-role-binding"
+                name = "backup-create-role-binding"
+                namespace = _namespace
             }
             roleRef = {
                 apiGroup = "rbac.authorization.k8s.io"
@@ -109,26 +109,26 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
                 kind = "Object"
                 metadata = {
-                    annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role"}
+                    annotations = {"crossplane.io/composition-resource-name": "backup-create-service-account"}
                     labels = _labels
-                    name = "backup-create-cluster-role"
+                    name = "backup-create-service-account"
                 }
                 spec = {
-                    forProvider = {"manifest": _backup_cr}
-                    managementPolicies = [_managementPolicy]
+                    forProvider = {"manifest": _backup_sa}
+                    managementPolicies = _managementPolicies
                 }
             }
             kubernetes.Object {
                 apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
                 kind = "Object"
                 metadata = {
-                    annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role-binding"}
+                    annotations = {"crossplane.io/composition-resource-name": "backup-create-role-binding"}
                     labels = _labels
-                    name = "backup-create-cluster-role-binding"
+                    name = "backup-create-role-binding"
                 }
                 spec = {
-                    forProvider = {"manifest": _backup_crb}
-                    managementPolicies = [_managementPolicy]
+                    forProvider = {"manifest": _backup_rb}
+                    managementPolicies = _managementPolicies
                 }
             }
         ]
@@ -138,7 +138,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
 _vars = {
     "backup": cv.backup
-    "baseName": cv.baseName
+    "backupBucketName": cv.backupBucketName
     "cmkEnabled": cv.cmkEnabled
     "cmkKeyName": cv.cmkKeyName
     "forceDestroy": cv.forceDestroy

@@ -21,10 +21,18 @@ projectId = spec?.projectId or ""
 region = databaseSpec?.region or spec?.region or ""
 storage_spec = spec?.storage or {}
 
+# Dual naming scheme, matching the legacy go-template composition:
+# - baseName = XR metadata.name — used for namespace-scoped Crossplane/K8s
+#   resources (ServiceAccount, Job, DatabaseInstance, Usage, etc.).
+# - hashedName = {projectIdFull[:18]}-{sha256(projectNumber+projectIdFull)[:6]}
+#   — used for GCP resources that need globally unique names (GCS buckets,
+#   KMS keyrings, the managed-service-details external-name).
+baseName = metadata?.name or ""
 projectIdFull = "{}-{}".format(projectId, environmentId)
 uidHash = crypto.sha256("{}-{}".format(env?.projectNumber or "", projectIdFull))[:6:]
-baseName = "{}-{}".format(projectIdFull[:18:], uidHash)
-cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env?.projectId or "", region, baseName, baseName)
+hashedName = "{}-{}".format(projectIdFull[:18:], uidHash)
+
+cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env?.projectId or "", region, hashedName, hashedName)
 databaseIamUser = "{}-sa@{}.iam".format(baseName, env?.projectId or "")
 databaseInstanceName = "{}-db-instance".format(baseName)
 databaseObjectName = "{}-db".format(baseName)
@@ -38,6 +46,12 @@ jobName = "{}-db-grant".format(baseName)
 searchName = "{}-es".format(baseName)
 searchNamespace = "{}-elasticsearch".format(namespace)
 searchSecretName = "{}-es-elastic-user".format(searchName)
+
+# Bucket names are globally unique across GCP, so use hashedName.
+bucketName = "{}-dl".format(hashedName)
+overlayBucketName = "{}-overlay".format(hashedName)
+backupBucketName = "{}-vault".format(hashedName)
+managedServiceDetailsExternalName = "{}-managed-service-details-secret".format(hashedName)
 
 labels = {
     "app": "liferay"

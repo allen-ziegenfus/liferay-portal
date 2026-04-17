@@ -14,12 +14,12 @@ _vars = {
     "region": cv.region
 }
 
-_res = cv.obs?.resources or {}
-_status = _res?["managed-service-details-configmap"]?.resource?.status?.atProvider?.manifest?.status or {}
-_conditions = _status?.conditions or []
-_is_ready_ctx = any c in _conditions {c.type == "Ready" and c.status == "True"}
+# managedServiceDetailsReady mirrors the db-grant-job readiness condition.
+# Consumers (e.g. the liferay app) poll this flag on the composite status.
+_grant_conditions = cv.obs?.resources?["liferay-db-grant-job"]?.resource?.status?.conditions or []
+_is_ready = any c in _grant_conditions { c.type == "Ready" and c.status == "True" }
 
 items = {
     "items": get_items(cv.obs, _vars)
-    "status": {"managedServiceDetailsReady": _is_ready_ctx}
+    "status": {"managedServiceDetailsReady": _is_ready}
 }
