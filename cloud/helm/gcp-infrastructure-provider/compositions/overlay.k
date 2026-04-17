@@ -1,7 +1,7 @@
-import .context_variables as cv
-import .models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
-import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as gcp
-import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as gcp_iam
+import context_variables as cv
+import models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
+import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as gcp
+import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as gcp_iam
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
     _labels = vars["labels"] if "labels" in vars else {}

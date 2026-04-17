@@ -1,5 +1,12 @@
-import k8s.apimachinery.pkg.apis.meta.v1
+import crypto
+import yaml
+import json
+import k8s.api.core.v1 as k8s_core
+import k8s.api.batch.v1 as k8s_batch
+import k8s.api.rbac.v1 as k8s_rbac
+import k8s.apimachinery.pkg.apis.meta.v1 as v1
 
+# --- MODELS ---
 
 
 
@@ -4714,3 +4721,1105 @@ schema ManagedFieldsEntry:
 
 
 
+
+
+# --- CONTEXT ---
+
+
+params = option("params") or {}
+ctx = params["ctx"] if "ctx" in params else {}
+obs = params["obs"] if "obs" in params else {
+    "resources": {}
+}
+oxr = params["oxr"] if "oxr" in params else {}
+
+env = ctx["apiextensions.crossplane.io/environment"] if "apiextensions.crossplane.io/environment" in ctx else {}
+metadata = oxr["metadata"] if "metadata" in oxr else {}
+spec = oxr["spec"] if "spec" in oxr else {}
+
+_cmk_spec = spec["cmk"] if "cmk" in spec else {}
+backup = spec["backup"] if "backup" in spec else {}
+cmkEnabled = _cmk_spec["enabled"] if "enabled" in _cmk_spec else False
+databaseSpec = spec["database"] if "database" in spec else {}
+environmentId = spec["environmentId"] if "environmentId" in spec else ""
+forceDestroy = spec["forceDestroy"] if "forceDestroy" in spec else False
+namespace = metadata["namespace"] if "namespace" in metadata else ""
+overlay = spec["overlay"] if "overlay" in spec else {}
+overlayEnabled = overlay["enabled"] if "enabled" in overlay else False
+projectId = spec["projectId"] if "projectId" in spec else ""
+region = databaseSpec["region"] if "region" in databaseSpec else (spec["region"] if "region" in spec else "")
+storage_spec = spec["storage"] if "storage" in spec else {}
+
+projectIdFull = "{}-{}".format(projectId, environmentId)
+uidHash = crypto.sha256("{}-{}".format(env["projectNumber"] if "projectNumber" in env else "", projectIdFull))[:6:]
+
+baseName = "{}-{}".format(projectIdFull[:18:], uidHash)
+cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env["projectId"] if "projectId" in env else "", region, baseName, baseName)
+databaseIamUser = "{}@{}.iam".format("{}-sa".format(baseName), env["projectId"] if "projectId" in env else "")
+databaseInstanceName = "{}-db-instance".format(baseName)
+databaseObjectName = "{}-db".format(baseName)
+databaseUserObjectName = "{}-db-user".format(baseName)
+databaseName = databaseSpec["name"] if "name" in databaseSpec else "lportal"
+databasePort = "5432"
+gsaEmail = "{}@{}.iam.gserviceaccount.com".format("{}-sa".format(baseName), env["projectId"] if "projectId" in env else "")
+gsaName = "{}-sa".format(baseName)
+instanceConnectionName = "{}:{}:{}".format(env["projectId"] if "projectId" in env else "", region, databaseInstanceName)
+jobName = "{}-db-grant".format(baseName)
+searchName = "{}-es".format(baseName)
+searchNamespace = "{}-elasticsearch".format(namespace)
+searchSecretName = "{}-es-elastic-user".format(searchName)
+
+labels = {
+    "app": "liferay"
+    "deployment-name": env["deploymentName"] if "deploymentName" in env else ""
+    "environment-id": environmentId
+    "project-id": projectId
+}
+if "commonTags" in spec and spec["commonTags"]:
+    labels.update(spec["commonTags"])
+
+backupTargetLabels = {**labels, "active": "true", "should-back-up": "true"}
+orphan = spec["orphanOnDelete"] if "orphanOnDelete" in spec else False
+managementPolicies = ["Create", "Observe", "Update"] if orphan else ["*"]
+managementPolicy = "ObserveCreateUpdate" if orphan else "Default"
+managementPoliciesNoUpdate = ["Create", "Observe"] if orphan else ["Create", "Delete", "Observe"]
+managementPoliciesOnce = ["Create", "Observe", "Delete"]
+
+
+schema init_layer:
+
+
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _labels = vars["labels"] if "labels" in vars else {}
+        _meta = vars["metadata"] if "metadata" in vars else {}
+        _name = str(_meta["name"] if "name" in _meta else "")
+        _namespace = str(vars["namespace"] if "namespace" in vars else "")
+        _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+
+        _init_cm = k8s_core.ConfigMap {
+                apiVersion = "v1"
+                kind = "ConfigMap"
+            metadata = {
+                labels = _labels
+                name = "init-config"
+                namespace = _namespace
+            }
+            data = {
+                "PROJECT_ID": str(vars["projectId"] if "projectId" in vars else "")
+                "REGION": str(vars["region"] if "region" in vars else "")
+            }
+        }
+
+        _items: [any] = []
+
+        _items
+    }
+
+    _vars = {
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "metadata": metadata
+        "namespace": namespace
+        "projectId": projectId
+        "region": region
+    }
+
+    _res = obs?.resources or {}
+    _status = _res?["managed-service-details-configmap"]?.resource?.status?.atProvider?.manifest?.status or {}
+    _conditions = _status?.conditions or []
+    _is_ready_ctx = any c in _conditions {c.type == "Ready" and c.status == "True"}
+
+    items = {
+        "items": get_items(obs, _vars)
+        "status": {"managedServiceDetailsReady": _is_ready_ctx}
+    }
+
+
+_init = init_layer {}
+items_init = _init.items
+
+schema security_layer:
+
+
+
+
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _env = vars["env"] if "env" in vars else {}
+        _labels = vars["labels"] if "labels" in vars else {}
+        _gsaName = str(vars["gsaName"] if "gsaName" in vars else "")
+        _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
+        _baseName = str(vars["baseName"] if "baseName" in vars else "")
+        _projectId = str(_env["projectId"] if "projectId" in _env else "")
+        _namespace = str(vars["namespace"] if "namespace" in vars else "")
+        _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+
+        _security_items: [any] = [
+            sa.ServiceAccount {
+                apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+                kind = "ServiceAccount"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-gsa"}
+                    labels = _labels
+                    name = _gsaName
+                }
+                spec = {
+                    forProvider = {
+                        displayName = "Liferay {} Service Account".format(_gsaName)
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            },
+            sa_iam.ServiceAccountIAMMember {
+                apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+                kind = "ServiceAccountIAMMember"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-wi-binding"}
+                    labels = _labels
+                }
+                spec = {
+                    forProvider = {
+                        member = "serviceAccount:{}.svc.id.goog[{}/liferay-default]".format(_projectId, _namespace)
+                        role = "roles/iam.workloadIdentityUser"
+                        serviceAccountIdRef = {
+                            name = _gsaName
+                        }
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }
+        ]
+
+        _security_items += [project_iam.ProjectIAMMember {
+                apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+                kind = "ProjectIAMMember"
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-sql-instance-user-role"}
+                labels = _labels
+            }
+            spec = {
+                forProvider = {
+                    member = "serviceAccount:{}".format(_gsaEmail)
+                    project = _projectId
+                    role = "roles/cloudsql.instanceUser"
+                }
+                managementPolicies = _managementPolicies
+            }
+        }]
+
+        _security_items += [project_iam.ProjectIAMMember {
+                apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+                kind = "ProjectIAMMember"
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-sql-client-role"}
+                labels = _labels
+            }
+            spec = {
+                forProvider = {
+                    member = "serviceAccount:{}".format(_gsaEmail)
+                    project = _projectId
+                    role = "roles/cloudsql.client"
+                }
+                managementPolicies = _managementPolicies
+            }
+        }]
+
+        if bool(vars["cmkEnabled"] if "cmkEnabled" in vars else False):
+            _security_items += [
+                kms_keyring.KeyRing {
+                apiVersion = "kms.gcp.m.upbound.io/v1beta1"
+                kind = "KeyRing"
+                    metadata = {
+                        annotations = {"crossplane.io/composition-resource-name": "liferay-keyring"}
+                        labels = _labels
+                        name = "{}-keyring".format(_baseName)
+                    }
+                    spec = {
+                        forProvider = {"location": str(vars["region"] if "region" in vars else "")}
+                        managementPolicies = _managementPolicies
+                    }
+                },
+                kms_key.CryptoKey {
+                apiVersion = "kms.gcp.m.upbound.io/v1beta1"
+                kind = "CryptoKey"
+                    metadata = {
+                        annotations = {"crossplane.io/composition-resource-name": "liferay-cryptokey"}
+                        labels = _labels
+                        name = "{}-key".format(_baseName)
+                    }
+                    spec = {
+                        forProvider = {
+                            keyRingSelector = {"matchControllerRef": True}
+                            purpose = "ENCRYPT_DECRYPT"
+                            rotationPeriod = "86400s"
+                        }
+                        managementPolicies = _managementPolicies
+                    }
+                }
+            ]
+
+            _kms_targets = [
+                {"name": "sql", "svc": "gcp-sa-cloud-sql"}
+                {"name": "storage", "svc": "gs-project-accounts"}
+            ]
+            _security_items += [kms_iam.CryptoKeyIAMMember {
+                apiVersion = "kms.gcp.m.upbound.io/v1beta1"
+                kind = "CryptoKeyIAMMember"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-{}-kms-binding".format(t["name"])}
+                    labels = _labels
+                }
+                spec = {
+                    forProvider = {
+                        cryptoKeyIdRef = {"name": "{}-key".format(_baseName)}
+                        member = "serviceAccount:service-{}@{}.iam.gserviceaccount.com".format(str(_env["projectNumber"] if "projectNumber" in _env else ""), t["svc"])
+                        role = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            } for t in _kms_targets]
+
+        _security_items
+    }
+
+    _vars = {
+        "baseName": baseName
+        "cmkEnabled": cmkEnabled
+        "cmkKeyName": cmkKeyName
+        "env": env
+        "gsaEmail": gsaEmail
+        "gsaName": gsaName
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "namespace": namespace
+        "region": region
+    }
+
+    items = {"items": get_items(obs, _vars)}
+
+
+_security = security_layer {}
+items_security = _security.items
+
+schema sql_layer:
+
+
+
+
+
+    _get_items_impl = lambda obs: any, vars: {str:any} -> [any] {
+        _db_spec = vars["database"] if "database" in vars else {}
+        _env = vars["env"] if "env" in vars else {}
+        _labels = vars["labels"] if "labels" in vars else {}
+        _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+
+        _items: [any] = [
+            sql_instance.DatabaseInstance {
+                apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                kind = "DatabaseInstance"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "database-primary"}
+                    labels = _labels
+                    name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")
+                }
+                spec = {
+                    forProvider = {
+                        databaseVersion = str(_db_spec["databaseVersion"] if "databaseVersion" in _db_spec else "POSTGRES_18")
+                        deletionProtection = bool(_db_spec["deletionProtection"] if "deletionProtection" in _db_spec else False)
+                        region = str(vars["region"] if "region" in vars else "")
+                        rootPasswordSecretRef = {
+                            key = "password"
+                            name = str(_db_spec["rootPasswordSecretName"] if "rootPasswordSecretName" in _db_spec else "placeholder")
+                        
+                        }
+                        settings = {
+                            databaseFlags = [{"name": "cloudsql.iam_authentication", "value": "on"}]
+                            diskSize = int(_db_spec["storageGB"] if "storageGB" in _db_spec else 10)
+                            diskType = "PD_SSD"
+                            edition = "ENTERPRISE"
+                            insightsConfig = {
+                                queryInsightsEnabled = bool(_db_spec["queryInsightsEnabled"] if "queryInsightsEnabled" in _db_spec else True)
+                            }
+                            ipConfiguration = {
+                                ipv4Enabled = False
+                                privateNetwork = "projects/{}/global/networks/{}".format(str(vars["projectId"] if "projectId" in vars else ""), str(_env["vpcName"] if "vpcName" in _env else ""))
+                                sslMode = "TRUSTED_CLIENT_CERTIFICATE_REQUIRED"
+                            }
+                            tier = str(_db_spec["instanceType"] if "instanceType" in _db_spec else "db-custom-1-3840")
+                            userLabels = _labels | {"active": "true", "should-back-up": "true"}
+                        }
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }
+            sql_db.Database {
+                apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                kind = "Database"
+                metadata = {
+                    annotations = {
+                        "crossplane.io/composition-resource-name": "liferay-db"
+                        "crossplane.io/external-name": str(vars["databaseName"] if "databaseName" in vars else "lportal")
+                    }
+                    labels = _labels
+                    name = str(vars["databaseObjectName"] if "databaseObjectName" in vars else "{}-db".format(str(vars["baseName"] if "baseName" in vars else "")))
+                }
+                spec = {
+                    forProvider = {
+                        instanceRef = {
+                            name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")
+                        }
+                        project = str(vars["projectId"] if "projectId" in vars else "")
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }
+            sql_user.User {
+                apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                kind = "User"
+                metadata = {
+                    annotations = {
+                        "crossplane.io/composition-resource-name": "liferay-iam-user"
+                        "crossplane.io/external-name": str(vars["databaseIamUser"] if "databaseIamUser" in vars else "")
+                    }
+                    labels = _labels
+                    name = str(vars["databaseUserObjectName"] if "databaseUserObjectName" in vars else "{}-db-user".format(str(vars["baseName"] if "baseName" in vars else "")))
+                }
+                spec = {
+                    forProvider = {
+                        instanceRef = {
+                            name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")
+                        }
+                        project = str(vars["projectId"] if "projectId" in vars else "")
+                        $type = "CLOUD_IAM_SERVICE_ACCOUNT"
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }
+            {
+                apiVersion = "protection.crossplane.io/v1beta1"
+                kind = "Usage"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-database"}
+                    name = "{}-instance-by-database".format(str(vars["baseName"] if "baseName" in vars else ""))
+                }
+                spec = {
+                    of = {
+                        apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                        kind = "DatabaseInstance"
+                        resourceRef = {name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")}
+                    }
+                    by = {
+                        apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                        kind = "Database"
+                        resourceRef = {name = str(vars["databaseObjectName"] if "databaseObjectName" in vars else "{}-db".format(str(vars["baseName"] if "baseName" in vars else "")))}
+                    }
+                }
+            }
+            {
+                apiVersion = "protection.crossplane.io/v1beta1"
+                kind = "Usage"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-user"}
+                    name = "{}-instance-by-user".format(str(vars["baseName"] if "baseName" in vars else ""))
+                }
+                spec = {
+                    of = {
+                        apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                        kind = "DatabaseInstance"
+                        resourceRef = {name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")}
+                    }
+                    by = {
+                        apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                        kind = "User"
+                        resourceRef = {name = str(vars["databaseUserObjectName"] if "databaseUserObjectName" in vars else "{}-db-user".format(str(vars["baseName"] if "baseName" in vars else "")))}
+                    }
+                }
+            }
+        ]
+
+        _items
+    }
+
+    get_items = _get_items_impl
+
+    _vars = {
+        "baseName": baseName
+        "database": databaseSpec
+        "databaseIamUser": databaseIamUser
+        "databaseInstanceName": databaseInstanceName
+        "databaseName": databaseName
+        "databaseObjectName": databaseObjectName
+        "databaseUserObjectName": databaseUserObjectName
+        "env": env
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "projectId": env["projectId"] if "projectId" in env else ""
+        "region": region
+    }
+
+    if option("combined", "false") != "true":
+        items = {"items": get_items(obs, _vars)}
+
+
+_sql = sql_layer {}
+items_sql = _sql.items
+
+schema storage_layer:
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _storage_spec = vars["storage_spec"] if "storage_spec" in vars else {}
+        _labels = vars["labels"] if "labels" in vars else {}
+        _baseName = vars["baseName"] if "baseName" in vars else ""
+        _bucket_name = str(vars["bucketName"] if "bucketName" in vars else "{}-dl".format(_baseName))
+        _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+
+        _items: [any] = [
+            gcp.Bucket {
+                apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+                kind = "Bucket"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-bucket"}
+                    labels = _labels
+                    name = _bucket_name
+                }
+                spec = {
+                    forProvider = {
+                        forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
+                        labels = _labels | {"active": "true", "should-back-up": "true"}
+                        location = str(vars["region"] if "region" in vars else "")
+                        storageClass = str(_storage_spec["storageClass"] if "storageClass" in _storage_spec else "STANDARD")
+                        uniformBucketLevelAccess = True
+                        versioning = {enabled = bool(_storage_spec["enableVersioning"] if "enableVersioning" in _storage_spec else True)}
+                    }
+                    if vars["cmkEnabled"] if "cmkEnabled" in vars else False:
+                        forProvider.encryption = {
+                            defaultKmsKeyName = str(vars["cmkKeyName"] if "cmkKeyName" in vars else "")
+                        }
+                    managementPolicies = _managementPolicies
+                }
+            },
+            gcp_iam.BucketIAMMember {
+                apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+                kind = "BucketIAMMember"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-iam"}
+                    labels = _labels
+                }
+                spec = {
+                    forProvider = {
+                        member = "serviceAccount:{}".format(str(vars["gsaEmail"] if "gsaEmail" in vars else ""))
+                        role = "roles/storage.admin"
+                        bucketRef = {
+                            name = _bucket_name
+                        }
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }
+        ]
+
+        _items
+    }
+
+    _vars = {
+        "baseName": baseName
+        "cmkEnabled": cmkEnabled
+        "cmkKeyName": cmkKeyName
+        "forceDestroy": forceDestroy
+        "gsaEmail": gsaEmail
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "region": region
+        "storage_spec": storage_spec
+    }
+
+    items = {"items": get_items(obs, _vars)}
+
+
+_storage = storage_layer {}
+items_storage = _storage.items
+
+schema overlay_layer:
+
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _labels = vars["labels"] if "labels" in vars else {}
+        _baseName = vars["baseName"] if "baseName" in vars else ""
+        _overlayBucketName = str(vars["overlayBucketName"] if "overlayBucketName" in vars else "{}-overlay".format(_baseName))
+        _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
+        _namespace = str(vars["namespace"] if "namespace" in vars else "")
+        _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+
+        _items: [any] = []
+
+        if bool(vars["overlayEnabled"] if "overlayEnabled" in vars else False):
+            _items += [gcp.Bucket {
+                apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+                kind = "Bucket"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-overlay-bucket"}
+                    labels = _labels
+                    name = _overlayBucketName
+                }
+                spec = {
+                    forProvider = {
+                        forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
+                        labels = _labels
+                        location = str(vars["overlayRegion"] if "overlayRegion" in vars and vars["overlayRegion"] else (vars["region"] if "region" in vars else ""))
+                        project = str(vars["projectId"] if "projectId" in vars else "")
+                        storageClass = "STANDARD"
+                        uniformBucketLevelAccess = True
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }]
+
+            _items += [gcp_iam.BucketIAMMember {
+                apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+                kind = "BucketIAMMember"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-gsa-overlay-bucket-iam"}
+                    labels = _labels
+                }
+                spec = {
+                    forProvider = {
+                        bucketRef = {"name": _overlayBucketName}
+                        member = "serviceAccount:{}".format(_gsaEmail)
+                        role = "roles/storage.objectViewer"
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }]
+
+        _items
+    }
+
+    _vars = {
+        "baseName": baseName
+        "forceDestroy": forceDestroy
+        "gsaEmail": gsaEmail
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "namespace": namespace
+        "overlayEnabled": overlayEnabled
+        "overlayRegion": overlay["region"] if "region" in overlay else ""
+        "projectId": env["projectId"] if "projectId" in env else ""
+        "region": region
+    }
+
+    items = {"items": get_items(obs, _vars)}
+
+
+_overlay = overlay_layer {}
+items_overlay = _overlay.items
+
+schema k8s_layer:
+
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _db_spec = (vars["databaseSpec"] if "databaseSpec" in vars else {})
+        _meta = (vars["metadata"] if "metadata" in vars else {})
+
+        _liferay_sa = k8s_core.ServiceAccount {
+                apiVersion = "v1"
+                kind = "ServiceAccount"
+            metadata = {
+                annotations = {"iam.gke.io/gcp-service-account": vars["gsaEmail"]}
+                labels = vars["labels"]
+                name = "liferay-default"
+                namespace = vars["namespace"]
+            }
+        }
+
+        _k8s_items: [any] = [
+            kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-ksa"}
+                    labels = vars["labels"]
+                    name = "{}-ksa".format((_meta["name"] if "name" in _meta else ""))
+                }
+                spec = {
+                    forProvider = {"manifest": _liferay_sa}
+                    managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+                }
+            }
+        ]
+
+        _liferay_job = k8s_batch.Job {
+                apiVersion = "batch/v1"
+                kind = "Job"
+            metadata = {
+                labels = vars["labels"]
+                name = vars["jobName"]
+                namespace = vars["namespace"]
+            }
+            spec = {
+                template = {
+                    spec = {
+                        containers = [{
+                            args = [
+                                """\
+    set -e
+    until pg_isready -h 127.0.0.1 -p {port} -U postgres; do sleep 2; done
+    psql -h 127.0.0.1 -v "ON_ERROR_STOP=1" -U postgres -d {db} <<EOF
+    GRANT ALL PRIVILEGES ON DATABASE "{db}" TO "{user}";
+    GRANT ALL ON ALL TABLES IN SCHEMA public TO "{user}";
+    GRANT cloudsqlsuperuser TO "{user}";
+    EOF
+    """.format(port=vars["databasePort"], db=vars["databaseName"], user=vars["databaseIamUser"])
+                            ]
+                            command = ["/bin/sh", "-c"]
+                            env = [{
+                                name = "PGPASSWORD"
+                                valueFrom = {
+                                    "secretKeyRef": {"key": "password", "name": (_db_spec["rootPasswordSecretName"] if "rootPasswordSecretName" in _db_spec else "")}
+                                }
+                            }]
+                            image = "postgres:18-alpine"
+                            name = "sql-runner"
+                            resources = {
+                                limits = {"cpu": "200m", "memory": "256Mi"}
+                                requests = {"cpu": "100m", "memory": "128Mi"}
+                            }
+                            securityContext = {
+                                allowPrivilegeEscalation = False
+                                capabilities = {"drop": ["ALL"]}
+                                runAsNonRoot = True
+                                runAsUser = 1000
+                                seccompProfile = {"type": "RuntimeDefault"}
+                            }
+                        }]
+                        initContainers = [{
+                            args = [
+                                "--auto-iam-authn"
+                                "--port={}".format(vars["databasePort"])
+                                "--private-ip"
+                                "--structured-logs"
+                                vars["instanceConnectionName"]
+                            ]
+                            image = "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1"
+                            name = "cloud-sql-proxy"
+                            resources = {
+                                limits = {"cpu": "200m", "memory": "256Mi"}
+                                requests = {"cpu": "100m", "memory": "128Mi"}
+                            }
+                            restartPolicy = "Always"
+                            securityContext = {
+                                allowPrivilegeEscalation = False
+                                capabilities = {"drop": ["ALL"]}
+                                runAsNonRoot = True
+                                runAsUser = 65532
+                                seccompProfile = {"type": "RuntimeDefault"}
+                            }
+                        }]
+                        restartPolicy = "OnFailure"
+                        securityContext = {
+                            fsGroup = 1000
+                            runAsNonRoot = True
+                            seccompProfile = {"type": "RuntimeDefault"}
+                        }
+                        serviceAccountName = "liferay-default"
+                        volumes = [{"emptyDir": {}, "name": "term-log"}]
+                    }
+                }
+            }
+        }
+
+        _k8s_items += [kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-db-grant-job"}
+                labels = vars["labels"]
+                name = vars["jobName"]
+            }
+            spec = {
+                forProvider = {"manifest": _liferay_job}
+                managementPolicies = vars["managementPoliciesOnce"] if "managementPoliciesOnce" in vars else ["Create", "Observe", "Delete"]
+            }
+        }]
+
+        _k8s_items
+    }
+
+    _vars = {
+        "databaseIamUser": databaseIamUser
+        "databaseName": databaseName
+        "databasePort": databasePort
+        "databaseSpec": databaseSpec
+        "gsaEmail": gsaEmail
+        "instanceConnectionName": instanceConnectionName
+        "jobName": jobName
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "managementPolicy": managementPolicy
+        "metadata": metadata
+        "namespace": namespace
+    }
+
+    if not option("combined") or option("combined") == "false":
+        items = {"items": get_items(obs, _vars)}
+
+
+_k8s = k8s_layer {}
+items_k8s = _k8s.items
+
+schema elasticsearch_layer:
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _res = obs?.resources or {}
+
+        _es_status = _res?["elasticsearch-observer"]?.resource?.status?.atProvider?.manifest?.status or {}
+        _sec_data = _res?["elasticsearch-secret-observer"]?.resource?.status?.atProvider?.manifest?.data or {}
+
+        _health = _es_status?.health or ""
+        _password = _sec_data?.elastic or ""
+
+        _is_ready = _health in ["green", "yellow"] and _password
+
+        _meta = vars?.metadata or {}
+        _name = str(_meta?.name or "")
+
+        _items = [
+            kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "elasticsearch-observer"}
+                    name = "{}-es-observer".format(_name)
+                }
+                spec = {
+                    forProvider = {
+                        manifest = {
+                            "apiVersion": "elasticsearch.k8s.elastic.co/v1"
+                            "kind": "Elasticsearch"
+                            "metadata": {
+                                "name": str(vars["searchName"] if "searchName" in vars else "")
+                                "namespace": str(vars["searchNamespace"] if "searchNamespace" in vars else "")
+                            }
+                        }
+                    }
+                    managementPolicies = ["Observe"]
+                }
+            }
+            kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "elasticsearch-secret-observer"}
+                    name = "{}-es-es-elastic-user-observer".format(_name)
+                }
+                spec = {
+                    forProvider = {
+                        manifest = k8s_core.Secret {
+                apiVersion = "v1"
+                kind = "Secret"
+                            metadata = {
+                                name = str(vars["searchSecretName"] if "searchSecretName" in vars else "")
+                                namespace = str(vars["searchNamespace"] if "searchNamespace" in vars else "")
+                            }
+                        }
+                    }
+                    managementPolicies = ["Observe"]
+                }
+            }
+        ]
+
+        if _is_ready:
+            _items += [kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+                metadata = {
+                    annotations = {
+                        "crossplane.io/external-name": "elasticsearch-connection-details"
+                        "crossplane.io/composition-resource-name": "elasticsearch-connection-details-secret"
+                    }
+                    labels = vars["labels"] if "labels" in vars else {}
+                    name = "{}-elasticsearch-connection-details-secret".format(_name)
+                }
+                spec = {
+                    forProvider = {
+                        manifest = k8s_core.Secret {
+                apiVersion = "v1"
+                kind = "Secret"
+                            data = {"ELASTICSEARCH_PASSWORD": _password}
+                            metadata = {
+                                labels = vars["labels"] if "labels" in vars else {}
+                                name = "elasticsearch-connection-details"
+                                namespace = str(vars["namespace"] if "namespace" in vars else "")
+                            }
+                            stringData = {
+                                "ELASTICSEARCH_URL": "http://{}-es-http.{}.svc:9200".format(str(vars["searchName"] if "searchName" in vars else ""), str(vars["searchNamespace"] if "searchNamespace" in vars else ""))
+                                "ELASTICSEARCH_USERNAME": "elastic"
+                            }
+                            type = "Opaque"
+                        }
+                    }
+                    managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["Default"]
+                }
+            }]
+
+        _items
+    }
+
+    _vars = {
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "metadata": metadata
+        "namespace": namespace
+        "searchName": searchName
+        "searchNamespace": searchNamespace
+        "searchSecretName": searchSecretName
+    }
+
+    items = {"items": get_items(obs, _vars) if not option("combined") or option("combined") == "false" else []}
+
+
+_elasticsearch = elasticsearch_layer {}
+items_elasticsearch = _elasticsearch.items
+
+schema backup_layer:
+
+
+
+
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _backup = (vars["backup"] if "backup" in vars else {}) or {}
+        _backup_items: [any] = []
+        _baseName = str(vars["baseName"] if "baseName" in vars else "")
+        _labels = vars["labels"] if "labels" in vars else {}
+        _meta_name = str(vars["metadata"]["name"] if "metadata" in vars and "name" in vars["metadata"] else "")
+        _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
+        _namespace = str(vars["namespace"] if "namespace" in vars else "")
+        _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+        _managementPolicy = vars["managementPolicy"] if "managementPolicy" in vars else "Default"
+
+        _get_iam_name = lambda role: str, bucket: str -> str {
+            _hash = crypto.sha256(_meta_name + role + "serviceAccount:" + _gsaEmail + bucket)[:12:]
+            "{}-{}".format(_meta_name, _hash)
+        }
+
+        if bool(_backup["enabled"] if "enabled" in _backup else False):
+            _backup_vault_labels = _labels | {"is-backup-vault": "true"}
+            _bucket_name = "{}-vault".format(_baseName)
+
+            _backup_items += [storage_bucket.Bucket {
+                apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+                kind = "Bucket"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-backup"}
+                    labels = _backup_vault_labels
+                    name = _bucket_name
+                }
+                spec = {
+                    forProvider = {
+                        forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
+                        labels = _backup_vault_labels
+                        lifecycleRule = [{
+                            action = {$type = "Delete"}
+                            condition = {age = (int(_backup["retentionDays"] if "retentionDays" in _backup else 30)) + 2}
+                        }]
+                        location = str(_backup["region"] if "region" in _backup else (vars["region"] if "region" in vars else ""))
+                        storageClass = str(_backup["storageClass"] if "storageClass" in _backup else "NEARLINE")
+                        uniformBucketLevelAccess = True
+                    }
+                    if bool(vars["cmkEnabled"] if "cmkEnabled" in vars else False):
+                        forProvider.encryption = {
+                            defaultKmsKeyName = str(vars["cmkKeyName"] if "cmkKeyName" in vars else "")
+                        }
+                    managementPolicies = _managementPolicies
+                }
+            }]
+
+            _backup_items += [storage_iam.BucketIAMMember {
+                apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+                kind = "BucketIAMMember"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-backup-iam"}
+                    labels = _labels
+                    name = _get_iam_name("roles/storage.admin", _bucket_name)
+                }
+                spec = {
+                    forProvider = {
+                        bucketRef = {"name": _bucket_name}
+                        member = "serviceAccount:{}".format(_gsaEmail)
+                        role = "roles/storage.admin"
+                    }
+                    managementPolicies = _managementPolicies
+                }
+            }]
+
+            _backup_cr = k8s_rbac.ClusterRole {
+                apiVersion = "rbac.authorization.k8s.io/v1"
+                kind = "ClusterRole"
+                metadata = {
+                    labels = _labels
+                    name = "backup-create-cluster-role"
+                }
+                rules = [{
+                    apiGroups = [""]
+                    resources = ["serviceaccounts"]
+                    verbs = ["create", "delete", "get", "list", "watch"]
+                }]
+            }
+
+            _backup_crb = k8s_rbac.ClusterRoleBinding {
+                apiVersion = "rbac.authorization.k8s.io/v1"
+                kind = "ClusterRoleBinding"
+                metadata = {
+                    labels = _labels
+                    name = "backup-create-cluster-role-binding"
+                }
+                roleRef = {
+                    apiGroup = "rbac.authorization.k8s.io"
+                    kind = "ClusterRole"
+                    name = "backup-create-cluster-role"
+                }
+                subjects = [{
+                    kind = "ServiceAccount"
+                    name = "backup-create-service-account"
+                    namespace = _namespace
+                }]
+            }
+
+            _backup_items += [
+                kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+                    metadata = {
+                        annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role"}
+                        labels = _labels
+                        name = "backup-create-cluster-role"
+                    }
+                    spec = {
+                        forProvider = {"manifest": _backup_cr}
+                        managementPolicies = [_managementPolicy]
+                    }
+                },
+                kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+                    metadata = {
+                        annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role-binding"}
+                        labels = _labels
+                        name = "backup-create-cluster-role-binding"
+                    }
+                    spec = {
+                        forProvider = {"manifest": _backup_crb}
+                        managementPolicies = [_managementPolicy]
+                    }
+                }
+            ]
+
+        _backup_items
+    }
+
+    _vars = {
+        "backup": backup
+        "baseName": baseName
+        "cmkEnabled": cmkEnabled
+        "cmkKeyName": cmkKeyName
+        "forceDestroy": forceDestroy
+        "gsaEmail": gsaEmail
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "managementPolicy": managementPolicy
+        "metadata": metadata
+        "namespace": namespace
+        "region": region
+    }
+
+    items = {"items": get_items(obs, _vars)}
+
+
+_backup = backup_layer {}
+items_backup = _backup.items
+
+schema managed_service_details_layer:
+
+
+
+
+    get_items = lambda obs: any, vars: {str:any} -> [any] {
+        _labels = vars["labels"] if "labels" in vars else {}
+        _namespace = str(vars["namespace"] if "namespace" in vars else "")
+        _baseName = str(vars["baseName"] if "baseName" in vars else "")
+
+        _managed_service_details_secret = k8s_core.Secret {
+            apiVersion = "v1"
+            kind = "Secret"
+            metadata = {
+                labels = _labels
+                name = "managed-service-details"
+                namespace = _namespace
+            }
+            stringData = {
+                "DATABASE_ENDPOINT": "localhost"
+                "DATABASE_INSTANCE_NAME": "{}:us-central1:{}-db-instance".format(str(vars["projectId"] if "projectId" in vars else ""), _baseName)
+                "DATABASE_PORT": "5432"
+                "DATABASE_USERNAME": "{}-sa@{}.iam".format(_baseName, str(vars["projectId"] if "projectId" in vars else ""))
+                "LIFERAY_GCS_BUCKET_NAME": str(vars["bucketName"] if "bucketName" in vars else "{}-dl".format(_baseName))
+                "LIFERAY_OVERLAY_BUCKET_NAME": str(vars["overlayBucketName"] if "overlayBucketName" in vars else "{}-overlay".format(_baseName))
+            }
+        }
+
+        _items: [any] = [
+            kubernetes.Object {
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
+                metadata = {
+                    annotations = {"crossplane.io/composition-resource-name": "managed-service-details-secret"}
+                    labels = _labels
+                    name = "{}-managed-service-details-secret".format(_baseName)
+                }
+                spec = {
+                    forProvider = {"manifest": _managed_service_details_secret}
+                    managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+                }
+            }
+        ]
+
+        _items
+    }
+
+    _vars = {
+        "baseName": baseName
+        "gsaEmail": gsaEmail
+        "labels": labels
+        "managementPolicies": managementPolicies
+        "namespace": namespace
+        "projectId": env["projectId"] if "projectId" in env else ""
+    }
+
+    items = {"items": get_items(obs, _vars)}
+
+
+_managed_service_details = managed_service_details_layer {}
+items_managed_service_details = _managed_service_details.items
+
+items = {"items": [item for layer in [items_init,items_security,items_sql,items_storage,items_overlay,items_k8s,items_elasticsearch,items_backup,items_managed_service_details] for item in layer.items]}

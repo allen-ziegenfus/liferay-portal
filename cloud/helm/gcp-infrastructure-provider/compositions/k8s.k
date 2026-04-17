@@ -1,5 +1,5 @@
-import .context_variables as cv
-import .models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
+import context_variables as cv
+import models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
 import k8s.api.batch.v1 as k8s_batch
 import k8s.api.core.v1 as k8s_core
 

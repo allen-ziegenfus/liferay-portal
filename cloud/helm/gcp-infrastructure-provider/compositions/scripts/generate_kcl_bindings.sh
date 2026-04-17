@@ -1,174 +1,77 @@
 #!/bin/bash
-
 set -e
-
 function main {
-    local compositions_directory_path="/home/allenz/liferay/liferay-portal/cloud/helm/gcp-infrastructure-provider/compositions"
+    local compositions_dir="/home/allenz/liferay/liferay-portal/cloud/helm/gcp-infrastructure-provider/compositions"
+    local tmp_dir=$(mktemp -d)
+    trap 'rm -rf "${tmp_dir}"' EXIT
 
-    local output_directory_path="${compositions_directory_path}/models"
-
-    local providers_configuration_file_path="/home/allenz/liferay/liferay-portal/cloud/helm/gcp-infrastructure-provider/templates/providers.yaml"
-
-    local temporary_working_directory_path
-    temporary_working_directory_path=$(mktemp -d)
-
-    declare -A resource_groups=(
-        ["databaseinstances.sql.gcp.m.upbound.io"]="sql"
-        ["databases.sql.gcp.m.upbound.io"]="sql"
-        ["users.sql.gcp.m.upbound.io"]="sql"
-        ["buckets.storage.gcp.m.upbound.io"]="storage"
-        ["bucketiammembers.storage.gcp.m.upbound.io"]="storage"
-        ["serviceaccounts.cloudplatform.gcp.m.upbound.io"]="cloudplatform"
-        ["serviceaccountiammembers.cloudplatform.gcp.m.upbound.io"]="cloudplatform"
-        ["projectiammembers.cloudplatform.gcp.m.upbound.io"]="cloudplatform"
-        ["keyrings.kms.gcp.m.upbound.io"]="kms"
-        ["cryptokeys.kms.gcp.m.upbound.io"]="kms"
-        ["cryptokeyiammembers.kms.gcp.m.upbound.io"]="kms"
-        ["objects.kubernetes.m.crossplane.io"]="kubernetes"
-    )
-
-    trap 'rm -rf "${temporary_working_directory_path}"' EXIT
-
-    echo ""
-    echo "Parsing providers..."
-
-    local provider_image_urls
-    provider_image_urls=$(yq -N -r '.spec.package | select(. != null)' "${providers_configuration_file_path}")
-
-    echo "Extracting selected resource definitions..."
-
-    for provider_image_url in ${provider_image_urls}
-    do
-        echo "Processing ${provider_image_url}..."
-
+    echo "Extracting provider CRDs..."
+    local provider_image_urls=$(yq -N -r '.spec.package | select(. != null)' "/home/allenz/liferay/liferay-portal/cloud/helm/gcp-infrastructure-provider/templates/providers.yaml")
+    for provider_image_url in ${provider_image_urls}; do
         docker pull -q "${provider_image_url}"
-
-        local container_identifier
-        container_identifier=$(docker create "${provider_image_url}")
-
-        docker cp "${container_identifier}:/package.yaml" "${temporary_working_directory_path}/package.yaml"
-
-        docker rm -v "${container_identifier}" > /dev/null
-
-        local custom_resource_definition_names
-        custom_resource_definition_names=$(yq -N -r 'select(.kind == "CustomResourceDefinition") | .metadata.name' "${temporary_working_directory_path}/package.yaml")
-
-        for custom_resource_definition_name in ${custom_resource_definition_names}
-        do
-            if [[ -v resource_groups["${custom_resource_definition_name}"] ]]
-            then
-                yq -N "select(.kind == \"CustomResourceDefinition\" and .metadata.name == \"${custom_resource_definition_name}\")" "${temporary_working_directory_path}/package.yaml" >> "${temporary_working_directory_path}/all_selected.yaml"
-
-                echo "---" >> "${temporary_working_directory_path}/all_selected.yaml"
-            fi
-        done
-
-        rm -f "${temporary_working_directory_path}/package.yaml"
+        local cid=$(docker create "${provider_image_url}")
+        docker cp "${cid}:/package.yaml" "${tmp_dir}/package.yaml"
+        docker rm -v "${cid}" > /dev/null
+        yq -N -r 'select(.kind == "CustomResourceDefinition")' "${tmp_dir}/package.yaml" >> "${tmp_dir}/all_crds.yaml"
+        echo "---" >> "${tmp_dir}/all_crds.yaml"
     done
 
-    echo ""
-    echo "Generating unified KCL models..."
-
-    rm -rf "${output_directory_path}"
-
-    mkdir -p "${output_directory_path}/tmp"
-
-    # kcl-openapi has issues with combined files containing multiple CRDs,
-    # so we generate them individually.
-
-    mkdir -p "${temporary_working_directory_path}/all_selected"
-
-    yq -N -s "\"${temporary_working_directory_path}/all_selected/\" + .metadata.name" "${temporary_working_directory_path}/all_selected.yaml"
-
-    for crd_file in "${temporary_working_directory_path}/all_selected/"*
-    do
-        [ -e "${crd_file}" ] || continue
-
-        local crd_name
-        crd_name=$(basename "${crd_file}")
-
-        if [[ "${crd_name}" == "null" ]]
-        then
-            continue
-        fi
-
-        echo "Generating model for ${crd_name}..."
-
-        local crd_version
-        crd_version=$(yq -N -r '.spec.versions[] | select(.storage == true) | .name' "${crd_file}")
-
-        mkdir -p "${output_directory_path}/tmp/${crd_version}"
-
-        kcl-openapi generate model --spec "${crd_file}" --crd --target "${output_directory_path}/tmp/${crd_version}" --model-package "models"
+    echo "Generating KCL models..."
+    mkdir -p "${tmp_dir}/src"
+    yq -N -s "\"${tmp_dir}/split/\" + .metadata.name" "${tmp_dir}/all_crds.yaml"
+    for crd in "${tmp_dir}/split/"*; do
+        [ -e "${crd}" ] || continue
+        kcl-openapi generate model --spec "${crd}" --crd --target "${tmp_dir}/src" --model-package "models"
     done
 
-    for version_dir in "${output_directory_path}/tmp"/*/
-    do
-        [ -d "${version_dir}" ] || continue
-        local version_name
-        version_name=$(basename "${version_dir}")
-        
-        mkdir -p "${output_directory_path}/${version_name}"
-        cp -r "${version_dir}models/"* "${output_directory_path}/${version_name}/"
-    done
+    echo "Bundling models.k and pipeline.k..."
+    python3 - <<'PY_EOF'
+import os, glob, re
+compositions_dir = "/home/allenz/liferay/liferay-portal/cloud/helm/gcp-infrastructure-provider/compositions"
+src_dir = glob.glob("/tmp/tmp.*/src/models")[0]
 
-    rm -rf "${output_directory_path}/tmp"
+# 1. Merge models
+merged_models = ""
+for root, _, files in os.walk(src_dir):
+    for f in files:
+        if not f.endswith('.k'): continue
+        with open(os.path.join(root, f), 'r') as file:
+            c = file.read()
+            c = re.sub(r'"""\nThis file was generated.*?\n"""\n', '', c, flags=re.DOTALL)
+            c = re.sub(r'(?m)^import .*', '', c)
+            merged_models += c + "\n"
 
-    echo "Fixing Kubernetes dependency conflicts..."
-
-    rm -rf "${output_directory_path}/k8s"
-
-    find "${output_directory_path}" -name "*.k" -exec sed -i 's/import k8s\.apimachinery/import k8s.apimachinery/g' {} +
-
-    echo "Consolidating models into a single models.k file..."
-
-    python3 - <<EOF
-import os
-import glob
-import re
-
-model_files = glob.glob('${output_directory_path}/**/*.k', recursive=True)
-
-merged_content = 'import k8s.apimachinery.pkg.apis.meta.v1\\n\\n'
-
-for f in model_files:
-    if f.endswith('kcl.mod') or f.endswith('kcl.mod.lock'):
-        continue
-    with open(f, 'r') as file:
-        content = file.read()
-        # Remove the generated header and imports
-        content = re.sub(r'"""\\nThis file was generated.*?\\n"""\\n', '', content, flags=re.DOTALL)
-        content = re.sub(r'(?m)^import .*\\n', '', content)
-        merged_content += content + '\\n'
-
-lines = merged_content.split('\\n')
-new_lines = []
+lines = merged_models.split('\n')
+deduped_models = []
 seen_schemas = set()
-skip_current = False
-
+skip = False
 for line in lines:
     m = re.match(r'^schema ([a-zA-Z0-9_]+):', line)
     if m:
-        current_schema = m.group(1)
-        if current_schema in seen_schemas:
-            skip_current = True
-        else:
-            skip_current = False
-            seen_schemas.add(current_schema)
-            new_lines.append(line)
-    else:
-        if not skip_current:
-            new_lines.append(line)
+        if m.group(1) in seen_schemas: skip = True
+        else: skip = False; seen_schemas.add(m.group(1))
+    if not skip: deduped_models.append(line)
 
-with open('${compositions_directory_path}/models.k', 'w') as f:
-    f.write('\\n'.join(new_lines))
-EOF
+with open(os.path.join(compositions_dir, 'models.k'), 'w') as f:
+    f.write('import k8s.apimachinery.pkg.apis.meta.v1\n\n' + '\n'.join(deduped_models))
 
-    echo "Cleaning up temporary models directory..."
-    rm -rf "${output_directory_path}"
+# 2. Build pipeline.k
+layers = ["init", "security", "sql", "storage", "overlay", "k8s", "elasticsearch", "backup", "managed_service_details"]
+shared_imports = ["import crypto", "import yaml", "import json", "import k8s.api.core.v1 as k8s_core", "import k8s.api.batch.v1 as k8s_batch", "import k8s.api.rbac.v1 as k8s_rbac", "import k8s.apimachinery.pkg.apis.meta.v1 as v1"]
+pipeline_content = "\n".join(shared_imports) + "\n\n# --- MODELS ---\n" + "\n".join(deduped_models) + "\n\n"
+with open(os.path.join(compositions_dir, 'context_variables.k'), 'r') as f:
+    pipeline_content += "# --- CONTEXT ---\n" + re.sub(r'(?m)^import .*', '', f.read()) + "\n\n"
 
-    echo ""
+for layer in layers:
+    with open(os.path.join(compositions_dir, f"{layer}.k"), 'r') as f:
+        l_content = re.sub(r'(?m)^import .*', '', f.read()).replace('models.', '').replace('cv.', '')
+        indented = "\n".join(["    " + line if line.strip() else line for line in l_content.split("\n")])
+        pipeline_content += f"schema {layer}_layer:\n{indented}\n\n_{layer} = {layer}_layer {{}}\nitems_{layer} = _{layer}.items\n\n"
+
+pipeline_content += "items = {\"items\": [item for layer in [" + ",".join([f"items_{l}" for l in layers]) + "] for item in layer.items]}\n"
+with open(os.path.join(compositions_dir, 'pipeline.k'), 'w') as f:
+    f.write(pipeline_content)
+PY_EOF
     echo "Done."
 }
-
 main

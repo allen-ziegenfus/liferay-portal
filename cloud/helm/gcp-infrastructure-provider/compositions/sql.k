@@ -1,9 +1,9 @@
-import .context_variables as cv
-import .models.v1beta1.sql_gcpm_upbound_io_v1beta1_database as sql_db
-import .models.v1beta1.sql_gcpm_upbound_io_v1beta1_database_instance as sql_instance
-import .models.v1beta1.sql_gcpm_upbound_io_v1beta1_user as sql_user
+import context_variables as cv
+import models.v1beta1.sql_gcpm_upbound_io_v1beta1_database as sql_db
+import models.v1beta1.sql_gcpm_upbound_io_v1beta1_database_instance as sql_instance
+import models.v1beta1.sql_gcpm_upbound_io_v1beta1_user as sql_user
 
-get_items = lambda obs: any, vars: {str:any} -> [any] {
+_get_items_impl = lambda obs: any, vars: {str:any} -> [any] {
     _db_spec = vars["database"] if "database" in vars else {}
     _env = vars["env"] if "env" in vars else {}
     _labels = vars["labels"] if "labels" in vars else {}
@@ -135,6 +135,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
     _items
 }
+
+get_items = _get_items_impl
 
 _vars = {
     "baseName": cv.baseName

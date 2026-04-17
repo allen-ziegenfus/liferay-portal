@@ -1,7 +1,7 @@
-import .context_variables as cv
-import .models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
-import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as storage_bucket
-import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
+import context_variables as cv
+import models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
+import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as storage_bucket
+import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
 import k8s.api.core.v1 as k8s_core
 import k8s.api.rbac.v1 as k8s_rbac
 import crypto

@@ -41,31 +41,7 @@ spec:
                 apiVersion: kcl.fn.crossplane.io/v1beta1
                 kind: KCLInput
                 source: |
-                    import crypto
-                    import yaml
-                    import json
-                    import k8s.api.core.v1 as k8s_core
-                    import k8s.api.batch.v1 as k8s_batch
-                    import k8s.api.rbac.v1 as k8s_rbac
-                    {{- include "kcl.load_layer" (dict "root" . "path" "compositions/models.k") | nindent 20 }}
-                    {{- include "kcl.load_layer" (dict "root" . "path" "compositions/context_variables.k") | nindent 20 }}
-                    
-                    _all_items = []
-                    
-                    {{- $layers := list "init" "security" "sql" "storage" "overlay" "k8s" "elasticsearch" "backup" "managed_service_details" -}}
-                    {{- range $layer := $layers }}
-                    # --- Layer: {{ $layer }} ---
-                    {{- $src := (include "kcl.load_layer" (dict "root" $ "path" (printf "compositions/%s.k" $layer))) -}}
-                    {{- $src = $src | replace "models." "" -}}
-                    {{- $src = $src | replace "get_items =" (printf "get_items_%s =" $layer) -}}
-                    {{- $src = $src | replace "_vars =" (printf "_vars_%s =" $layer) -}}
-                    {{- $src = $src | replace "items =" (printf "items_%s =" $layer) -}}
-                    {{- $src = $src | replace "get_items(cv.obs, _vars)" (printf "get_items_%s(cv.obs, _vars_%s)" $layer $layer) }}
-                    {{ $src | nindent 20 }}
-                    _all_items += {{ printf "items_%s" $layer }}.items
-                    {{- end }}
-                    
-                    items = {"items": _all_items}
+                    {{- .Files.Get "compositions/pipeline.k" | nindent 20 }}
             step: composite-logic
         -   functionRef:
                 name: function-auto-ready
