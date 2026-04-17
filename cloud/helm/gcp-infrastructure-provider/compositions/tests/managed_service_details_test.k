@@ -13,5 +13,5 @@ test_secret_created_when_ready = lambda {
     _obs = {}
     _items = msd.get_items(_obs, _vars)
     assert len(_items) == 1, "ConfigMap should be created"
-    assert _items[0].metadata.annotations["crossplane.io/composition-resource-name"] == "managed-service-details-configmap"
+    assert _items[0].metadata.annotations["crossplane.io/composition-resource-name"] == "managed-service-details-secret"
 }

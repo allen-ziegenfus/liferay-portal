@@ -81,7 +81,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                         type = "Opaque"
                     }
                 }
-                managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
+                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["Default"]
             }
         }]
 

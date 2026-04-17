@@ -17,8 +17,8 @@ test_sql_orphan_policy = lambda {
         "region": "us-central1"
     }
     _items = sql.get_items({}, _vars)
-    # Instance + Database + User = 3 items
-    assert len(_items) == 3
+    # Instance + Database + User + 2 Usages = 5 items
+    assert len(_items) == 5
     
     _instance = _items[0]
     assert _instance.spec.managementPolicies == ["Create", "Observe", "Update"]

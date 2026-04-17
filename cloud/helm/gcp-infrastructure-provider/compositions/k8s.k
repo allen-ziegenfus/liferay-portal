@@ -25,7 +25,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {"manifest": _liferay_sa}
-                managementPolicies = [vars["managementPolicy"]
+                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
             }
         }
     ]
@@ -116,7 +116,7 @@ EOF
         }
         spec = {
             forProvider = {"manifest": _liferay_job}
-            managementPolicies = [vars["managementPolicy"]
+            managementPolicies = vars["managementPoliciesOnce"] if "managementPoliciesOnce" in vars else ["Create", "Observe", "Delete"]
         }
     }]
 
@@ -133,10 +133,10 @@ _vars = {
     "jobName": cv.jobName
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
+    "managementPolicy": cv.managementPolicy
     "metadata": cv.metadata
     "namespace": cv.namespace
 }
 
 if not option("combined") or option("combined") == "false":
     items = {"items": get_items(cv.obs, _vars)}
-

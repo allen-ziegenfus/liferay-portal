@@ -15,6 +15,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
     _namespace = str(vars["namespace"] if "namespace" in vars else "")
     _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+    _managementPolicy = vars["managementPolicy"] if "managementPolicy" in vars else "Default"
 
     _get_iam_name = lambda role: str, bucket: str -> str {
         _hash = crypto.sha256(_meta_name + role + "serviceAccount:" + _gsaEmail + bucket)[:12:]
@@ -67,19 +68,22 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
         }]
 
-        _backup_sa = k8s_core.ServiceAccount {
+        _backup_cr = k8s_rbac.ClusterRole {
             metadata = {
                 labels = _labels
-                name = "backup-create-service-account"
-                namespace = _namespace
+                name = "backup-create-cluster-role"
             }
+            rules = [{
+                apiGroups = [""]
+                resources = ["serviceaccounts"]
+                verbs = ["create", "delete", "get", "list", "watch"]
+            }]
         }
 
-        _backup_rb = k8s_rbac.RoleBinding {
+        _backup_crb = k8s_rbac.ClusterRoleBinding {
             metadata = {
                 labels = _labels
-                name = "backup-create-role-binding"
-                namespace = _namespace
+                name = "backup-create-cluster-role-binding"
             }
             roleRef = {
                 apiGroup = "rbac.authorization.k8s.io"
@@ -96,24 +100,24 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         _backup_items += [
             kubernetes.Object {
                 metadata = {
-                    annotations = {"crossplane.io/composition-resource-name": "backup-create-service-account"}
+                    annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role"}
                     labels = _labels
-                    name = "backup-create-service-account"
+                    name = "backup-create-cluster-role"
                 }
                 spec = {
-                    forProvider = {"manifest": _backup_sa}
-                    managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
+                    forProvider = {"manifest": _backup_cr}
+                    managementPolicies = [_managementPolicy]
                 }
             },
             kubernetes.Object {
                 metadata = {
-                    annotations = {"crossplane.io/composition-resource-name": "backup-create-role-binding"}
+                    annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role-binding"}
                     labels = _labels
-                    name = "backup-create-role-binding"
+                    name = "backup-create-cluster-role-binding"
                 }
                 spec = {
-                    forProvider = {"manifest": _backup_rb}
-                    managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
+                    forProvider = {"manifest": _backup_crb}
+                    managementPolicies = [_managementPolicy]
                 }
             }
         ]
@@ -130,6 +134,7 @@ _vars = {
     "gsaEmail": cv.gsaEmail
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
+    "managementPolicy": cv.managementPolicy
     "metadata": cv.metadata
     "namespace": cv.namespace
     "region": cv.region

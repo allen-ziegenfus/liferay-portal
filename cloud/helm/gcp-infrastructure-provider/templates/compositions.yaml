@@ -41,7 +41,11 @@ spec:
                 apiVersion: kcl.fn.crossplane.io/v1beta1
                 kind: KCLInput
                 source: |
-                    {{- .Files.Get "compositions/init.kcl" | nindent 20 }}
+                    {{- $cv := .Files.Get "compositions/context_variables.k" | replace "import crypto" "" -}}
+                    {{- $src := .Files.Get "compositions/init.k" | replace "import .context_variables as cv" "" | regexReplaceAll "(?m)^import .*\n" "" | regexReplaceAll "[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+ \\{" "{" -}}
+                    import crypto
+                    {{ $cv | nindent 20 }}
+                    {{ $src | nindent 20 }}
             step: init-context
         -   functionRef:
                 name: function-kcl
@@ -49,7 +53,11 @@ spec:
                 apiVersion: kcl.fn.crossplane.io/v1beta1
                 kind: KCLInput
                 source: |
-                    {{- .Files.Get "compositions/security.kcl" | nindent 20 }}
+                    {{- $cv := .Files.Get "compositions/context_variables.k" | replace "import crypto" "" -}}
+                    {{- $src := .Files.Get "compositions/security.k" | regexReplaceAll "(?m)^import .*\n" "" | regexReplaceAll "[a-zA-Z0-9_]+\\.[a-zA-Z0-9_]+ \\{" "{" -}}
+                    import crypto
+                    {{ $cv | nindent 20 }}
+                    {{ $src | nindent 20 }}
             step: security-layer
         -   functionRef:
                 name: function-kcl
@@ -57,11 +65,15 @@ spec:
                 apiVersion: kcl.fn.crossplane.io/v1beta1
                 kind: KCLInput
                 source: |
-                    {{- .Files.Get "compositions/sql.kcl" | nindent 20 }}
-                    ---
-                    {{- .Files.Get "compositions/storage.kcl" | nindent 20 }}
-                    ---
-                    {{- .Files.Get "compositions/overlay.kcl" | nindent 20 }}
+                    {{- $cv := .Files.Get "compositions/context_variables.k" | replace "import crypto" "" -}}
+                    {{- $srcSql := .Files.Get "compositions/sql.k" | replace "import .context_variables as cv" "" -}}
+                    {{- $srcStorage := .Files.Get "compositions/storage.k" | replace "import .context_variables as cv" "" -}}
+                    {{- $srcOverlay := .Files.Get "compositions/overlay.k" | replace "import .context_variables as cv" "" -}}
+                    import crypto
+                    {{ $cv | nindent 20 }}
+                    {{ $srcSql | nindent 20 }}
+                    {{ $srcStorage | nindent 20 }}
+                    {{ $srcOverlay | nindent 20 }}
             step: stateful-layer
         -   functionRef:
                 name: function-kcl
@@ -69,22 +81,18 @@ spec:
                 apiVersion: kcl.fn.crossplane.io/v1beta1
                 kind: KCLInput
                 source: |
-                    {{- .Files.Get "compositions/k8s.kcl" | nindent 20 }}
-                    ---
-                    {{- .Files.Get "compositions/elasticsearch.kcl" | nindent 20 }}
-                    ---
-                    {{- .Files.Get "compositions/backup.kcl" | nindent 20 }}
-                    ---
-                    {{- .Files.Get "compositions/application.kcl" | nindent 20 }}
+                    {{- $cv := .Files.Get "compositions/context_variables.k" | replace "import crypto" "" -}}
+                    {{- $srcK8s := .Files.Get "compositions/k8s.k" | replace "import .context_variables as cv" "" -}}
+                    {{- $srcEs := .Files.Get "compositions/elasticsearch.k" | replace "import .context_variables as cv" "" -}}
+                    {{- $srcBackup := .Files.Get "compositions/backup.k" | replace "import .context_variables as cv" "" -}}
+                    {{- $srcMsd := .Files.Get "compositions/managed_service_details.k" | replace "import .context_variables as cv" "" -}}
+                    import crypto
+                    {{ $cv | nindent 20 }}
+                    {{ $srcK8s | nindent 20 }}
+                    {{ $srcEs | nindent 20 }}
+                    {{ $srcBackup | nindent 20 }}
+                    {{ $srcMsd | nindent 20 }}
             step: application-layer
-        -   functionRef:
-                name: function-kcl
-            input:
-                apiVersion: kcl.fn.crossplane.io/v1beta1
-                kind: KCLInput
-                source: |
-                    {{- .Files.Get "compositions/context.kcl" | nindent 20 }}
-            step: configmap-and-status-layer
         -   functionRef:
                 name: function-auto-ready
             step: auto-detect-ready-composed-resources

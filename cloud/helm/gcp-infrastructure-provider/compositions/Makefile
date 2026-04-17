@@ -1,6 +1,6 @@
 MOCK ?= mock.json
 
-LAYERS = backup elasticsearch init k8s managed_service_details overlay secret security sql storage
+LAYERS = backup elasticsearch init k8s managed_service_details overlay security sql storage
 
 .PHONY: all fmt lint test run-all pkg clean $(LAYERS)
 
@@ -17,7 +17,10 @@ lint:
 	done
 
 test:
-	cd tests && kcl test ./...
+	cd tests && \
+	PARAMS=$$(cat arz_dev2025_params.json | jq -c) && \
+	CLUSTER_REFS=$$(cat cluster_extracted_resources.json | jq -c) && \
+	kcl test ./... -D params="$$PARAMS" -D cluster_refs="$$CLUSTER_REFS"
 
 run-all:
 	@if [ ! -f $(MOCK) ]; then echo "Please provide a mock.json file."; exit 1; fi

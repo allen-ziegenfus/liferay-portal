@@ -12,10 +12,9 @@ _vars: {str:any} = {
 
 test_overlay_created_when_enabled = lambda {
     _items = overlay.get_items({}, _vars)
-    assert len(_items) == 3, "Overlay should be created when enabled (3 items), got {}".format(len(_items))
-    assert _items[0].metadata.annotations["crossplane.io/composition-resource-name"] == "overlay-bucket"
-    assert _items[1].metadata.annotations["crossplane.io/composition-resource-name"] == "overlay-iam"
-    assert _items[2].metadata.annotations["crossplane.io/composition-resource-name"] == "overlay-configmap"
+    assert len(_items) == 2, "Overlay should be created when enabled (2 items), got {}".format(len(_items))
+    assert _items[0].metadata.annotations["crossplane.io/composition-resource-name"] == "liferay-overlay-bucket"
+    assert _items[1].metadata.annotations["crossplane.io/composition-resource-name"] == "liferay-gsa-overlay-bucket-iam"
 }
 
 test_overlay_not_created_when_disabled = lambda {

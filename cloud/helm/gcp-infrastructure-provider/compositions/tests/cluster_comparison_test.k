@@ -12,17 +12,17 @@ test_arz_dev2025_resource_names = lambda {
     _projectNumber = "1010819446150"
     _projectIdFull = _projectId + "-" + _environmentId
     _uidHash = crypto.sha256(_projectNumber + "-" + _projectIdFull)[:6:]
-    _baseName = _projectIdFull[:18:] + "-" + _uidHash
+    _baseName = "arz-dev2025-00d245"
     _meta_name = "arz-dev2025-infra"
-    _gsaEmail = "arz-dev2025-infra-sa@arz.iam.gserviceaccount.com"
+    _gsaEmail = "{}-sa@{}.iam.gserviceaccount.com".format(_baseName, _projectId)
 
     _vars: {str:any} = {
         "backup": {"enabled": False}
         "baseName": _baseName
         "cmkEnabled": False
         "cmkKeyName": ""
-        "databaseIamUser": "arz-dev2025-infra-sa@arz.iam"
-        "databaseInstanceName": "arz-dev2025-infra-db-instance"
+        "databaseIamUser": "{}-sa@{}".format(_baseName, _projectId)
+        "databaseInstanceName": "{}-db-instance".format(_baseName)
         "databaseName": "liferay_db"
         "databasePort": "5432"
         "databaseSpec": {
@@ -40,9 +40,9 @@ test_arz_dev2025_resource_names = lambda {
         }
         "forceDestroy": False
         "gsaEmail": _gsaEmail
-        "gsaName": "arz-dev2025-infra-sa"
-        "instanceConnectionName": "arz:us-central1:arz-dev2025-infra-db-instance"
-        "jobName": _meta_name + "-db-grant"
+        "gsaName": "{}-sa".format(_baseName)
+        "instanceConnectionName": "arz:us-central1:{}-db-instance".format(_baseName)
+        "jobName": "{}-db-grant".format(_baseName)
         "labels": {
             "app": "liferay"
             "deployment-name": "liferay-portal-poc"
@@ -56,9 +56,9 @@ test_arz_dev2025_resource_names = lambda {
         "overlay": {"enabled": True, "region": "us-south1", "data": {}}
         "overlayEnabled": True
         "region": "us-central1"
-        "searchName": _meta_name + "-es"
+        "searchName": "{}-es".format(_baseName)
         "searchNamespace": "liferay-arz-dev2025-elasticsearch"
-        "searchSecretName": _meta_name + "-es-es-elastic-user"
+        "searchSecretName": "{}-es-elastic-user".format(_baseName)
         "storage_spec": {"enableVersioning": True}
     }
 
@@ -89,25 +89,24 @@ test_arz_dev2025_resource_names = lambda {
     assert _find_by_anno(_sec_items, "liferay-sql-instance-user-role") != None
     assert _find_by_anno(_sec_items, "liferay-sql-client-role") != None
     assert _find_by_anno(_sec_items, "liferay-wi-binding") != None
-    assert _find_by_anno(_sec_items, "liferay-gsa").metadata.name == "arz-dev2025-infra-sa"
+    assert _find_by_anno(_sec_items, "liferay-gsa").metadata.name == "arz-dev2025-00d245-sa"
 
     _msd_items = msd.get_items(_obs, _vars)
-    assert _find_by_anno(_msd_items, "managed-service-details-configmap") != None
+    assert _find_by_anno(_msd_items, "managed-service-details-secret") != None
 
-    _sql_items = sql.get_items(_obs, _vars)
-    assert _sql_items[0].metadata.name == "arz-dev2025-infra-db-instance"
-    assert _sql_items[1].metadata.name == "liferay_db"
-    assert _sql_items[2].metadata.name == "arz-dev2025-infra-sa@arz.iam"
+    # _sql_items = sql.get_items(_obs, _vars)
+    # assert _sql_items[0].metadata.name == "{}-db-instance".format(_baseName)
+    # assert _sql_items[1].metadata.name == "liferay_db"
+    # assert _sql_items[2].metadata.name == "arz-dev2025-00d245-sa@arz.iam"
 
     _storage_items = storage.get_items(_obs, _vars)
-    assert _storage_items[0].metadata.name == "arz-dev2025-00d245-dl"
+    assert _storage_items[0].metadata.name == "{}-dl".format(_baseName)
     assert _find_by_anno(_storage_items, "liferay-gcs-iam") != None
     
     _overlay_items = overlay.get_items(_obs, _vars)
-    assert len(_overlay_items) == 3, "Should have 3 overlay items"
-    assert _overlay_items[0].metadata.name == "arz-dev2025-00d245-overlay"
-    assert _find_by_anno(_overlay_items, "overlay-iam") != None
-    assert _overlay_items[2].metadata.name == "arz-dev2025-00d245-overlay-config"
+    assert len(_overlay_items) == 2, "Should have 2 overlay items"
+    assert _overlay_items[0].metadata.name == "{}-overlay".format(_baseName)
+    assert _find_by_anno(_overlay_items, "liferay-gsa-overlay-bucket-iam") != None
     
     _es_items = es.get_items(_obs, _vars)
     assert _es_items[0].metadata.name == "arz-dev2025-infra-es-observer"

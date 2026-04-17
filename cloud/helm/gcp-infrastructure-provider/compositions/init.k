@@ -23,19 +23,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         }
     }
 
-    _items: [any] = [
-        kubernetes.Object {
-            metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "init-configmap"}
-                labels = _labels
-                name = "{}-init-config".format(_name)
-            }
-            spec = {
-                forProvider = {"manifest": _init_cm}
-                managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
-            }
-        }
-    ]
+    _items: [any] = []
 
     _items
 }

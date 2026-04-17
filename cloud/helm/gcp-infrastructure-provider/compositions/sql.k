@@ -12,13 +12,13 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     _items: [any] = [
         sql_instance.DatabaseInstance {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-db-instance"}
+                annotations = {"crossplane.io/composition-resource-name": "database-primary"}
                 labels = _labels
                 name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")
             }
             spec = {
                 forProvider = {
-                    databaseVersion = "POSTGRES_15"
+                    databaseVersion = str(_db_spec["databaseVersion"] if "databaseVersion" in _db_spec else "POSTGRES_18")
                     deletionProtection = bool(_db_spec["deletionProtection"] if "deletionProtection" in _db_spec else False)
                     region = str(vars["region"] if "region" in vars else "")
                     rootPasswordSecretRef = {
@@ -48,33 +48,81 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         }
         sql_db.Database {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-database"}
+                annotations = {
+                    "crossplane.io/composition-resource-name": "liferay-db"
+                    "crossplane.io/external-name": str(vars["databaseName"] if "databaseName" in vars else "lportal")
+                }
                 labels = _labels
-                name = str(vars["databaseName"] if "databaseName" in vars else "")
+                name = str(vars["databaseObjectName"] if "databaseObjectName" in vars else "{}-db".format(str(vars["baseName"] if "baseName" in vars else "")))
             }
             spec = {
                 forProvider = {
                     instanceRef = {
                         name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")
                     }
+                    project = str(vars["projectId"] if "projectId" in vars else "")
                 }
                 managementPolicies = _managementPolicies
             }
         }
         sql_user.User {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-db-iam-user"}
+                annotations = {
+                    "crossplane.io/composition-resource-name": "liferay-iam-user"
+                    "crossplane.io/external-name": str(vars["databaseIamUser"] if "databaseIamUser" in vars else "")
+                }
                 labels = _labels
-                name = str(vars["databaseIamUser"] if "databaseIamUser" in vars else "")
+                name = str(vars["databaseUserObjectName"] if "databaseUserObjectName" in vars else "{}-db-user".format(str(vars["baseName"] if "baseName" in vars else "")))
             }
             spec = {
                 forProvider = {
                     instanceRef = {
                         name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")
                     }
-                    $type = "CLOUD_IAM_USER"
+                    project = str(vars["projectId"] if "projectId" in vars else "")
+                    $type = "CLOUD_IAM_SERVICE_ACCOUNT"
                 }
                 managementPolicies = _managementPolicies
+            }
+        }
+        {
+            apiVersion = "protection.crossplane.io/v1beta1"
+            kind = "Usage"
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-database"}
+                name = "{}-instance-by-database".format(str(vars["baseName"] if "baseName" in vars else ""))
+            }
+            spec = {
+                of = {
+                    apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                    kind = "DatabaseInstance"
+                    resourceRef = {name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")}
+                }
+                by = {
+                    apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                    kind = "Database"
+                    resourceRef = {name = str(vars["databaseObjectName"] if "databaseObjectName" in vars else "{}-db".format(str(vars["baseName"] if "baseName" in vars else "")))}
+                }
+            }
+        }
+        {
+            apiVersion = "protection.crossplane.io/v1beta1"
+            kind = "Usage"
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "usage-instance-by-user"}
+                name = "{}-instance-by-user".format(str(vars["baseName"] if "baseName" in vars else ""))
+            }
+            spec = {
+                of = {
+                    apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                    kind = "DatabaseInstance"
+                    resourceRef = {name = str(vars["databaseInstanceName"] if "databaseInstanceName" in vars else "")}
+                }
+                by = {
+                    apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+                    kind = "User"
+                    resourceRef = {name = str(vars["databaseUserObjectName"] if "databaseUserObjectName" in vars else "{}-db-user".format(str(vars["baseName"] if "baseName" in vars else "")))}
+                }
             }
         }
     ]
@@ -83,6 +131,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 }
 
 _vars = {
+    "baseName": cv.baseName
     "database": cv.databaseSpec
     "databaseIamUser": cv.databaseIamUser
     "databaseInstanceName": cv.databaseInstanceName
