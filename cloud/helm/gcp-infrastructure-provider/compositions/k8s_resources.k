@@ -4,43 +4,33 @@ import k8s.api.batch.v1 as k8s_batch
 import k8s.api.core.v1 as k8s_core
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _db_spec = (vars["databaseSpec"] if "databaseSpec" in vars else {})
-    _meta = (vars["metadata"] if "metadata" in vars else {})
+    _db_spec = vars?.databaseSpec or {}
+    _labels = vars?.labels or {}
+    _namespace = str(vars?.namespace or "")
+    _gsaEmail = str(vars?.gsaEmail or "")
+    _jobName = str(vars?.jobName or "")
+    _meta_name = str(vars?.metadata?.name or "")
+    _managementPolicies = vars?.managementPolicies or ["*"]
+    _managementPoliciesOnce = vars?.managementPoliciesOnce or ["Create", "Observe", "Delete"]
 
     _liferay_sa = k8s_core.ServiceAccount {
-            apiVersion = "v1"
-            kind = "ServiceAccount"
+        apiVersion = "v1"
+        kind = "ServiceAccount"
         metadata = {
-            annotations = {"iam.gke.io/gcp-service-account": vars["gsaEmail"]}
-            labels = vars["labels"]
+            annotations = {"iam.gke.io/gcp-service-account": _gsaEmail}
+            labels = _labels
             name = "liferay-default"
-            namespace = vars["namespace"]
+            namespace = _namespace
         }
     }
 
-    _k8s_items: [any] = [
-        kubernetes.Object {
-            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
-            kind = "Object"
-            metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-ksa"}
-                labels = vars["labels"]
-                name = "{}-ksa".format((_meta["name"] if "name" in _meta else ""))
-            }
-            spec = {
-                forProvider = {"manifest": _liferay_sa}
-                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
-            }
-        }
-    ]
-
     _liferay_job = k8s_batch.Job {
-            apiVersion = "batch/v1"
-            kind = "Job"
+        apiVersion = "batch/v1"
+        kind = "Job"
         metadata = {
-            labels = vars["labels"]
-            name = vars["jobName"]
-            namespace = vars["namespace"]
+            labels = _labels
+            name = _jobName
+            namespace = _namespace
         }
         spec = {
             template = {
@@ -55,80 +45,93 @@ GRANT ALL PRIVILEGES ON DATABASE "{db}" TO "{user}";
 GRANT ALL ON ALL TABLES IN SCHEMA public TO "{user}";
 GRANT cloudsqlsuperuser TO "{user}";
 EOF
-""".format(port=vars["databasePort"], db=vars["databaseName"], user=vars["databaseIamUser"])
+""".format(port=str(vars?.databasePort or ""), db=str(vars?.databaseName or ""), user=str(vars?.databaseIamUser or ""))
                         ]
                         command = ["/bin/sh", "-c"]
                         env = [{
                             name = "PGPASSWORD"
                             valueFrom = {
-                                "secretKeyRef": {"key": "password", "name": (_db_spec["rootPasswordSecretName"] if "rootPasswordSecretName" in _db_spec else "")}
+                                secretKeyRef = {key = "password", name = str(_db_spec?.rootPasswordSecretName or "")}
                             }
                         }]
                         image = "postgres:18-alpine"
                         name = "sql-runner"
                         resources = {
-                            limits = {"cpu": "200m", "memory": "256Mi"}
-                            requests = {"cpu": "100m", "memory": "128Mi"}
+                            limits = {cpu = "200m", memory = "256Mi"}
+                            requests = {cpu = "100m", memory = "128Mi"}
                         }
                         securityContext = {
                             allowPrivilegeEscalation = False
-                            capabilities = {"drop": ["ALL"]}
+                            capabilities = {drop = ["ALL"]}
                             runAsNonRoot = True
                             runAsUser = 1000
-                            seccompProfile = {"type": "RuntimeDefault"}
+                            seccompProfile = {$type = "RuntimeDefault"}
                         }
                     }]
                     initContainers = [{
                         args = [
                             "--auto-iam-authn"
-                            "--port={}".format(vars["databasePort"])
+                            "--port={}".format(str(vars?.databasePort or ""))
                             "--private-ip"
                             "--structured-logs"
-                            vars["instanceConnectionName"]
+                            str(vars?.instanceConnectionName or "")
                         ]
                         image = "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.1"
                         name = "cloud-sql-proxy"
                         resources = {
-                            limits = {"cpu": "200m", "memory": "256Mi"}
-                            requests = {"cpu": "100m", "memory": "128Mi"}
+                            limits = {cpu = "200m", memory = "256Mi"}
+                            requests = {cpu = "100m", memory = "128Mi"}
                         }
                         restartPolicy = "Always"
                         securityContext = {
                             allowPrivilegeEscalation = False
-                            capabilities = {"drop": ["ALL"]}
+                            capabilities = {drop = ["ALL"]}
                             runAsNonRoot = True
                             runAsUser = 65532
-                            seccompProfile = {"type": "RuntimeDefault"}
+                            seccompProfile = {$type = "RuntimeDefault"}
                         }
                     }]
                     restartPolicy = "OnFailure"
                     securityContext = {
                         fsGroup = 1000
                         runAsNonRoot = True
-                        seccompProfile = {"type": "RuntimeDefault"}
+                        seccompProfile = {$type = "RuntimeDefault"}
                     }
                     serviceAccountName = "liferay-default"
-                    volumes = [{"emptyDir": {}, "name": "term-log"}]
+                    volumes = [{emptyDir = {}, name = "term-log"}]
                 }
             }
         }
     }
 
-    _k8s_items += [kubernetes.Object {
+    [
+        kubernetes.Object {
             apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
             kind = "Object"
-        metadata = {
-            annotations = {"crossplane.io/composition-resource-name": "liferay-db-grant-job"}
-            labels = vars["labels"]
-            name = vars["jobName"]
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-ksa"}
+                labels = _labels
+                name = "{}-ksa".format(_meta_name)
+            }
+            spec = {
+                forProvider = {manifest = _liferay_sa}
+                managementPolicies = _managementPolicies
+            }
         }
-        spec = {
-            forProvider = {"manifest": _liferay_job}
-            managementPolicies = vars["managementPoliciesOnce"] if "managementPoliciesOnce" in vars else ["Create", "Observe", "Delete"]
+        kubernetes.Object {
+            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+            kind = "Object"
+            metadata = {
+                annotations = {"crossplane.io/composition-resource-name": "liferay-db-grant-job"}
+                labels = _labels
+                name = _jobName
+            }
+            spec = {
+                forProvider = {manifest = _liferay_job}
+                managementPolicies = _managementPoliciesOnce
+            }
         }
-    }]
-
-    _k8s_items
+    ]
 }
 
 _vars = {
@@ -141,7 +144,7 @@ _vars = {
     "jobName": cv.jobName
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
-    "managementPolicy": cv.managementPolicy
+    "managementPoliciesOnce": cv.managementPoliciesOnce
     "metadata": cv.metadata
     "namespace": cv.namespace
 }

@@ -2,27 +2,26 @@ import context_variables as cv
 import models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
 import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as storage_bucket
 import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
-import k8s.api.core.v1 as k8s_core
 import k8s.api.rbac.v1 as k8s_rbac
 import crypto
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _backup = (vars["backup"] if "backup" in vars else {}) or {}
-    _backup_items: [any] = []
-    _baseName = str(vars["baseName"] if "baseName" in vars else "")
-    _labels = vars["labels"] if "labels" in vars else {}
-    _meta_name = str(vars["metadata"]["name"] if "metadata" in vars and "name" in vars["metadata"] else "")
-    _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
-    _namespace = str(vars["namespace"] if "namespace" in vars else "")
-    _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
-    _managementPolicy = vars["managementPolicy"] if "managementPolicy" in vars else "Default"
+    _backup = vars?.backup or {}
+    _baseName = str(vars?.baseName or "")
+    _labels = vars?.labels or {}
+    _meta_name = str(vars?.metadata?.name or "")
+    _gsaEmail = str(vars?.gsaEmail or "")
+    _namespace = str(vars?.namespace or "")
+    _managementPolicies = vars?.managementPolicies or ["*"]
+    _managementPolicy = vars?.managementPolicy or "Default"
 
     _get_iam_name = lambda role: str, bucket: str -> str {
         _hash = crypto.sha256(_meta_name + role + "serviceAccount:" + _gsaEmail + bucket)[:12:]
         "{}-{}".format(_meta_name, _hash)
     }
 
-    if bool(_backup["enabled"] if "enabled" in _backup else False):
+    _backup_items: [any] = []
+    if _backup?.enabled:
         _backup_vault_labels = _labels | {"is-backup-vault": "true"}
         _bucket_name = "{}-vault".format(_baseName)
 
@@ -36,19 +35,19 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {
-                    forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
+                    forceDestroy = bool(vars?.forceDestroy or False)
                     labels = _backup_vault_labels
                     lifecycleRule = [{
                         action = {$type = "Delete"}
-                        condition = {age = (int(_backup["retentionDays"] if "retentionDays" in _backup else 30)) + 2}
+                        condition = {age = int(_backup?.retentionDays or 30) + 2}
                     }]
-                    location = str(_backup["region"] if "region" in _backup else (vars["region"] if "region" in vars else ""))
-                    storageClass = str(_backup["storageClass"] if "storageClass" in _backup else "NEARLINE")
+                    location = str(_backup?.region or vars?.region or "")
+                    storageClass = str(_backup?.storageClass or "NEARLINE")
                     uniformBucketLevelAccess = True
                 }
-                if bool(vars["cmkEnabled"] if "cmkEnabled" in vars else False):
+                if vars?.cmkEnabled:
                     forProvider.encryption = {
-                        defaultKmsKeyName = str(vars["cmkKeyName"] if "cmkKeyName" in vars else "")
+                        defaultKmsKeyName = str(vars?.cmkKeyName or "")
                     }
                 managementPolicies = _managementPolicies
             }
@@ -107,8 +106,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
         _backup_items += [
             kubernetes.Object {
-            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
-            kind = "Object"
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role"}
                     labels = _labels
@@ -118,10 +117,10 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                     forProvider = {"manifest": _backup_cr}
                     managementPolicies = [_managementPolicy]
                 }
-            },
+            }
             kubernetes.Object {
-            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
-            kind = "Object"
+                apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+                kind = "Object"
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role-binding"}
                     labels = _labels

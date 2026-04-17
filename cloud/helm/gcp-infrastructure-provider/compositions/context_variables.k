@@ -1,43 +1,39 @@
 import crypto
 
 params = option("params") or {}
-ctx = params["ctx"] if "ctx" in params else {}
-obs = params["obs"] if "obs" in params else {
-    "resources": {}
-}
-oxr = params["oxr"] if "oxr" in params else {}
+ctx = params?.ctx or {}
+obs = params?.obs or {"resources": {}}
+oxr = params?.oxr or {}
 
-env = ctx["apiextensions.crossplane.io/environment"] if "apiextensions.crossplane.io/environment" in ctx else {}
-metadata = oxr["metadata"] if "metadata" in oxr else {}
-spec = oxr["spec"] if "spec" in oxr else {}
+env = ctx?["apiextensions.crossplane.io/environment"] or {}
+metadata = oxr?.metadata or {}
+spec = oxr?.spec or {}
 
-_cmk_spec = spec["cmk"] if "cmk" in spec else {}
-backup = spec["backup"] if "backup" in spec else {}
-cmkEnabled = _cmk_spec["enabled"] if "enabled" in _cmk_spec else False
-databaseSpec = spec["database"] if "database" in spec else {}
-environmentId = spec["environmentId"] if "environmentId" in spec else ""
-forceDestroy = spec["forceDestroy"] if "forceDestroy" in spec else False
-namespace = metadata["namespace"] if "namespace" in metadata else ""
-overlay = spec["overlay"] if "overlay" in spec else {}
-overlayEnabled = overlay["enabled"] if "enabled" in overlay else False
-projectId = spec["projectId"] if "projectId" in spec else ""
-region = databaseSpec["region"] if "region" in databaseSpec else (spec["region"] if "region" in spec else "")
-storage_spec = spec["storage"] if "storage" in spec else {}
+backup = spec?.backup or {}
+cmkEnabled = spec?.cmk?.enabled or False
+databaseSpec = spec?.database or {}
+environmentId = spec?.environmentId or ""
+forceDestroy = spec?.forceDestroy or False
+namespace = metadata?.namespace or ""
+overlay = spec?.overlay or {}
+overlayEnabled = overlay?.enabled or False
+projectId = spec?.projectId or ""
+region = databaseSpec?.region or spec?.region or ""
+storage_spec = spec?.storage or {}
 
 projectIdFull = "{}-{}".format(projectId, environmentId)
-uidHash = crypto.sha256("{}-{}".format(env["projectNumber"] if "projectNumber" in env else "", projectIdFull))[:6:]
-
+uidHash = crypto.sha256("{}-{}".format(env?.projectNumber or "", projectIdFull))[:6:]
 baseName = "{}-{}".format(projectIdFull[:18:], uidHash)
-cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env["projectId"] if "projectId" in env else "", region, baseName, baseName)
-databaseIamUser = "{}@{}.iam".format("{}-sa".format(baseName), env["projectId"] if "projectId" in env else "")
+cmkKeyName = "projects/{}/locations/{}/keyRings/{}-keyring/cryptoKeys/{}-key".format(env?.projectId or "", region, baseName, baseName)
+databaseIamUser = "{}-sa@{}.iam".format(baseName, env?.projectId or "")
 databaseInstanceName = "{}-db-instance".format(baseName)
 databaseObjectName = "{}-db".format(baseName)
 databaseUserObjectName = "{}-db-user".format(baseName)
-databaseName = databaseSpec["name"] if "name" in databaseSpec else "lportal"
+databaseName = databaseSpec?.name or "lportal"
 databasePort = "5432"
-gsaEmail = "{}@{}.iam.gserviceaccount.com".format("{}-sa".format(baseName), env["projectId"] if "projectId" in env else "")
+gsaEmail = "{}-sa@{}.iam.gserviceaccount.com".format(baseName, env?.projectId or "")
 gsaName = "{}-sa".format(baseName)
-instanceConnectionName = "{}:{}:{}".format(env["projectId"] if "projectId" in env else "", region, databaseInstanceName)
+instanceConnectionName = "{}:{}:{}".format(env?.projectId or "", region, databaseInstanceName)
 jobName = "{}-db-grant".format(baseName)
 searchName = "{}-es".format(baseName)
 searchNamespace = "{}-elasticsearch".format(namespace)
@@ -45,15 +41,13 @@ searchSecretName = "{}-es-elastic-user".format(searchName)
 
 labels = {
     "app": "liferay"
-    "deployment-name": env["deploymentName"] if "deploymentName" in env else ""
+    "deployment-name": env?.deploymentName or ""
     "environment-id": environmentId
     "project-id": projectId
-}
-if "commonTags" in spec and spec["commonTags"]:
-    labels.update(spec["commonTags"])
+} | (spec?.commonTags or {})
 
-backupTargetLabels = {**labels, "active": "true", "should-back-up": "true"}
-orphan = spec["orphanOnDelete"] if "orphanOnDelete" in spec else False
+backupTargetLabels = labels | {"active": "true", "should-back-up": "true"}
+orphan = spec?.orphanOnDelete or False
 managementPolicies = ["Create", "Observe", "Update"] if orphan else ["*"]
 managementPolicy = "ObserveCreateUpdate" if orphan else "Default"
 managementPoliciesNoUpdate = ["Create", "Observe"] if orphan else ["Create", "Delete", "Observe"]

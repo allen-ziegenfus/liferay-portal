@@ -3,13 +3,13 @@ import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as gcp
 import models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as gcp_iam
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _storage_spec = vars["storage_spec"] if "storage_spec" in vars else {}
-    _labels = vars["labels"] if "labels" in vars else {}
-    _baseName = vars["baseName"] if "baseName" in vars else ""
-    _bucket_name = str(vars["bucketName"] if "bucketName" in vars else "{}-dl".format(_baseName))
-    _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+    _storage_spec = vars?.storage_spec or {}
+    _labels = vars?.labels or {}
+    _baseName = str(vars?.baseName or "")
+    _bucket_name = str(vars?.bucketName or "{}-dl".format(_baseName))
+    _managementPolicies = vars?.managementPolicies or ["*"]
 
-    _items: [any] = [
+    [
         gcp.Bucket {
             apiVersion = "storage.gcp.m.upbound.io/v1beta1"
             kind = "Bucket"
@@ -20,20 +20,20 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {
-                    forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
+                    forceDestroy = bool(vars?.forceDestroy or False)
                     labels = _labels | {"active": "true", "should-back-up": "true"}
-                    location = str(vars["region"] if "region" in vars else "")
-                    storageClass = str(_storage_spec["storageClass"] if "storageClass" in _storage_spec else "STANDARD")
+                    location = str(vars?.region or "")
+                    storageClass = str(_storage_spec?.storageClass or "STANDARD")
                     uniformBucketLevelAccess = True
-                    versioning = {enabled = bool(_storage_spec["enableVersioning"] if "enableVersioning" in _storage_spec else True)}
+                    versioning = {enabled = bool(_storage_spec?.enableVersioning if _storage_spec?.enableVersioning != Undefined else True)}
                 }
-                if vars["cmkEnabled"] if "cmkEnabled" in vars else False:
+                if vars?.cmkEnabled:
                     forProvider.encryption = {
-                        defaultKmsKeyName = str(vars["cmkKeyName"] if "cmkKeyName" in vars else "")
+                        defaultKmsKeyName = str(vars?.cmkKeyName or "")
                     }
                 managementPolicies = _managementPolicies
             }
-        },
+        }
         gcp_iam.BucketIAMMember {
             apiVersion = "storage.gcp.m.upbound.io/v1beta1"
             kind = "BucketIAMMember"
@@ -43,18 +43,14 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {
-                    member = "serviceAccount:{}".format(str(vars["gsaEmail"] if "gsaEmail" in vars else ""))
+                    member = "serviceAccount:{}".format(str(vars?.gsaEmail or ""))
                     role = "roles/storage.admin"
-                    bucketRef = {
-                        name = _bucket_name
-                    }
+                    bucketRef = {name = _bucket_name}
                 }
                 managementPolicies = _managementPolicies
             }
         }
     ]
-
-    _items
 }
 
 _vars = {

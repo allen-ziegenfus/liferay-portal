@@ -4,17 +4,20 @@ import k8s.api.core.v1 as k8s_core
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
     _res = obs?.resources or {}
-
     _es_status = _res?["elasticsearch-observer"]?.resource?.status?.atProvider?.manifest?.status or {}
     _sec_data = _res?["elasticsearch-secret-observer"]?.resource?.status?.atProvider?.manifest?.data or {}
 
     _health = _es_status?.health or ""
     _password = _sec_data?.elastic or ""
-
     _is_ready = _health in ["green", "yellow"] and _password
 
-    _meta = vars?.metadata or {}
-    _name = str(_meta?.name or "")
+    _labels = vars?.labels or {}
+    _name = str(vars?.metadata?.name or "")
+    _namespace = str(vars?.namespace or "")
+    _searchName = str(vars?.searchName or "")
+    _searchNamespace = str(vars?.searchNamespace or "")
+    _searchSecretName = str(vars?.searchSecretName or "")
+    _managementPolicies = vars?.managementPolicies or ["Default"]
 
     _items = [
         kubernetes.Object {
@@ -27,12 +30,9 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             spec = {
                 forProvider = {
                     manifest = {
-                        "apiVersion": "elasticsearch.k8s.elastic.co/v1"
-                        "kind": "Elasticsearch"
-                        "metadata": {
-                            "name": str(vars["searchName"] if "searchName" in vars else "")
-                            "namespace": str(vars["searchNamespace"] if "searchNamespace" in vars else "")
-                        }
+                        apiVersion = "elasticsearch.k8s.elastic.co/v1"
+                        kind = "Elasticsearch"
+                        metadata = {name = _searchName, namespace = _searchNamespace}
                     }
                 }
                 managementPolicies = ["Observe"]
@@ -48,12 +48,9 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             spec = {
                 forProvider = {
                     manifest = k8s_core.Secret {
-            apiVersion = "v1"
-            kind = "Secret"
-                        metadata = {
-                            name = str(vars["searchSecretName"] if "searchSecretName" in vars else "")
-                            namespace = str(vars["searchNamespace"] if "searchNamespace" in vars else "")
-                        }
+                        apiVersion = "v1"
+                        kind = "Secret"
+                        metadata = {name = _searchSecretName, namespace = _searchNamespace}
                     }
                 }
                 managementPolicies = ["Observe"]
@@ -70,28 +67,28 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                     "crossplane.io/external-name": "elasticsearch-connection-details"
                     "crossplane.io/composition-resource-name": "elasticsearch-connection-details-secret"
                 }
-                labels = vars["labels"] if "labels" in vars else {}
+                labels = _labels
                 name = "{}-elasticsearch-connection-details-secret".format(_name)
             }
             spec = {
                 forProvider = {
                     manifest = k8s_core.Secret {
-            apiVersion = "v1"
-            kind = "Secret"
-                        data = {"ELASTICSEARCH_PASSWORD": _password}
+                        apiVersion = "v1"
+                        kind = "Secret"
+                        data = {ELASTICSEARCH_PASSWORD = _password}
                         metadata = {
-                            labels = vars["labels"] if "labels" in vars else {}
+                            labels = _labels
                             name = "elasticsearch-connection-details"
-                            namespace = str(vars["namespace"] if "namespace" in vars else "")
+                            namespace = _namespace
                         }
                         stringData = {
-                            "ELASTICSEARCH_URL": "http://{}-es-http.{}.svc:9200".format(str(vars["searchName"] if "searchName" in vars else ""), str(vars["searchNamespace"] if "searchNamespace" in vars else ""))
-                            "ELASTICSEARCH_USERNAME": "elastic"
+                            ELASTICSEARCH_URL = "http://{}-es-http.{}.svc:9200".format(_searchName, _searchNamespace)
+                            ELASTICSEARCH_USERNAME = "elastic"
                         }
-                        type = "Opaque"
+                        $type = "Opaque"
                     }
                 }
-                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["Default"]
+                managementPolicies = _managementPolicies
             }
         }]
 
