@@ -120,17 +120,52 @@ function main {
 
     find "${output_directory_path}" -name "*.k" -exec sed -i 's/import k8s\.apimachinery/import k8s.apimachinery/g' {} +
 
-    echo "Initializing models package..."
+    echo "Consolidating models into a single models.k file..."
 
-    cat << 'KMOD' > "${output_directory_path}/kcl.mod"
-[package]
-name = "models"
-edition = "v0.12.3"
-version = "0.0.1"
+    python3 - <<EOF
+import os
+import glob
+import re
 
-[dependencies]
-k8s = "1.32.4"
-KMOD
+model_files = glob.glob('${output_directory_path}/**/*.k', recursive=True)
+
+merged_content = 'import k8s.apimachinery.pkg.apis.meta.v1\\n\\n'
+
+for f in model_files:
+    if f.endswith('kcl.mod') or f.endswith('kcl.mod.lock'):
+        continue
+    with open(f, 'r') as file:
+        content = file.read()
+        # Remove the generated header and imports
+        content = re.sub(r'"""\\nThis file was generated.*?\\n"""\\n', '', content, flags=re.DOTALL)
+        content = re.sub(r'(?m)^import .*\\n', '', content)
+        merged_content += content + '\\n'
+
+lines = merged_content.split('\\n')
+new_lines = []
+seen_schemas = set()
+skip_current = False
+
+for line in lines:
+    m = re.match(r'^schema ([a-zA-Z0-9_]+):', line)
+    if m:
+        current_schema = m.group(1)
+        if current_schema in seen_schemas:
+            skip_current = True
+        else:
+            skip_current = False
+            seen_schemas.add(current_schema)
+            new_lines.append(line)
+    else:
+        if not skip_current:
+            new_lines.append(line)
+
+with open('${compositions_directory_path}/models.k', 'w') as f:
+    f.write('\\n'.join(new_lines))
+EOF
+
+    echo "Cleaning up temporary models directory..."
+    rm -rf "${output_directory_path}"
 
     echo ""
     echo "Done."

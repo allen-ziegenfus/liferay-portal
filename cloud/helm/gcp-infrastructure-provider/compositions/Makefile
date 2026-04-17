@@ -37,5 +37,8 @@ $(LAYERS):
 pkg:
 	/home/allenz/go/bin/kpm pkg
 
+generate:
+	./scripts/generate_kcl_bindings.sh
+
 clean:
 	rm -rf vendor/ kcl.mod.lock
