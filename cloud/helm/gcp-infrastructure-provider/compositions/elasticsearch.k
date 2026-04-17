@@ -108,4 +108,4 @@ _vars = {
     "searchSecretName": cv.searchSecretName
 }
 
-items = {"items": get_items(cv.obs, _vars) if not option("combined") or option("combined") == "false" else []}
+items = {"items": get_items(cv.obs, _vars)}

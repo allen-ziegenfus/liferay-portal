@@ -153,5 +153,4 @@ _vars = {
     "region": cv.region
 }
 
-if option("combined", "false") != "true":
-    items = {"items": get_items(cv.obs, _vars)}
+items = {"items": get_items(cv.obs, _vars)}

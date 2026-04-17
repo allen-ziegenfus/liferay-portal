@@ -146,5 +146,4 @@ _vars = {
     "namespace": cv.namespace
 }
 
-if not option("combined") or option("combined") == "false":
-    items = {"items": get_items(cv.obs, _vars)}
+items = {"items": get_items(cv.obs, _vars)}

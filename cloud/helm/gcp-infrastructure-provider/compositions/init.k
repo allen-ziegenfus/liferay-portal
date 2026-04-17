@@ -1,32 +1,7 @@
 import context_variables as cv
-import models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
-import k8s.api.core.v1 as k8s_core
-import crypto
-import yaml
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _labels = vars["labels"] if "labels" in vars else {}
-    _meta = vars["metadata"] if "metadata" in vars else {}
-    _name = str(_meta["name"] if "name" in _meta else "")
-    _namespace = str(vars["namespace"] if "namespace" in vars else "")
-    _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
-
-    _init_cm = k8s_core.ConfigMap {
-            apiVersion = "v1"
-            kind = "ConfigMap"
-        metadata = {
-            labels = _labels
-            name = "init-config"
-            namespace = _namespace
-        }
-        data = {
-            "PROJECT_ID": str(vars["projectId"] if "projectId" in vars else "")
-            "REGION": str(vars["region"] if "region" in vars else "")
-        }
-    }
-
     _items: [any] = []
-
     _items
 }
 
