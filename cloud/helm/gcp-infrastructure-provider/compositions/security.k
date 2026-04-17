@@ -18,6 +18,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
     _security_items: [any] = [
         sa.ServiceAccount {
+            apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+            kind = "ServiceAccount"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-gsa"}
                 labels = _labels
@@ -31,6 +33,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
         },
         sa_iam.ServiceAccountIAMMember {
+            apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+            kind = "ServiceAccountIAMMember"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-wi-binding"}
                 labels = _labels
@@ -49,6 +53,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     ]
 
     _security_items += [project_iam.ProjectIAMMember {
+            apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+            kind = "ProjectIAMMember"
         metadata = {
             annotations = {"crossplane.io/composition-resource-name": "liferay-sql-instance-user-role"}
             labels = _labels
@@ -64,6 +70,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     }]
 
     _security_items += [project_iam.ProjectIAMMember {
+            apiVersion = "cloudplatform.gcp.m.upbound.io/v1beta1"
+            kind = "ProjectIAMMember"
         metadata = {
             annotations = {"crossplane.io/composition-resource-name": "liferay-sql-client-role"}
             labels = _labels
@@ -81,6 +89,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     if bool(vars["cmkEnabled"] if "cmkEnabled" in vars else False):
         _security_items += [
             kms_keyring.KeyRing {
+            apiVersion = "kms.gcp.m.upbound.io/v1beta1"
+            kind = "KeyRing"
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "liferay-keyring"}
                     labels = _labels
@@ -92,6 +102,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 }
             },
             kms_key.CryptoKey {
+            apiVersion = "kms.gcp.m.upbound.io/v1beta1"
+            kind = "CryptoKey"
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "liferay-cryptokey"}
                     labels = _labels
@@ -113,6 +125,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             {"name": "storage", "svc": "gs-project-accounts"}
         ]
         _security_items += [kms_iam.CryptoKeyIAMMember {
+            apiVersion = "kms.gcp.m.upbound.io/v1beta1"
+            kind = "CryptoKeyIAMMember"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-{}-kms-binding".format(t["name"])}
                 labels = _labels

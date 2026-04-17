@@ -12,6 +12,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
 
     _init_cm = k8s_core.ConfigMap {
+            apiVersion = "v1"
+            kind = "ConfigMap"
         metadata = {
             labels = _labels
             name = "init-config"

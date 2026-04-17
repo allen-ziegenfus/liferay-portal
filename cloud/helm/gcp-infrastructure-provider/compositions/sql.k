@@ -11,6 +11,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
     _items: [any] = [
         sql_instance.DatabaseInstance {
+            apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+            kind = "DatabaseInstance"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "database-primary"}
                 labels = _labels
@@ -47,6 +49,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
         }
         sql_db.Database {
+            apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+            kind = "Database"
             metadata = {
                 annotations = {
                     "crossplane.io/composition-resource-name": "liferay-db"
@@ -66,6 +70,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
         }
         sql_user.User {
+            apiVersion = "sql.gcp.m.upbound.io/v1beta1"
+            kind = "User"
             metadata = {
                 annotations = {
                     "crossplane.io/composition-resource-name": "liferay-iam-user"
@@ -136,6 +142,8 @@ _vars = {
     "databaseIamUser": cv.databaseIamUser
     "databaseInstanceName": cv.databaseInstanceName
     "databaseName": cv.databaseName
+    "databaseObjectName": cv.databaseObjectName
+    "databaseUserObjectName": cv.databaseUserObjectName
     "env": cv.env
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies

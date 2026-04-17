@@ -5,10 +5,11 @@ import k8s.api.core.v1 as k8s_core
 get_items = lambda obs: any, vars: {str:any} -> [any] {
     _labels = vars["labels"] if "labels" in vars else {}
     _namespace = str(vars["namespace"] if "namespace" in vars else "")
-    _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
     _baseName = str(vars["baseName"] if "baseName" in vars else "")
 
     _managed_service_details_secret = k8s_core.Secret {
+        apiVersion = "v1"
+        kind = "Secret"
         metadata = {
             labels = _labels
             name = "managed-service-details"
@@ -26,6 +27,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
     _items: [any] = [
         kubernetes.Object {
+            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+            kind = "Object"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "managed-service-details-secret"}
                 labels = _labels

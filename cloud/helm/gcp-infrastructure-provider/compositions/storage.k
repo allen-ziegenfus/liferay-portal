@@ -11,6 +11,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
     _items: [any] = [
         gcp.Bucket {
+            apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+            kind = "Bucket"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-bucket"}
                 labels = _labels
@@ -33,6 +35,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
         },
         gcp_iam.BucketIAMMember {
+            apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+            kind = "BucketIAMMember"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-iam"}
                 labels = _labels

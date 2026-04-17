@@ -27,6 +27,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         _bucket_name = "{}-vault".format(_baseName)
 
         _backup_items += [storage_bucket.Bucket {
+            apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+            kind = "Bucket"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-backup"}
                 labels = _backup_vault_labels
@@ -53,6 +55,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         }]
 
         _backup_items += [storage_iam.BucketIAMMember {
+            apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+            kind = "BucketIAMMember"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-backup-iam"}
                 labels = _labels
@@ -69,6 +73,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         }]
 
         _backup_cr = k8s_rbac.ClusterRole {
+            apiVersion = "rbac.authorization.k8s.io/v1"
+            kind = "ClusterRole"
             metadata = {
                 labels = _labels
                 name = "backup-create-cluster-role"
@@ -81,6 +87,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         }
 
         _backup_crb = k8s_rbac.ClusterRoleBinding {
+            apiVersion = "rbac.authorization.k8s.io/v1"
+            kind = "ClusterRoleBinding"
             metadata = {
                 labels = _labels
                 name = "backup-create-cluster-role-binding"
@@ -99,6 +107,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
         _backup_items += [
             kubernetes.Object {
+            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+            kind = "Object"
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role"}
                     labels = _labels
@@ -110,6 +120,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 }
             },
             kubernetes.Object {
+            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+            kind = "Object"
                 metadata = {
                     annotations = {"crossplane.io/composition-resource-name": "backup-create-cluster-role-binding"}
                     labels = _labels

@@ -8,6 +8,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     _meta = (vars["metadata"] if "metadata" in vars else {})
 
     _liferay_sa = k8s_core.ServiceAccount {
+            apiVersion = "v1"
+            kind = "ServiceAccount"
         metadata = {
             annotations = {"iam.gke.io/gcp-service-account": vars["gsaEmail"]}
             labels = vars["labels"]
@@ -18,6 +20,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
     _k8s_items: [any] = [
         kubernetes.Object {
+            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+            kind = "Object"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-ksa"}
                 labels = vars["labels"]
@@ -31,6 +35,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
     ]
 
     _liferay_job = k8s_batch.Job {
+            apiVersion = "batch/v1"
+            kind = "Job"
         metadata = {
             labels = vars["labels"]
             name = vars["jobName"]
@@ -109,6 +115,8 @@ EOF
     }
 
     _k8s_items += [kubernetes.Object {
+            apiVersion = "kubernetes.m.crossplane.io/v1alpha1"
+            kind = "Object"
         metadata = {
             annotations = {"crossplane.io/composition-resource-name": "liferay-db-grant-job"}
             labels = vars["labels"]

@@ -15,6 +15,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
     if bool(vars["overlayEnabled"] if "overlayEnabled" in vars else False):
         _items += [gcp.Bucket {
+            apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+            kind = "Bucket"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-overlay-bucket"}
                 labels = _labels
@@ -34,6 +36,8 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
         }]
 
         _items += [gcp_iam.BucketIAMMember {
+            apiVersion = "storage.gcp.m.upbound.io/v1beta1"
+            kind = "BucketIAMMember"
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-gsa-overlay-bucket-iam"}
                 labels = _labels
