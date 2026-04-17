@@ -3,9 +3,9 @@ import crossplane_provider_upjet_gcp.v1beta1.secretmanager_gcp_upbound_io_v1beta
 import crossplane_provider_upjet_gcp.v1beta1.secretmanager_gcp_upbound_io_v1beta1_secret_i_a_m_member as gcp_secret_iam
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _baseName = str(vars.get("baseName") or "")
-    _labels = vars.get("labels") or {}
-    _gsaEmail = str(vars.get("gsaEmail") or "")
+    _baseName = str(vars["baseName"] if "baseName" in vars else "")
+    _labels = vars["labels"] if "labels" in vars else {}
+    _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
     _secret_name = "{}-secret".format(_baseName)
 
     _secret_items: [any] = [
@@ -21,7 +21,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                         auto = [{}]
                     }]
                 }
-                managementPolicies = vars.get("managementPolicies") or ["*"]
+                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
             }
         },
         gcp_secret_iam.SecretIAMMember {
@@ -35,7 +35,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                     role = "roles/secretmanager.secretAccessor"
                     secretIdRef = {"name": _secret_name}
                 }
-                managementPolicies = vars.get("managementPolicies") or ["*"]
+                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
             }
         }
     ]

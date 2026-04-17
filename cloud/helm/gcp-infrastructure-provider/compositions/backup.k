@@ -1,7 +1,7 @@
 import .context_variables as cv
-import crossplane_provider_kubernetes.v1alpha1 as kubernetes
-import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as storage_bucket
-import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
+import .models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
+import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as storage_bucket
+import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as storage_iam
 import k8s.api.core.v1 as k8s_core
 import k8s.api.rbac.v1 as k8s_rbac
 import crypto
@@ -36,17 +36,17 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                     forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
                     labels = _backup_vault_labels
                     lifecycleRule = [{
-                        action = [{type = "Delete"}]
-                        condition = [{age = (int(_backup["retentionDays"] if "retentionDays" in _backup else 30)) + 2}]
+                        action = {$type = "Delete"}
+                        condition = {age = (int(_backup["retentionDays"] if "retentionDays" in _backup else 30)) + 2}
                     }]
                     location = str(_backup["region"] if "region" in _backup else (vars["region"] if "region" in vars else ""))
                     storageClass = str(_backup["storageClass"] if "storageClass" in _backup else "NEARLINE")
                     uniformBucketLevelAccess = True
                 }
                 if bool(vars["cmkEnabled"] if "cmkEnabled" in vars else False):
-                    forProvider.encryption = [{
+                    forProvider.encryption = {
                         defaultKmsKeyName = str(vars["cmkKeyName"] if "cmkKeyName" in vars else "")
-                    }]
+                    }
                 managementPolicies = _managementPolicies
             }
         }]
@@ -102,7 +102,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 }
                 spec = {
                     forProvider = {"manifest": _backup_sa}
-                    managementPolicy = str(vars["managementPolicy"] if "managementPolicy" in vars else "Default")
+                    managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
                 }
             },
             kubernetes.Object {
@@ -113,7 +113,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 }
                 spec = {
                     forProvider = {"manifest": _backup_rb}
-                    managementPolicy = str(vars["managementPolicy"] if "managementPolicy" in vars else "Default")
+                    managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
                 }
             }
         ]
@@ -130,7 +130,6 @@ _vars = {
     "gsaEmail": cv.gsaEmail
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
-    "managementPolicy": cv.managementPolicy
     "metadata": cv.metadata
     "namespace": cv.namespace
     "region": cv.region

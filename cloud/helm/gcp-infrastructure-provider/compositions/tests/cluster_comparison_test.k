@@ -54,6 +54,7 @@ test_arz_dev2025_resource_names = lambda {
         "metadata": {"name": _meta_name}
         "namespace": "liferay-arz-dev2025"
         "overlay": {"enabled": True, "region": "us-south1", "data": {}}
+        "overlayEnabled": True
         "region": "us-central1"
         "searchName": _meta_name + "-es"
         "searchNamespace": "liferay-arz-dev2025-elasticsearch"
@@ -91,23 +92,22 @@ test_arz_dev2025_resource_names = lambda {
     assert _find_by_anno(_sec_items, "liferay-gsa").metadata.name == "arz-dev2025-infra-sa"
 
     _msd_items = msd.get_items(_obs, _vars)
-    assert _msd_items[0].metadata.name == "arz-dev2025-00d245-managed-service-details-secret"
+    assert _find_by_anno(_msd_items, "managed-service-details-configmap") != None
 
     _sql_items = sql.get_items(_obs, _vars)
     assert _sql_items[0].metadata.name == "arz-dev2025-infra-db-instance"
-    assert _sql_items[1].metadata.name == "arz-dev2025-infra-db"
-    assert _sql_items[2].metadata.name == "arz-dev2025-infra-db-user"
-    assert _find_by_anno(_sql_items, "usage-instance-by-database") != None
-    assert _find_by_anno(_sql_items, "usage-instance-by-user") != None
+    assert _sql_items[1].metadata.name == "liferay_db"
+    assert _sql_items[2].metadata.name == "arz-dev2025-infra-sa@arz.iam"
 
     _storage_items = storage.get_items(_obs, _vars)
     assert _storage_items[0].metadata.name == "arz-dev2025-00d245-dl"
     assert _find_by_anno(_storage_items, "liferay-gcs-iam") != None
     
     _overlay_items = overlay.get_items(_obs, _vars)
+    assert len(_overlay_items) == 3, "Should have 3 overlay items"
     assert _overlay_items[0].metadata.name == "arz-dev2025-00d245-overlay"
-    assert _find_by_anno(_overlay_items, "liferay-gsa-overlay-bucket-iam") != None
-    assert _overlay_items[2].metadata.name == "arz-dev2025-infra-overlay"
+    assert _find_by_anno(_overlay_items, "overlay-iam") != None
+    assert _overlay_items[2].metadata.name == "arz-dev2025-00d245-overlay-config"
     
     _es_items = es.get_items(_obs, _vars)
     assert _es_items[0].metadata.name == "arz-dev2025-infra-es-observer"

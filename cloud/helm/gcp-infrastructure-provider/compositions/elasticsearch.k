@@ -1,5 +1,5 @@
 import .context_variables as cv
-import crossplane_provider_kubernetes.v1alpha1 as kubernetes
+import .models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
 import k8s.api.core.v1 as k8s_core
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
@@ -28,12 +28,12 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                         "apiVersion": "elasticsearch.k8s.elastic.co/v1"
                         "kind": "Elasticsearch"
                         "metadata": {
-                            "name": str(vars.get("searchName") or "")
-                            "namespace": str(vars.get("searchNamespace") or "")
+                            "name": str(vars["searchName"] if "searchName" in vars else "")
+                            "namespace": str(vars["searchNamespace"] if "searchNamespace" in vars else "")
                         }
                     }
                 }
-                managementPolicy = "Observe"
+                managementPolicies = ["Observe"]
             }
         }
         kubernetes.Object {
@@ -45,12 +45,12 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                 forProvider = {
                     manifest = k8s_core.Secret {
                         metadata = {
-                            name = str(vars.get("searchSecretName") or "")
-                            namespace = str(vars.get("searchNamespace") or "")
+                            name = str(vars["searchSecretName"] if "searchSecretName" in vars else "")
+                            namespace = str(vars["searchNamespace"] if "searchNamespace" in vars else "")
                         }
                     }
                 }
-                managementPolicy = "Observe"
+                managementPolicies = ["Observe"]
             }
         }
     ]
@@ -62,7 +62,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                     "crossplane.io/external-name": "elasticsearch-connection-details"
                     "crossplane.io/composition-resource-name": "elasticsearch-connection-details-secret"
                 }
-                labels = vars.get("labels") or {}
+                labels = vars["labels"] if "labels" in vars else {}
                 name = "{}-elasticsearch-connection-details-secret".format(_name)
             }
             spec = {
@@ -70,18 +70,18 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
                     manifest = k8s_core.Secret {
                         data = {"ELASTICSEARCH_PASSWORD": _password}
                         metadata = {
-                            labels = vars.get("labels") or {}
+                            labels = vars["labels"] if "labels" in vars else {}
                             name = "elasticsearch-connection-details"
-                            namespace = str(vars.get("namespace") or "")
+                            namespace = str(vars["namespace"] if "namespace" in vars else "")
                         }
                         stringData = {
-                            "ELASTICSEARCH_URL": "http://{}-es-http.{}.svc:9200".format(str(vars.get("searchName") or ""), str(vars.get("searchNamespace") or ""))
+                            "ELASTICSEARCH_URL": "http://{}-es-http.{}.svc:9200".format(str(vars["searchName"] if "searchName" in vars else ""), str(vars["searchNamespace"] if "searchNamespace" in vars else ""))
                             "ELASTICSEARCH_USERNAME": "elastic"
                         }
                         type = "Opaque"
                     }
                 }
-                managementPolicy = str(vars.get("managementPolicy") or "Default")
+                managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
             }
         }]
 
@@ -90,7 +90,7 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
 _vars = {
     "labels": cv.labels
-    "managementPolicy": cv.managementPolicy
+    "managementPolicies": cv.managementPolicies
     "metadata": cv.metadata
     "namespace": cv.namespace
     "searchName": cv.searchName

@@ -1,11 +1,11 @@
 import .context_variables as cv
-import crossplane_provider_kubernetes.v1alpha1 as kubernetes
+import .models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
 import k8s.api.batch.v1 as k8s_batch
 import k8s.api.core.v1 as k8s_core
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _db_spec = vars.get("databaseSpec") or {}
-    _meta = vars.get("metadata") or {}
+    _db_spec = (vars["databaseSpec"] if "databaseSpec" in vars else {})
+    _meta = (vars["metadata"] if "metadata" in vars else {})
 
     _liferay_sa = k8s_core.ServiceAccount {
         metadata = {
@@ -21,11 +21,11 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-ksa"}
                 labels = vars["labels"]
-                name = "{}-ksa".format(_meta.get("name") or "")
+                name = "{}-ksa".format((_meta["name"] if "name" in _meta else ""))
             }
             spec = {
                 forProvider = {"manifest": _liferay_sa}
-                managementPolicy = vars["managementPolicy"]
+                managementPolicies = [vars["managementPolicy"]
             }
         }
     ]
@@ -55,7 +55,7 @@ EOF
                         env = [{
                             name = "PGPASSWORD"
                             valueFrom = {
-                                "secretKeyRef": {"key": "password", "name": _db_spec.get("rootPasswordSecretName") or ""}
+                                "secretKeyRef": {"key": "password", "name": (_db_spec["rootPasswordSecretName"] if "rootPasswordSecretName" in _db_spec else "")}
                             }
                         }]
                         image = "postgres:18-alpine"
@@ -116,7 +116,7 @@ EOF
         }
         spec = {
             forProvider = {"manifest": _liferay_job}
-            managementPolicy = vars["managementPolicy"]
+            managementPolicies = [vars["managementPolicy"]
         }
     }]
 
@@ -132,7 +132,7 @@ _vars = {
     "instanceConnectionName": cv.instanceConnectionName
     "jobName": cv.jobName
     "labels": cv.labels
-    "managementPolicy": cv.managementPolicy
+    "managementPolicies": cv.managementPolicies
     "metadata": cv.metadata
     "namespace": cv.namespace
 }

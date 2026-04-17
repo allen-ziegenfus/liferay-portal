@@ -1,34 +1,35 @@
 import .context_variables as cv
-import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as gcp
-import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket_i_a_m_member as gcp_iam
+import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as gcp
+import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as gcp_iam
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
     _storage_spec = vars["storage_spec"] if "storage_spec" in vars else {}
     _labels = vars["labels"] if "labels" in vars else {}
     _baseName = vars["baseName"] if "baseName" in vars else ""
-    _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
+    _bucket_name = str(vars["bucketName"] if "bucketName" in vars else "{}-dl".format(_baseName))
+    _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
 
-    _storage_items: [any] = [
+    _items: [any] = [
         gcp.Bucket {
             metadata = {
                 annotations = {"crossplane.io/composition-resource-name": "liferay-gcs-bucket"}
                 labels = _labels
-                name = "{}-dl".format(_baseName)
+                name = _bucket_name
             }
             spec = {
                 forProvider = {
                     forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
                     labels = _labels | {"active": "true", "should-back-up": "true"}
-                    location = str(_storage_spec["region"] if "region" in _storage_spec else (vars["region"] if "region" in vars else ""))
-                    storageClass = "STANDARD"
+                    location = str(vars["region"] if "region" in vars else "")
+                    storageClass = str(_storage_spec["storageClass"] if "storageClass" in _storage_spec else "STANDARD")
                     uniformBucketLevelAccess = True
-                    versioning = [{enabled = bool(_storage_spec["enableVersioning"] if "enableVersioning" in _storage_spec else True)}]
+                    versioning = {enabled = bool(_storage_spec["enableVersioning"] if "enableVersioning" in _storage_spec else True)}
                 }
-                if vars.get("cmkEnabled"):
-                    forProvider.encryption = [{
+                if vars["cmkEnabled"] if "cmkEnabled" in vars else False:
+                    forProvider.encryption = {
                         defaultKmsKeyName = str(vars["cmkKeyName"] if "cmkKeyName" in vars else "")
-                    }]
-                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+                    }
+                managementPolicies = _managementPolicies
             }
         },
         gcp_iam.BucketIAMMember {
@@ -38,16 +39,18 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
             }
             spec = {
                 forProvider = {
-                    bucketRef = {"name": "{}-dl".format(_baseName)}
-                    member = "serviceAccount:{}".format(_gsaEmail)
+                    member = "serviceAccount:{}".format(str(vars["gsaEmail"] if "gsaEmail" in vars else ""))
                     role = "roles/storage.admin"
+                    bucketRef = {
+                        name = _bucket_name
+                    }
                 }
-                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+                managementPolicies = _managementPolicies
             }
         }
     ]
 
-    _storage_items
+    _items
 }
 
 _vars = {
@@ -58,7 +61,6 @@ _vars = {
     "gsaEmail": cv.gsaEmail
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
-    "metadata": cv.metadata
     "region": cv.region
     "storage_spec": cv.storage_spec
 }

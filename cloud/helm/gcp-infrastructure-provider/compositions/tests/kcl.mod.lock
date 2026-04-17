@@ -11,22 +11,6 @@
     reg = "ghcr.io"
     repo = "kcl-lang/crossplane"
     oci_tag = "v2.0.2"
-  [dependencies.crossplane-provider-kubernetes]
-    name = "crossplane-provider-kubernetes"
-    full_name = "crossplane-provider-kubernetes_0.18.0"
-    version = "0.18.0"
-    sum = "ruN1sWzJH2c+TMCp51KNKdP1PCgz+ZMwBunZKpIEYVs="
-    reg = "ghcr.io"
-    repo = "kcl-lang/crossplane-provider-kubernetes"
-    oci_tag = "0.18.0"
-  [dependencies.crossplane-provider-upjet-gcp]
-    name = "crossplane-provider-upjet-gcp"
-    full_name = "crossplane-provider-upjet-gcp_1.0.5"
-    version = "1.0.5"
-    sum = "nJLB3un8NJ9rare3BtDmp4Xs1PnHG2DP1ykdOxwaeYA="
-    reg = "ghcr.io"
-    repo = "kcl-lang/crossplane-provider-upjet-gcp"
-    oci_tag = "1.0.5"
   [dependencies.k8s]
     name = "k8s"
     full_name = "k8s_1.32.4"

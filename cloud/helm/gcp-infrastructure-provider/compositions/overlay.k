@@ -1,76 +1,72 @@
 import .context_variables as cv
-import crossplane_provider_kubernetes.v1alpha1 as kubernetes
-import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket as gcp
-import crossplane_provider_upjet_gcp.v1beta1.storage_gcp_upbound_io_v1beta1_bucket_i_a_m_member as gcp_iam
-import k8s.api.core.v1 as k8s_core
+import .models.v1alpha1.kubernetesm_crossplane_io_v1alpha1_object as kubernetes
+import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket as gcp
+import .models.v1beta1.storage_gcpm_upbound_io_v1beta1_bucket_i_a_m_member as gcp_iam
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
-    _overlay = (vars["overlay"] if "overlay" in vars else {}) or {}
-    _baseName = str(vars["baseName"] if "baseName" in vars else "")
     _labels = vars["labels"] if "labels" in vars else {}
-    _meta_name = str(vars["metadata"]["name"] if "metadata" in vars and "name" in vars["metadata"] else "")
+    _baseName = vars["baseName"] if "baseName" in vars else ""
     _gsaEmail = str(vars["gsaEmail"] if "gsaEmail" in vars else "")
-    
-    _items = []
+    _namespace = str(vars["namespace"] if "namespace" in vars else "")
+    _managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
 
-    if bool(_overlay["enabled"] if "enabled" in _overlay else False):
-        _bucket_name = "{}-overlay".format(_baseName)
-        
+    _items: [any] = []
+
+    if bool(vars["overlayEnabled"] if "overlayEnabled" in vars else False):
         _items += [gcp.Bucket {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-overlay-bucket"}
+                annotations = {"crossplane.io/composition-resource-name": "overlay-bucket"}
                 labels = _labels
-                name = _bucket_name
+                name = "{}-overlay".format(_baseName)
             }
             spec = {
                 forProvider = {
-                    forceDestroy = bool(vars["forceDestroy"] if "forceDestroy" in vars else False)
+                    forceDestroy = True
                     labels = _labels
-                    location = str(_overlay["region"] if "region" in _overlay else (vars["region"] if "region" in vars else ""))
+                    location = str(vars["region"] if "region" in vars else "")
                     storageClass = "STANDARD"
                     uniformBucketLevelAccess = True
-                    versioning = [{enabled = True}]
                 }
-                if bool(vars["cmkEnabled"] if "cmkEnabled" in vars else False):
-                    forProvider.encryption = [{
-                        defaultKmsKeyName = str(vars["cmkKeyName"] if "cmkKeyName" in vars else "")
-                    }]
-                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+                managementPolicies = _managementPolicies
             }
         }]
 
         _items += [gcp_iam.BucketIAMMember {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-gsa-overlay-bucket-iam"}
+                annotations = {"crossplane.io/composition-resource-name": "overlay-iam"}
                 labels = _labels
             }
             spec = {
                 forProvider = {
-                    bucketRef = {"name": _bucket_name}
+                    bucketRef = {"name": "{}-overlay".format(_baseName)}
                     member = "serviceAccount:{}".format(_gsaEmail)
-                    role = "roles/storage.objectViewer"
+                    role = "roles/storage.admin"
                 }
-                managementPolicies = vars["managementPolicies"] if "managementPolicies" in vars else ["*"]
+                managementPolicies = _managementPolicies
             }
         }]
 
         _items += [kubernetes.Object {
             metadata = {
-                annotations = {"crossplane.io/composition-resource-name": "liferay-overlay-cm"}
+                annotations = {"crossplane.io/composition-resource-name": "overlay-configmap"}
                 labels = _labels
-                name = "{}-overlay".format(_meta_name)
+                name = "{}-overlay-config".format(_baseName)
             }
             spec = {
                 forProvider = {
-                    manifest = k8s_core.ConfigMap {
-                        data = _overlay["data"] if "data" in _overlay else {}
-                        metadata = {
-                            name = "{}-overlay".format(_meta_name)
-                            namespace = str(vars["namespace"] if "namespace" in vars else "")
+                    manifest = {
+                        "apiVersion": "v1"
+                        "kind": "ConfigMap"
+                        "metadata": {
+                            "name": "overlay-config"
+                            "namespace": _namespace
+                        }
+                        "data": {
+                            "bucket": "{}-overlay".format(_baseName)
                         }
                     }
                 }
-                managementPolicy = str(vars["managementPolicy"] if "managementPolicy" in vars else "Default")
+                managementPolicies = [str(vars["managementPolicies"] if "managementPolicies" in vars else "Default")]
             }
         }]
 
@@ -79,16 +75,11 @@ get_items = lambda obs: any, vars: {str:any} -> [any] {
 
 _vars = {
     "baseName": cv.baseName
-    "cmkEnabled": cv.cmkEnabled
-    "cmkKeyName": cv.cmkKeyName
-    "forceDestroy": cv.forceDestroy
     "gsaEmail": cv.gsaEmail
     "labels": cv.labels
     "managementPolicies": cv.managementPolicies
-    "managementPolicy": cv.managementPolicy
-    "metadata": cv.metadata
     "namespace": cv.namespace
-    "overlay": cv.overlay
+    "overlayEnabled": cv.overlayEnabled
     "region": cv.region
 }
 

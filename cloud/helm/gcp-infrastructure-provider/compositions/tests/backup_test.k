@@ -28,8 +28,8 @@ test_backup_enabled = lambda {
     assert _bucket.metadata.name == "test-liferay-123-vault"
     assert _bucket.spec.forProvider.location == "us-west1"
     assert _bucket.spec.forProvider.storageClass == "COLDLINE"
-    assert _bucket.spec.forProvider.lifecycleRule[0].condition[0].age == 12
-    assert _bucket.spec.forProvider.encryption[0].defaultKmsKeyName == _vars["cmkKeyName"]
+    assert _bucket.spec.forProvider.lifecycleRule[0].condition.age == 12
+    assert _bucket.spec.forProvider.encryption.defaultKmsKeyName == _vars["cmkKeyName"]
 }
 
 test_backup_disabled = lambda {

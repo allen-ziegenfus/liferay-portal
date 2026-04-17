@@ -1,10 +1,10 @@
 import .context_variables as cv
-import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_project_i_a_m_member as project_iam
-import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_service_account as sa
-import crossplane_provider_upjet_gcp.v1beta1.cloudplatform_gcp_upbound_io_v1beta1_service_account_i_a_m_member as sa_iam
-import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_crypto_key as kms_key
-import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_crypto_key_i_a_m_member as kms_iam
-import crossplane_provider_upjet_gcp.v1beta1.kms_gcp_upbound_io_v1beta1_key_ring as kms_keyring
+import .models.v1beta1.cloudplatform_gcpm_upbound_io_v1beta1_project_i_a_m_member as project_iam
+import .models.v1beta1.cloudplatform_gcpm_upbound_io_v1beta1_service_account as sa
+import .models.v1beta1.cloudplatform_gcpm_upbound_io_v1beta1_service_account_i_a_m_member as sa_iam
+import .models.v1beta1.kms_gcpm_upbound_io_v1beta1_crypto_key as kms_key
+import .models.v1beta1.kms_gcpm_upbound_io_v1beta1_crypto_key_i_a_m_member as kms_iam
+import .models.v1beta1.kms_gcpm_upbound_io_v1beta1_key_ring as kms_keyring
 
 get_items = lambda obs: any, vars: {str:any} -> [any] {
     _env = vars["env"] if "env" in vars else {}
