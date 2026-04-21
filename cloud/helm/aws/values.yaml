@@ -159,11 +159,25 @@ liferay-default:
             -   mountPath: /opt/liferay/osgi/configs/com.liferay.portal.search.opensearch2.configuration.OpenSearchConnectionConfiguration-REMOTE.config
                 name: liferay-configmap
                 subPath: com.liferay.portal.search.opensearch2.configuration.OpenSearchConnectionConfiguration-REMOTE.config
+    customVolumes:
+        x-liferay-init-scripts-aws:
+            -   configMap:
+                    defaultMode: 0755
+                    name: liferay-init-scripts-aws
+                name: liferay-init-scripts-aws
     network:
         enabled: true
         timeouts:
             backendRequest: 300s
             request: 300s
+    overlay:
+        copy: []
+        enabled: false
+        image:
+            repository: amazon/aws-cli
+            tag: 2.27.63
+        initScriptsVolumeName: liferay-init-scripts-aws
+        type: s3
     portalBundleDenyList:
         -   com.liferay.portal.search.elasticsearch.cross.cluster.replication.impl
         -   com.liferay.portal.search.elasticsearch.monitoring.web
