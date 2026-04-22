@@ -105,7 +105,4 @@ locals {
 	secret_store_provider_default_enabled=var.external_secret_store_provider_hcl == null
 	secret_store_provider_hcl=local.secret_store_provider_default_enabled ? local.secret_store_provider_default : var.external_secret_store_provider_hcl
 	terraform_manager_name="liferay-cloud-native-terraform"
-	wif_allowed_repositories=compact([
-		var.liferay_workspace_git_repo
-	])
 }

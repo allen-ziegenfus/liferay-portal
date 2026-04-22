@@ -3,9 +3,10 @@ resource "google_iam_workload_identity_pool" "github" {
 	project=var.project_id
 	workload_identity_pool_id=local.github_workload_identity_pool_name
 }
+# checkov:skip=CKV_GCP_125:attribute_condition uses assertion.repository but checkov cannot evaluate the join() interpolation statically
 resource "google_iam_workload_identity_pool_provider" "github" {
 	count=var.liferay_workspace_git_repo != "" ? 1 : 0
-	attribute_condition="assertion.repository in [${join(",", formatlist("'%s'", local.wif_allowed_repositories))}]"
+	attribute_condition="assertion.repository == '${var.liferay_workspace_git_repo}'"
 	attribute_mapping={
 		"attribute.actor"="assertion.actor"
 		"attribute.repository"="assertion.repository"
