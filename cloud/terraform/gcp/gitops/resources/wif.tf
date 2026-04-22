@@ -22,7 +22,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
 resource "google_project_iam_member" "workspace_overlay_bucket_admin" {
 	count=var.liferay_workspace_git_repo != "" ? 1 : 0
 	condition {
-		expression="resource.name.endsWith('${local.overlay_bucket_suffix}')"
+		expression="resource.name.endsWith('${local.overlay_bucket_suffix}') || resource.name.contains('${local.overlay_bucket_suffix}/')"
 		title="Restrict to Overlay Buckets"
 	}
 	member="principalSet://iam.googleapis.com/projects/${data.google_project.project.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github[0].workload_identity_pool_id}/attribute.repository/${var.liferay_workspace_git_repo}"
