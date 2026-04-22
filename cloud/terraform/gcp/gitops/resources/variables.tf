@@ -32,6 +32,10 @@ variable "gateway_namespace" {
 	default="envoy-gateway-system"
 	type=string
 }
+variable "github_workload_identity_pool_id" {
+	default="github-pool"
+	type=string
+}
 variable "infrastructure_git_repo_config" {
 	default={
 		auth={}
@@ -165,6 +169,10 @@ variable "liferay_helm_chart_name" {
 	}
 }
 variable "liferay_helm_chart_version" {
+	type=string
+}
+variable "liferay_workspace_git_repo" {
+	default=""
 	type=string
 }
 variable "project_id" {

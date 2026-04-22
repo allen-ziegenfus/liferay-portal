@@ -51,6 +51,7 @@ locals {
 	}
 	gateway_class_name="liferay-gateway-class"
 	gateway_name="${var.infrastructure_git_repo_config.target.slugProjectId}-${var.infrastructure_git_repo_config.target.slugEnvironmentId}-gateway"
+	github_workload_identity_pool_name=var.liferay_workspace_git_repo != "" ? "${var.github_workload_identity_pool_id}-${random_id.pool_suffix[0].hex}" : null
 	git_repo_auth_configs=merge(
 		local.git_repo_infrastructure_separate_from_liferay ? {
 			"infrastructure"=merge(
@@ -89,6 +90,8 @@ locals {
 		} : {},
 	)
 	liferay_namespace_pattern="liferay-*"
+	overlay_bucket_prefix=substr(var.project_id, 0, 15)
+	overlay_bucket_suffix="-overlay"
 	secret_prefixes={
 		certificates="liferay-certificates-"
 		licenses="liferay-licenses-"
@@ -102,4 +105,7 @@ locals {
 	secret_store_provider_default_enabled=var.external_secret_store_provider_hcl == null
 	secret_store_provider_hcl=local.secret_store_provider_default_enabled ? local.secret_store_provider_default : var.external_secret_store_provider_hcl
 	terraform_manager_name="liferay-cloud-native-terraform"
+	wif_allowed_repositories=compact([
+		var.liferay_workspace_git_repo
+	])
 }
