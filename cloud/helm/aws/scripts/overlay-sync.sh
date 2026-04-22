@@ -2,6 +2,7 @@
 
 set -o errexit
 set -o nounset
+HOME=/tmp
 
 function main {
 	if [ "${#}" -ne 3 ]
