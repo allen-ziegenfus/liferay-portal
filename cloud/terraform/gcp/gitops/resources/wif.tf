@@ -5,7 +5,7 @@ resource "google_iam_workload_identity_pool" "github" {
 }
 resource "google_iam_workload_identity_pool_provider" "github" {
 	count=var.liferay_workspace_git_repo != "" ? 1 : 0
-	attribute_condition="assertion.repository == '${var.liferay_workspace_git_repo}'"
+	attribute_condition="assertion.sub == 'repo:${var.liferay_workspace_git_repo}:ref:refs/heads/${var.liferay_workspace_git_repo_branch}'"
 	attribute_mapping={
 		"attribute.actor"="assertion.actor"
 		"attribute.repository"="assertion.repository"

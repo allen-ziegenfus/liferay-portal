@@ -175,6 +175,10 @@ variable "liferay_workspace_git_repo" {
 	default=""
 	type=string
 }
+variable "liferay_workspace_git_repo_branch" {
+	default="main"
+	type=string
+}
 variable "project_id" {
 	type=string
 }
