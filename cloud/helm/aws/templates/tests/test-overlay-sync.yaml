@@ -1,0 +1,33 @@
+{{- if (index .Values "liferay-default").overlay.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+    annotations:
+        helm.sh/hook: test
+        helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    name: liferay-aws-test-overlay-sync
+    namespace: {{ .Release.Namespace }}
+spec:
+    containers:
+        -   args:
+                -   sts
+                -   get-caller-identity
+            command:
+                -   aws
+            env:
+                -   name: HOME
+                    value: /tmp
+            image: {{ printf "%s:%s" (index .Values "liferay-default").overlay.image.repository ((index .Values "liferay-default").overlay.image.tag | toString) }}
+            name: test-overlay-sync
+            securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                    drop:
+                        -   ALL
+                runAsNonRoot: true
+                runAsUser: 1000
+                seccompProfile:
+                    type: RuntimeDefault
+    restartPolicy: Never
+    serviceAccountName: liferay-default
+{{- end }}

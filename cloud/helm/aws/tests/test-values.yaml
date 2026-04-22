@@ -1,0 +1,30 @@
+global:
+    liferayServiceAccount:
+        annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::294825482201:role/lcd-50935-irsa
+liferay-default:
+    customEnv:
+        x-liferay-aws: []
+        x-liferay-aws-opensearch: []
+    customEnvFrom:
+        x-liferay-aws-database: []
+        x-liferay-aws-doclib: []
+        x-liferay-aws-opensearch: []
+    customInitContainers:
+        x-liferay-install-opensearch-modules: []
+    network:
+        enabled: false
+    overlay:
+        copy:
+            -   from: overlay-build-1/configs
+                into: osgi/configs
+            -   from: overlay-build-1/osgi/modules
+                into: osgi/modules
+        enabled: true
+    resources:
+        limits:
+            cpu: 2000m
+            memory: 6Gi
+        requests:
+            cpu: 500m
+            memory: 4Gi
