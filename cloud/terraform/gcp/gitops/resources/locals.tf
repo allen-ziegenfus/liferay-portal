@@ -90,7 +90,6 @@ locals {
 		} : {},
 	)
 	liferay_namespace_pattern="liferay-*"
-	overlay_bucket_suffix="-overlay"
 	secret_prefixes={
 		certificates="liferay-certificates-"
 		licenses="liferay-licenses-"
