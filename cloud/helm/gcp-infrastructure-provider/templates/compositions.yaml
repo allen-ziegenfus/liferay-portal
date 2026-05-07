@@ -31,17 +31,18 @@ spec:
                         -   ref:
                                 name: environment-config
                             type: Reference
-                        -   ref:
-                                name: liferay-template-store
-                            type: Reference
             step: environment-configs
         -   functionRef:
                 name: function-kcl
             input:
-                apiVersion: kcl.fn.crossplane.io/v1beta1
+                apiVersion: template.fn.crossplane.io/v1beta1
                 kind: KCLInput
-                source: |
-                    {{- .Files.Get "compositions/dist/pipeline.k" | nindent 20 }}
+                spec:
+                    dependencies: |
+                        k8s = "1.32.4"
+                        crossplane = "v2.0.2"
+                    source: |
+                        {{- .Files.Get "compositions/dist/pipeline.k" | nindent 24 }}
             step: composite-logic
         -   functionRef:
                 name: function-auto-ready
