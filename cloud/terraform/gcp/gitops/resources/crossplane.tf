@@ -261,9 +261,21 @@ resource "kubernetes_manifest" "function_kcl_runtime_config" {
 										}
 									}
 									securityContext=local.default_crossplane_container_security_context
+									volumeMounts=[
+										{
+											mountPath="/tmp"
+											name="tmp"
+										},
+									]
 								},
 							],
 							securityContext=local.default_crossplane_pod_security_context
+							volumes=[
+								{
+									emptyDir={}
+									name="tmp"
+								},
+							]
 						}
 					}
 				}
