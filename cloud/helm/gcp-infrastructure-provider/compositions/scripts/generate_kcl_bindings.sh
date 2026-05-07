@@ -136,9 +136,9 @@ pipeline += (
 	"        _items = layer.items\n"
 	"    _items\n"
 	"}\n"
-	"items = {\"items\": [item for layer in ["
+	"items = [item for layer in ["
 	+ ",".join(f"items_{l}" for l in layers)
-	+ "] for item in _layer_items(layer)]}\n"
+	+ "] for item in _layer_items(layer)]\n"
 )
 
 # Collapse runs of blank lines to shrink the bundle.

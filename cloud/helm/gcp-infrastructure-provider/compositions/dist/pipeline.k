@@ -4388,4 +4388,4 @@ _layer_items = lambda layer {
         _items = layer.items
     _items
 }
-items = {"items": [item for layer in [items_backup,items_elasticsearch,items_init,items_k8s_resources,items_managed_service_details,items_overlay,items_security,items_sql,items_storage] for item in _layer_items(layer)]}
+items = [item for layer in [items_backup,items_elasticsearch,items_init,items_k8s_resources,items_managed_service_details,items_overlay,items_security,items_sql,items_storage] for item in _layer_items(layer)]
