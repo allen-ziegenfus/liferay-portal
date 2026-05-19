@@ -12,7 +12,7 @@ function main {
 
 	local reference_timestamp
 
-	reference_timestamp=$(date --utc "+%Y-%m-%dT%H:%M:%SZ")
+	reference_timestamp=$(date -u "+%Y-%m-%dT%H:%M:%SZ")
 
 	kubectl \
 		annotate \
