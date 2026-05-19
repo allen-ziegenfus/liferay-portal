@@ -186,9 +186,18 @@ spec:
                                     value: promoting
                                 -   name: target-active-data-plane
                                     value: "{{ "{{" }}tasks.get-current-infrastructure-state.outputs.parameters.data-inactive}}"
-                        depends: restore-cloudsql-backup && restore-dl-bucket
+                        depends: reapply-data-plane-grants && restore-dl-bucket
                         name: promote-target-data-plane
                         template: apply-wait-infrastructure
+                    -   arguments:
+                            parameters:
+                                -   name: data-inactive
+                                    value: "{{ "{{" }}tasks.get-current-infrastructure-state.outputs.parameters.data-inactive}}"
+                                -   name: liferay-infrastructure-name
+                                    value: "{{ "{{" }}tasks.get-current-infrastructure-state.outputs.parameters.liferay-infrastructure-name}}"
+                        depends: restore-cloudsql-backup
+                        name: reapply-data-plane-grants
+                        template: reapply-data-plane-grants
                     -   arguments:
                             parameters:
                                 -   name: liferay-infrastructure-name
@@ -250,6 +259,18 @@ spec:
                         name: roll-back-restart
                         template: roll-back-restart
             name: main
+        -   inputs:
+                parameters:
+                    -   name: data-inactive
+                    -   name: liferay-infrastructure-name
+            name: reapply-data-plane-grants
+            script:
+                command: [sh]
+                image: "{{ .Values.images.helmKubectl.repository }}:{{ .Values.images.helmKubectl.tag }}"
+                resources:
+                    {{- .Values.resources.default | toYaml | nindent 20 }}
+                source: |-
+                    {{- tpl (.Files.Get "scripts/reapply-data-plane-grants.sh") . | nindent 20 }}
         -   inputs:
                 parameters:
                     -   name: liferay-workload-name

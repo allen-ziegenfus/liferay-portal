@@ -35,6 +35,15 @@ rules:
         verbs:
             -   create
             -   patch
+    -   apiGroups: ["batch"]
+        resources: ["jobs"]
+        verbs:
+            -   create
+            -   delete
+            -   get
+            -   list
+            -   patch
+            -   watch
     -   apiGroups: ["gcp.liferay.com"]
         resources: ["liferayinfrastructures"]
         verbs:
@@ -42,13 +51,25 @@ rules:
             -   list
             -   patch
             -   watch
-    -   apiGroups: ["storage.gcp.m.upbound.io"]
-        resources: ["buckets"]
+    -   apiGroups: ["kubernetes.m.crossplane.io"]
+        resources: ["objects"]
         verbs:
             -   get
             -   list
     -   apiGroups: ["sql.gcp.m.upbound.io"]
         resources: ["databaseinstances"]
+        verbs:
+            -   get
+            -   list
+    -   apiGroups: ["sql.gcp.m.upbound.io"]
+        resources: ["users"]
+        verbs:
+            -   get
+            -   list
+            -   patch
+            -   watch
+    -   apiGroups: ["storage.gcp.m.upbound.io"]
+        resources: ["buckets"]
         verbs:
             -   get
             -   list
