@@ -34,7 +34,9 @@ function main {
 				get \
 				users.sql.gcp.m.upbound.io \
 				"${user_name}" \
-				--output jsonpath="{.status.conditions[?(@.type==\"Ready\")]}" 2>/dev/null || echo "{}")
+				--output jsonpath="{.status.conditions[?(@.type==\"Ready\")]}" 2>/dev/null)
+
+		[ -z "${ready_condition}" ] && ready_condition="{}"
 
 		local last_transition_time
 
@@ -76,7 +78,7 @@ function main {
 		--ignore-not-found \
 		--wait
 
-	echo "${job_manifest}" | kubectl apply --filename -
+	printf "%s" "${job_manifest}" | kubectl apply --filename -
 
 	kubectl \
 		wait \
