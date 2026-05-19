@@ -34,7 +34,7 @@ function main {
 				get \
 				users.sql.gcp.m.upbound.io \
 				"${user_name}" \
-				--output jsonpath="{.status.conditions[?(@.type==\"Ready\")]}" 2>/dev/null)
+				--output jsonpath="{.status.conditions[?(@.type==\"Ready\")]}" 2>/dev/null || true)
 
 		[ -z "${ready_condition}" ] && ready_condition="{}"
 
