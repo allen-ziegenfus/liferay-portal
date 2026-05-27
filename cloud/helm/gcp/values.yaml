@@ -181,6 +181,8 @@ liferay-default:
         httpGet: null
         periodSeconds: 10
         timeoutSeconds: 5
+    structuredLogging:
+        layoutVariant: gcp
     volumeClaimTemplates:
         -   metadata:
                 name: liferay-persistent-volume
