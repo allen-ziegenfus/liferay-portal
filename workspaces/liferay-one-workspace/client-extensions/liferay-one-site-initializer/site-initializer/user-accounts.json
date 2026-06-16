@@ -152,6 +152,22 @@
 						"name": "Account Administrator"
 					}
 				]
+			},
+			{
+				"externalReferenceCode": "SUP-LIFERAY",
+				"roleBriefs": [
+					{
+						"name": "Account Administrator"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "SUP-TEST",
+				"roleBriefs": [
+					{
+						"name": "Account Administrator"
+					}
+				]
 			}
 		],
 		"alternateName": "admin",
@@ -160,6 +176,7 @@
 		"familyName": "Admin",
 		"givenName": "Admin",
 		"name": "Admin",
+		"password": "test",
 		"status": "Active"
 	},
 	{
@@ -315,6 +332,22 @@
 						"name": "Account Administrator"
 					}
 				]
+			},
+			{
+				"externalReferenceCode": "SUP-LIFERAY",
+				"roleBriefs": [
+					{
+						"name": "Account Administrator"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "SUP-TEST",
+				"roleBriefs": [
+					{
+						"name": "Account Administrator"
+					}
+				]
 			}
 		],
 		"alternateName": "staff",
@@ -323,6 +356,7 @@
 		"familyName": "Staff",
 		"givenName": "Liferay",
 		"name": "Liferay Staff",
+		"password": "test",
 		"status": "Active"
 	},
 	{
@@ -334,18 +368,119 @@
 						"name": "Account Member"
 					}
 				]
-			}
-		],
-		"alternateName": "customer",
-		"emailAddress": "customer@customer.com",
-		"externalReferenceCode": "USER_CUSTOMER",
-		"familyName": "Customer",
-		"givenName": "Customer",
-		"name": "Customer",
-		"status": "Active"
-	},
-	{
-		"accountBriefs": [
+			},
+			{
+				"externalReferenceCode": "ERC-002",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-003",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-004",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-005",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-006",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-007",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-008",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-009",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-010",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-011",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-012",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-013",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-014",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-015",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
 			{
 				"externalReferenceCode": "ERC-016",
 				"roleBriefs": [
@@ -369,6 +504,210 @@
 						"name": "Account Member"
 					}
 				]
+			},
+			{
+				"externalReferenceCode": "ERC-019",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "SUP-LIFERAY",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "SUP-TEST",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			}
+		],
+		"alternateName": "customer",
+		"emailAddress": "customer@customer.com",
+		"externalReferenceCode": "USER_CUSTOMER",
+		"familyName": "Customer",
+		"givenName": "Customer",
+		"name": "Customer",
+		"password": "test",
+		"status": "Active"
+	},
+	{
+		"accountBriefs": [
+			{
+				"externalReferenceCode": "ERC-001",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-002",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-003",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-004",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-005",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-006",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-007",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-008",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-009",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-010",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-011",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-012",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-013",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-014",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-015",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-016",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-017",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-018",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "ERC-019",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "SUP-LIFERAY",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
+			},
+			{
+				"externalReferenceCode": "SUP-TEST",
+				"roleBriefs": [
+					{
+						"name": "Account Member"
+					}
+				]
 			}
 		],
 		"alternateName": "partner",
@@ -377,6 +716,7 @@
 		"familyName": "Partner",
 		"givenName": "Partner",
 		"name": "Partner",
+		"password": "test",
 		"status": "Active"
 	}
 ]

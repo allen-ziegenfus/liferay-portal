@@ -17,8 +17,18 @@
 		},
 		{
 			"accountEntryRestricted": true,
-			"accountEntryRestrictedObjectFieldName": "r_accountToOAuth2DxpAuthorization_accountEntryId",
+			"accountEntryRestrictedObjectFieldName": "r_accountEntryToOAuth2DxpAuthorization_accountEntryId",
 			"externalReferenceCode": "C_OAUTH2_DXP_AUTHORIZATION"
+		},
+		{
+			"accountEntryRestricted": true,
+			"accountEntryRestrictedObjectFieldName": "r_accountEntryToProject_accountEntryId",
+			"externalReferenceCode": "C_PROJECT"
+		},
+		{
+			"accountEntryRestricted": true,
+			"accountEntryRestrictedObjectFieldName": "r_accountEntryToProjectMembership_accountEntryId",
+			"externalReferenceCode": "C_PROJECT_MEMBERSHIP"
 		},
 		{
 			"accountEntryRestricted": true,
@@ -32,13 +42,8 @@
 		},
 		{
 			"accountEntryRestricted": true,
-			"accountEntryRestrictedObjectFieldName": "r_accountToTrialExtensionRequest_accountEntryId",
+			"accountEntryRestrictedObjectFieldName": "r_accountEntryToTrialExtensionRequest_accountEntryId",
 			"externalReferenceCode": "C_TRIAL_EXTENSION_REQUEST"
-		},
-		{
-			"accountEntryRestricted": true,
-			"accountEntryRestrictedObjectFieldName": "r_accountEntryToUserProjectAssociation_accountEntryId",
-			"externalReferenceCode": "C_USER_PROJECT_ASSOCIATION"
 		}
 	]
 }
