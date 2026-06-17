@@ -1,0 +1,55 @@
+[
+	{
+		"categories": [
+			"app"
+		],
+		"description": "A sample application used to validate the Test Supplier catalog and the marketplace publishing flow.",
+		"displayAvailability": true,
+		"displayStockQuantity": true,
+		"externalReferenceCode": "PRDCT-TEST-APP",
+		"images": [
+			"sample-marketplace-app.png"
+		],
+		"name": "Test App",
+		"options": [
+			{
+				"key": "base-license-usage-type",
+				"values": [
+					"standard"
+				]
+			}
+		],
+		"price": 0,
+		"sku": "PRDCT-TEST-APP",
+		"specificationOptions": [
+			{
+				"key": "app-documentation-url",
+				"value": "https://docs.testsupplier.com"
+			},
+			{
+				"key": "developer-name",
+				"value": "Test Supplier"
+			},
+			{
+				"key": "price-model",
+				"value": "Free"
+			},
+			{
+				"key": "publisher-name",
+				"value": "Test Supplier"
+			},
+			{
+				"key": "publisher-web-site-url",
+				"value": "https://www.testsupplier.com"
+			},
+			{
+				"key": "support-email-address",
+				"value": "support@testsupplier.com"
+			},
+			{
+				"key": "support-url",
+				"value": "https://support.testsupplier.com"
+			}
+		]
+	}
+]
