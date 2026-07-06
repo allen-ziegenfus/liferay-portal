@@ -1,0 +1,104 @@
+KOR-36115:
+    default: Portal
+KOR-36125:
+    Sizing 1: Portal Backup Sizing 1
+    default: Portal Backup
+KOR-36134:
+    Sizing 1: Portal Non-Prod Sizing 1
+    Sizing 3: Portal Non-Prod Sizing 3
+    Sizing 4: Portal Non-Prod Sizing 4
+    default: Portal Non-Prod
+KOR-36143:
+    Sizing 1: Portal Prod Sizing 1
+    Sizing 2: Portal Prod Sizing 2
+    Sizing 3: Portal Prod Sizing 3
+    Sizing 4: Portal Prod Sizing 4
+    default: Portal Prod
+KOR-36152:
+    Sizing 1: Portal Dev Sizing 1
+    Sizing 4: Portal Dev Sizing 4
+    default: Portal Dev
+KOR-36154:
+    Sizing 1: Portal OEM Sizing 1
+    Sizing 4: Portal OEM Sizing 4
+    default: Portal OEM
+KOR-36156:
+    Sizing 1: Portal Enterprise Sizing 1
+    Sizing 3: Portal Enterprise Sizing 3
+    Sizing 4: Portal Enterprise Sizing 4
+    default: Portal Enterprise
+KOR-36166:
+    default: Portal Prod
+KOR-36170:
+    default: Portal Non-Prod
+KOR-36174:
+    default: Portal Backup
+KOR-36180:
+    default: Portal Limited
+KOR-36183:
+    Sizing 3: Portal Prod Sizing 3
+    default: Portal Prod
+KOR-36187:
+    Sizing 3: Portal Non-Prod Sizing 3
+    default: Portal Non-Prod
+KOR-36191:
+    default: Portal Backup
+KOR-36198:
+    default: Portal Non-Prod
+KOR-36302:
+    Sizing 1: Portal Non-Prod Sizing 1
+KOR-36327:
+    Sizing 1: Liferay Self-Hosted Backup Sizing 1
+    Sizing 2: Liferay Self-Hosted Backup Sizing 2
+    Sizing 3: Liferay Self-Hosted Backup Sizing 3
+    Sizing 4: Liferay Self-Hosted Backup Sizing 4
+    default: Liferay Self-Hosted Backup
+KOR-36333:
+    Sizing 1: Liferay Self-Hosted Dev Sizing 1
+    Sizing 2: Liferay Self-Hosted Dev Sizing 2
+    Sizing 3: Liferay Self-Hosted Dev Sizing 3
+    Sizing 4: Liferay Self-Hosted Dev Sizing 4
+    default: Liferay Self-Hosted Dev
+KOR-36335:
+    Sizing 1: Liferay Self-Hosted Enterprise Sizing 1
+    Sizing 3: Liferay Self-Hosted Enterprise Sizing 3
+    Sizing 4: Liferay Self-Hosted Enterprise Sizing 4
+    default: Liferay Self-Hosted Enterprise
+KOR-36343:
+    Sizing 1: Liferay Self-Hosted Limited Sizing 1
+    default: Liferay Self-Hosted Limited
+KOR-36346:
+    Sizing 1: Liferay Self-Hosted Non-Prod Sizing 1
+    Sizing 2: Liferay Self-Hosted Non-Prod Sizing 2
+    Sizing 3: Liferay Self-Hosted Non-Prod Sizing 3
+    Sizing 4: Liferay Self-Hosted Non-Prod Sizing 4
+    default: Liferay Self-Hosted Non-Prod
+KOR-36352:
+    Sizing 1: Liferay Self-Hosted OEM Sizing 1
+    Sizing 4: Liferay Self-Hosted OEM Sizing 4
+    default: Liferay Self-Hosted OEM
+KOR-36354:
+    Sizing 1: Liferay Self-Hosted Prod Sizing 1
+    Sizing 2: Liferay Self-Hosted Prod Sizing 2
+    Sizing 3: Liferay Self-Hosted Prod Sizing 3
+    Sizing 4: Liferay Self-Hosted Prod Sizing 4
+    default: Liferay Self-Hosted Prod
+KOR-36385:
+    Sizing 1: Commerce Backup Sizing 1
+KOR-36394:
+    Sizing 1: Commerce Non-Prod Sizing 1
+    Sizing 4: Commerce Non-Prod Sizing 4
+    default: Commerce Non-Prod
+KOR-36403:
+    Sizing 1: Commerce Prod Sizing 1
+    default: Commerce Prod
+KOR-36572:
+    Sizing 1: Commerce Enterprise Sizing 1
+    default: Commerce Enterprise
+KOR-36574:
+    Sizing 1: Liferay Self-Hosted Flex Sizing 1
+KOR-36580:
+    Sizing 1: Commerce Dev Sizing 1
+    Sizing 2: Commerce Dev Sizing 2
+    Sizing 4: Commerce Dev Sizing 4
+    default: Commerce Dev
