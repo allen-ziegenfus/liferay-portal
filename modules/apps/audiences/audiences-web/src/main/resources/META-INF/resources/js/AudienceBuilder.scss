@@ -8,29 +8,60 @@ $toolbar-height: 55px;
 }
 
 .audience-builder-attribute {
-	border-radius: 4px;
+	border: 2px solid transparent;
 	cursor: grab;
+	height: 55px;
 
+	&:focus,
 	&:hover {
-		background-color: $light;
+		background-color: var(--primary-l3);
+		border-color: $primary;
 	}
 
 	&--dragging {
 		opacity: 0.5;
 	}
+
+	&__icon {
+		height: 32px;
+		width: 32px;
+
+		&--indigo {
+			background-color: $indigo-l5;
+			color: $indigo;
+		}
+
+		&--orange {
+			background-color: $orange-l5;
+			color: $orange;
+		}
+
+		&--teal {
+			background-color: $teal-l5;
+			color: $teal;
+		}
+	}
 }
 
-.audience-builder-conjunction-line {
-	width: 20px;
+.audience-builder-conjunction-menu {
+	.dropdown-item {
+		text-transform: uppercase;
+	}
 }
 
 .audience-builder-drop-zone {
+	background-color: $white;
+	border: 2px dashed transparent;
+	border-radius: 0.5rem;
 	min-height: 240px;
 	transition: background-color 0.1s ease-in-out;
 
+	&--active {
+		border-color: $primary;
+	}
+
 	&--over {
-		background-color: rgba($primary, 0.06);
-		box-shadow: inset 0 0 0 2px $primary;
+		background-color: var(--primary-l3);
 	}
 }
 
@@ -39,7 +70,16 @@ $toolbar-height: 55px;
 }
 
 .audience-builder-rule {
-	border-left: 4px solid $teal-l2;
+	border: 2px solid var(--secondary-l3);
+	border-left: 4px solid $indigo;
+	border-radius: 0.5rem;
+
+	&:focus-within {
+		background-color: var(--primary-l3);
+		border-bottom-color: $primary;
+		border-right-color: $primary;
+		border-top-color: $primary;
+	}
 
 	&--dragging {
 		opacity: 0.5;
@@ -50,7 +90,30 @@ $toolbar-height: 55px;
 	}
 
 	&--drop-top {
-		box-shadow: 0 -4px 0 0 $primary;
+		box-shadow: inset 0 4px 0 0 $primary;
+	}
+
+	&--error {
+		border-left-color: var(--secondary-l1);
+
+		&:focus-within {
+			background-color: $gray-100;
+			border-bottom-color: var(--secondary-l3);
+			border-right-color: var(--secondary-l3);
+			border-top-color: var(--secondary-l3);
+		}
+	}
+
+	&--indigo {
+		border-left-color: $indigo;
+	}
+
+	&--orange {
+		border-left-color: $orange;
+	}
+
+	&--teal {
+		border-left-color: $teal;
 	}
 }
 

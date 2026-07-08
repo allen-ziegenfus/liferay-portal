@@ -10,6 +10,10 @@ import classNames from 'classnames';
 import React, {Dispatch, Fragment} from 'react';
 import {useDrop} from 'react-dnd';
 
+import {
+	CATEGORY_ICON_COLORS,
+	DEFAULT_ICON_COLOR,
+} from '../constants/categoryIconColors';
 import {DRAG_TYPES} from '../constants/dragTypes';
 import {Action} from '../reducer';
 import {AudiencesCriteria, AudiencesCriteriaType, Rule} from '../types';
@@ -45,6 +49,18 @@ export default function ConditionsPanel({
 			])
 		);
 
+	const iconColorsByKey: Record<string, string> = Object.fromEntries(
+		audiencesCriteriaTypes.flatMap((audiencesCriteriaType) =>
+			audiencesCriteriaType.audiencesCriterias.map(
+				(audiencesCriteria) => [
+					audiencesCriteria.key,
+					CATEGORY_ICON_COLORS[audiencesCriteriaType.key] ??
+						DEFAULT_ICON_COLOR,
+				]
+			)
+		)
+	);
+
 	const announce = useScreenReaderAnnounce();
 
 	const dndItems = rules.map((rule) => {
@@ -57,13 +73,16 @@ export default function ConditionsPanel({
 		};
 	});
 
-	const [{isOver}, drop] = useDrop<
+	const [{canDrop, isOver}, drop] = useDrop<
 		AttributeDragItem,
 		void,
-		{isOver: boolean}
+		{canDrop: boolean; isOver: boolean}
 	>({
 		accept: DRAG_TYPES.ATTRIBUTE,
-		collect: (monitor) => ({isOver: monitor.isOver()}),
+		collect: (monitor) => ({
+			canDrop: monitor.canDrop(),
+			isOver: monitor.isOver(),
+		}),
 		drop: (item) => handleAddRule(item.audiencesCriteria),
 	});
 
@@ -100,8 +119,9 @@ export default function ConditionsPanel({
 					<div className="align-items-center bg-lighter border-top d-flex p-3">
 						<div className="mr-3">
 							<Picker
+								UNSAFE_menuClassName="audience-builder-conjunction-menu"
 								aria-label={Liferay.Language.get('conjunction')}
-								className="form-control-sm w-auto"
+								className="form-control-sm text-uppercase w-auto"
 								items={[
 									{
 										label: Liferay.Language.get('and'),
@@ -127,6 +147,24 @@ export default function ConditionsPanel({
 								)}
 							</Picker>
 						</div>
+
+						<span className="text-2 text-secondary">
+							{conjunction === 'OR'
+								? Liferay.Language.get('any-rule-must-match')
+								: Liferay.Language.get('all-rules-must-match')}
+
+							{' · '}
+
+							{rules.length === 1
+								? Liferay.Util.sub(
+										Liferay.Language.get('x-criterion'),
+										rules.length
+									)
+								: Liferay.Util.sub(
+										Liferay.Language.get('x-criteria'),
+										rules.length
+									)}
+						</span>
 					</div>
 
 					<div className="px-3 py-2">
@@ -135,17 +173,11 @@ export default function ConditionsPanel({
 								{index > 0 ? (
 									<div
 										aria-hidden="true"
-										className="align-items-center d-flex mb-3"
+										className="font-weight-semi-bold my-3 text-3 text-secondary text-uppercase"
 									>
-										<span className="audience-builder-conjunction-line border-top" />
-
-										<span className="font-weight-semi-bold mx-3 text-3 text-secondary text-uppercase">
-											{conjunction === 'OR'
-												? Liferay.Language.get('or')
-												: Liferay.Language.get('and')}
-										</span>
-
-										<span className="border-top flex-grow-1" />
+										{conjunction === 'OR'
+											? Liferay.Language.get('or')
+											: Liferay.Language.get('and')}
 									</div>
 								) : null}
 
@@ -153,6 +185,7 @@ export default function ConditionsPanel({
 									audiencesCriteria={
 										audiencesCriteriasByKey[rule.attribute]
 									}
+									iconColor={iconColorsByKey[rule.attribute]}
 									index={index}
 									items={dndItems}
 									onAddRule={handleAddRule}
@@ -160,7 +193,7 @@ export default function ConditionsPanel({
 										dispatch({
 											index,
 											rule: newRule,
-											type: 'CHANGE_RULE',
+											type: 'UPDATE_RULE',
 										})
 									}
 									onDelete={() => {
@@ -194,20 +227,23 @@ export default function ConditionsPanel({
 			) : (
 				<div
 					className={classNames(
-						'audience-builder-drop-zone border-top p-4',
+						'audience-builder-drop-zone m-4 p-4',
 						{
+							'audience-builder-drop-zone--active': canDrop,
 							'audience-builder-drop-zone--over': isOver,
 						}
 					)}
 					ref={drop}
 				>
-					<ClayEmptyState
-						description={Liferay.Language.get(
-							'to-create-a-new-audience-drag-items-from-the-sidebar-and-drop-them-here'
-						)}
-						imgSrc={`${Liferay.ThemeDisplay.getPathThemeImages()}/states/search_state.svg`}
-						title={Liferay.Language.get('no-criteria-yet')}
-					/>
+					{!canDrop && (
+						<ClayEmptyState
+							description={Liferay.Language.get(
+								'to-create-a-new-audience-drag-items-from-the-sidebar-and-drop-them-here'
+							)}
+							imgSrc={`${Liferay.ThemeDisplay.getPathThemeImages()}/states/search_state.svg`}
+							title={Liferay.Language.get('no-criteria-yet')}
+						/>
+					)}
 				</div>
 			)}
 		</div>

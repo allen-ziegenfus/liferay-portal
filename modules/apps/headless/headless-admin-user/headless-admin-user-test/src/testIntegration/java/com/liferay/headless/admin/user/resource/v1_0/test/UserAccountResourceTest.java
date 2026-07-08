@@ -1774,6 +1774,26 @@ public class UserAccountResourceTest extends BaseUserAccountResourceTestCase {
 	}
 
 	@Override
+	protected GraphQLField
+			testGraphQLGetUserAccountsPageUserAccount_getGraphQLField()
+		throws Exception {
+
+		return new GraphQLField(
+			"userAccounts",
+			HashMapBuilder.<String, Object>put(
+				"page", 1
+			).put(
+				"pageSize", 10
+			).put(
+				"search", () -> null
+			).put(
+				"sort", "\"dateCreated:desc\""
+			).build(),
+			new GraphQLField("items", getGraphQLFields()),
+			new GraphQLField("page"), new GraphQLField("totalCount"));
+	}
+
+	@Override
 	protected UserAccount testGraphQLUserAccount_addUserAccount()
 		throws Exception {
 

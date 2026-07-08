@@ -32,6 +32,7 @@ interface AttributeDragItem {
 
 interface IProps {
 	audiencesCriteria?: AudiencesCriteria;
+	iconColor: string;
 	index: number;
 	items: DragItem[];
 	onAddRule: (audiencesCriteria: AudiencesCriteria, index?: number) => void;
@@ -60,6 +61,7 @@ const getDropPosition = (
 
 export default function RuleRow({
 	audiencesCriteria,
+	iconColor,
 	index,
 	items,
 	onAddRule,
@@ -111,7 +113,38 @@ export default function RuleRow({
 	});
 
 	if (!audiencesCriteria) {
-		return null;
+		return (
+			<div
+				aria-label={Liferay.Language.get(
+					'the-criteria-is-no-longer-available'
+				)}
+				className="align-items-center audience-builder-rule audience-builder-rule--error d-flex justify-content-between p-3"
+				ref={dropItemRef}
+			>
+				<div className="align-items-center c-gap-3 d-flex">
+					<ClayIcon
+						className="text-danger"
+						symbol="exclamation-full"
+					/>
+
+					<span className="text-3">
+						{Liferay.Language.get(
+							'the-criteria-is-no-longer-available'
+						)}
+					</span>
+				</div>
+
+				<ClayButtonWithIcon
+					aria-label={Liferay.Language.get('delete')}
+					borderless
+					displayType="secondary"
+					onClick={onDelete}
+					size="sm"
+					symbol="times-circle"
+					title={Liferay.Language.get('delete')}
+				/>
+			</div>
+		);
 	}
 
 	const {inputType, label, options, type} = audiencesCriteria;
@@ -119,10 +152,11 @@ export default function RuleRow({
 	const operators = getOperators(inputType, type);
 
 	return (
-		<div className="mb-3" ref={attributeDrop}>
+		<div ref={attributeDrop}>
 			<div
 				className={classNames(
 					'align-items-center audience-builder-rule d-flex justify-content-between p-3',
+					`audience-builder-rule--${iconColor}`,
 					{
 						'audience-builder-rule--dragging': isDragging,
 						'audience-builder-rule--drop-bottom':

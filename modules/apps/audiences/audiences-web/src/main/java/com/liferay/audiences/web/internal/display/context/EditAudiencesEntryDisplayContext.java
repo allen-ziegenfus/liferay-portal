@@ -142,10 +142,14 @@ public class EditAudiencesEntryDisplayContext {
 							}
 						).build())
 				).put(
+					"key", audiencesCriteriaType.getKey()
+				).put(
 					"label", audiencesCriteriaType.getLabel()
 				).build())
 		).put(
 			"backURL", getBackURL()
+		).put(
+			"backURLTitle", getBackURLTitle()
 		).put(
 			"name", _getName()
 		).put(
