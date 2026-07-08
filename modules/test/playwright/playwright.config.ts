@@ -74,11 +74,7 @@ import {config as designLibraryWebConfig} from './tests/design-library-web/main/
 import {config as dispatchWebConfig} from './tests/dispatch-web/main/config';
 import {config as documentLibraryWebConfig} from './tests/document-library-web/main/config';
 import {config as dynamicDataMappingFormWebConfig} from './tests/dynamic-data-mapping-form-web/main/config';
-import {config as e2eCmsDxpContentPageConfig} from './tests/e2e-cms-dxp/content-page/main/config';
-import {config as e2eCmsDxpDisplayPageTemplateConfig} from './tests/e2e-cms-dxp/display-page-template/main/config';
-import {config as e2eCmsDxpSharingConfig} from './tests/e2e-cms-dxp/sharing/main/config';
-import {config as e2eCmsDxpTranslationsConfig} from './tests/e2e-cms-dxp/translations/main/config';
-import {config as e2eCmsDxpWorkflowConfig} from './tests/e2e-cms-dxp/workflow/main/config';
+import {config as e2eCmsDxpConfig} from './tests/e2e-cms-dxp/main/config';
 import {config as expandoWebConfig} from './tests/expando-web/main/config';
 import {config as exportImportServiceConfig} from './tests/export-import-service/main/config';
 import {config as exportImportWebConfig} from './tests/export-import-web/main/config';
@@ -126,6 +122,7 @@ import {config as loginWebSetupAdminConfig} from './tests/login-web/setup-admin/
 import {config as mapsConfig} from './tests/maps/main/config';
 import {config as marketplaceAppManagerWebConfig} from './tests/marketplace-app-manager-web/main/config';
 import {config as messageBoardsWebConfig} from './tests/message-boards-web/main/config';
+import {config as messageBoardsWebPaginationConfig} from './tests/message-boards-web/pagination/config';
 import {config as multifactorAuthenticationEmailOTPConfig} from './tests/multi-factor-authentication-email-otp-web/main/config';
 import {config as multifactorAuthenticationConfig} from './tests/multi-factor-authentication-timebased-otp-web/main/config';
 import {config as multifactorAuthenticationWebConfig} from './tests/multi-factor-authentication-web/main/config';
@@ -319,11 +316,7 @@ export default defineConfig({
 		dispatchWebConfig,
 		documentLibraryWebConfig,
 		dynamicDataMappingFormWebConfig,
-		e2eCmsDxpDisplayPageTemplateConfig,
-		e2eCmsDxpContentPageConfig,
-		e2eCmsDxpSharingConfig,
-		e2eCmsDxpTranslationsConfig,
-		e2eCmsDxpWorkflowConfig,
+		e2eCmsDxpConfig,
 		expandoWebConfig,
 		exportImportServiceConfig,
 		exportImportWebConfig,
@@ -373,6 +366,7 @@ export default defineConfig({
 		marketplaceAppManagerWebConfig,
 		marketplaceConfig,
 		messageBoardsWebConfig,
+		messageBoardsWebPaginationConfig,
 		multifactorAuthenticationConfig,
 		multifactorAuthenticationEmailOTPConfig,
 		multifactorAuthenticationWebConfig,
