@@ -392,6 +392,30 @@ export class HeadlessDeliveryApiHelper {
 		);
 	}
 
+	async postStructuredContentFolderStructuredContent({
+		contentStructureId,
+		datePublished,
+		structuredContentFolderId,
+		title,
+	}: {
+		contentStructureId: number;
+		datePublished: string;
+		structuredContentFolderId: number;
+		title: string;
+	}): Promise<StructuredContent> {
+		return this.apiHelpers.post(
+			`${this.apiHelpers.baseUrl}${this.basePath}/structured-content-folders/${structuredContentFolderId}/structured-contents`,
+			{
+				data: {
+					contentStructureId,
+					datePublished,
+					title,
+				},
+				failOnStatusCode: true,
+			}
+		);
+	}
+
 	async getStructuredContentByKey(
 		siteId: string,
 		key: string
@@ -494,6 +518,35 @@ export class HeadlessDeliveryApiHelper {
 				failOnStatusCode: true,
 				headers: {
 					...(await this.apiHelpers.getCSRFTokenHeader()),
+				},
+			}
+		);
+	}
+
+	async postDocumentFolderDocument(
+		documentFolderId: number | string,
+		file: fs.ReadStream,
+		document?: TDocument
+	) {
+		document = {
+			description: getRandomString(),
+			externalReferenceCode: getRandomString(),
+			fileName: getRandomString(),
+			title: getRandomString(),
+			viewableBy: 'Anyone',
+			...(document || {}),
+		};
+
+		return this.apiHelpers.post(
+			`${this.apiHelpers.baseUrl}${this.basePath}/document-folders/${documentFolderId}/documents`,
+			{
+				failOnStatusCode: true,
+				headers: {
+					...(await this.apiHelpers.getCSRFTokenHeader()),
+				},
+				multipart: {
+					document: JSON.stringify(document),
+					file,
 				},
 			}
 		);
