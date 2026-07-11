@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {render, screen} from '@testing-library/react';
+import {fireEvent, render, screen, within} from '@testing-library/react';
 import React from 'react';
 
 import '@testing-library/jest-dom';
@@ -20,6 +20,18 @@ const DATA = [
 ];
 
 describe('BarChart', () => {
+	it('moves focus to the next bar with the arrow keys', () => {
+		render(<BarChart data={DATA} title="Monthly visits" />);
+
+		const bars = screen.getAllByRole('img');
+
+		bars[0].focus();
+
+		fireEvent.keyDown(bars[0], {key: 'ArrowRight'});
+
+		expect(bars[1]).toHaveFocus();
+	});
+
 	it('renders one accessible bar per datum', () => {
 		render(<BarChart data={DATA} title="Monthly visits" />);
 
@@ -70,8 +82,7 @@ describe('BarChart', () => {
 		);
 
 		expect(screen.getAllByRole('img')[0]).toHaveStyle({
-			'--charts-bar-fill':
-				'var(--primary-l0, light-dark(#5791ff, #0f62ff))',
+			'--charts-bar-fill': 'var(--chart-color-1)',
 		});
 	});
 
@@ -88,9 +99,108 @@ describe('BarChart', () => {
 		).toBeInTheDocument();
 	});
 
+	it('lays the stacked meter out as one accessible segment per datum', () => {
+		render(<BarChart data={DATA} stacked title="Monthly visits" />);
+
+		const segments = screen.getAllByRole('img');
+
+		expect(segments).toHaveLength(DATA.length);
+		expect(segments[0]).toHaveAttribute('aria-label', 'Jan: 12');
+	});
+
+	it('forces the categorical scheme and drops the axis when stacked', () => {
+		const {container} = render(
+			<BarChart
+				data={DATA}
+				scheme="blue"
+				stacked
+				title="Monthly visits"
+			/>
+		);
+
+		const figure = screen.getByRole('figure');
+
+		expect(figure).toHaveClass('charts-bar-chart--stacked');
+		expect(figure).toHaveClass('charts-bar-chart--categorical');
+		expect(
+			container.querySelector('.charts-bar-chart__axis')
+		).not.toBeInTheDocument();
+	});
+
+	it('shows the datum share in the list legend by default', () => {
+		render(<BarChart data={DATA} legend="list" title="Monthly visits" />);
+
+		// 12 of 39 total.
+
+		expect(screen.getByText('30.8%')).toBeInTheDocument();
+	});
+
+	it('shows the raw value in the list legend for legendValue="value"', () => {
+		render(
+			<BarChart
+				data={DATA}
+				legend="list"
+				legendValue="value"
+				title="Monthly visits"
+			/>
+		);
+
+		const legend = screen.getByRole('list', {hidden: true});
+
+		expect(within(legend).getByText('12')).toBeInTheDocument();
+		expect(within(legend).queryByText('30.8%')).not.toBeInTheDocument();
+	});
+
+	it('shows no trailing metric in the list legend for legendValue="name"', () => {
+		render(
+			<BarChart
+				data={DATA}
+				legend="list"
+				legendValue="name"
+				title="Monthly visits"
+			/>
+		);
+
+		const legend = screen.getByRole('list', {hidden: true});
+
+		expect(within(legend).getByText('Jan')).toBeInTheDocument();
+		expect(within(legend).queryByText('12')).not.toBeInTheDocument();
+		expect(within(legend).queryByText('30.8%')).not.toBeInTheDocument();
+	});
+
+	it('applies the alignment and swatch-border modifiers', () => {
+		render(
+			<BarChart
+				alignment="center"
+				data={DATA}
+				legend="list"
+				legendSwatchBorder={false}
+				title="Monthly visits"
+			/>
+		);
+
+		const figure = screen.getByRole('figure');
+
+		expect(figure).toHaveClass('charts-bar-chart--align-center');
+		expect(figure).toHaveClass('charts-bar-chart--no-swatch-border');
+	});
+
 	it('has no accessibility violations', async () => {
 		const {container} = render(
 			<BarChart data={DATA} legend="list" title="Monthly visits" />
+		);
+
+		await checkAccessibility({bestPractices: true, context: container});
+	});
+
+	it('has no accessibility violations when stacked', async () => {
+		const {container} = render(
+			<BarChart
+				data={DATA}
+				legend="list"
+				stacked
+				title="Monthly visits"
+			/>
 		);
 
 		await checkAccessibility({bestPractices: true, context: container});

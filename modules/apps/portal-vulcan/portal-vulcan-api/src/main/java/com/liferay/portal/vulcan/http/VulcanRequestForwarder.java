@@ -9,6 +9,8 @@ import com.liferay.portal.kernel.model.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.Map;
+
 /**
  * @author Alejandro Tardín
  */
@@ -25,6 +27,10 @@ public interface VulcanRequestForwarder {
 		}
 
 		public default String getContentType() {
+			return null;
+		}
+
+		public default Map<String, String> getHeaders() {
 			return null;
 		}
 

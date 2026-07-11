@@ -6,17 +6,29 @@
 import classNames from 'classnames';
 import React, {useCallback, useId, useMemo, useRef, useState} from 'react';
 
+import ChartSummary from '../chart_summary/ChartSummary';
 import PieChartLegend from './components/PieChartLegend';
 import PieChartPlot from './components/PieChartPlot';
-import PieChartSummary from './components/PieChartSummary';
 import {SIZE_PRESETS, STROKE_INSET, THICKNESS_RATIOS} from './constants';
 
 import '../../css/PieChart.scss';
-import {usePieKeyboardNav} from './hooks/usePieKeyboardNav';
+import {useChartKeyboardNav} from '../hooks/useChartKeyboardNav';
+import {toPercent} from '../percent';
 import {PieDatum} from './types/PieDatum';
 import {getPieChartSlicePathFactory} from './utils/getPieChartSlicePathFactory';
-import {toPercent} from './utils/percent';
 import {getPieSliceColors} from './utils/pieColors';
+
+/**
+ * What the `legend="list"` rows show next to each label.
+ *
+ * - `percent` (default): the slice's share of the total, e.g. `42.3%`.
+ * - `value`: the raw value, e.g. `68`.
+ * - `name`: nothing extra — just the swatch and label.
+ *
+ * No effect on `legend="table"`, which always breaks value and share into their
+ * own columns.
+ */
+export type PieChartLegendValue = 'name' | 'percent' | 'value';
 
 export interface PieChartProps {
 	animated?: boolean;
@@ -25,6 +37,15 @@ export interface PieChartProps {
 	description?: string;
 	innerRadius?: number;
 	legend?: 'list' | 'none' | 'table';
+
+	/**
+	 * Draw the 1px border around each legend color swatch (list and table).
+	 * Default `true`. Set `false` for borderless swatches.
+	 */
+	legendSwatchBorder?: boolean;
+
+	/** What the `legend="list"` rows show next to each label. Default `percent`. */
+	legendValue?: PieChartLegendValue;
 	size?: 'lg' | 'md' | 'sm' | 'xs' | number;
 	thickness?: 'lg' | 'md';
 	title: string;
@@ -56,6 +77,8 @@ export default function PieChart({
 	description,
 	innerRadius: innerRadiusRatio,
 	legend = 'list',
+	legendSwatchBorder = true,
+	legendValue = 'percent',
 	size = 'md',
 	thickness = 'md',
 	title,
@@ -102,7 +125,12 @@ export default function PieChart({
 		sliceRefs.current[index]?.focus();
 	}, []);
 
-	const onKeyDown = usePieKeyboardNav(data.length, focusSlice);
+	const focusableIndexes = useMemo(
+		() => Array.from({length: data.length}, (_, index) => index),
+		[data.length]
+	);
+
+	const onKeyDown = useChartKeyboardNav(focusableIndexes, focusSlice);
 
 	const sliceRefFactory = useCallback(
 		(index: number) => (element: SVGPathElement | null) => {
@@ -124,7 +152,10 @@ export default function PieChart({
 			aria-labelledby={titleId}
 			className={classNames(
 				'chart-pie',
-				{'chart-pie-revealed': animated},
+				{
+					'chart-pie-no-swatch-border': !legendSwatchBorder,
+					'chart-pie-revealed': animated,
+				},
 				className
 			)}
 		>
@@ -133,10 +164,11 @@ export default function PieChart({
 			</figcaption>
 
 			{legend === 'table' ? null : (
-				<PieChartSummary
-					data={data}
+				<ChartSummary
 					description={description}
 					id={summaryId}
+					items={data}
+					showPosition
 					total={total}
 				/>
 			)}
@@ -172,6 +204,7 @@ export default function PieChart({
 					colors={colors}
 					data={data}
 					legend={legend}
+					legendValue={legendValue}
 					onFocus={focusSlice}
 					onHover={setHoverIndex}
 					onHoverEnd={() => setHoverIndex(null)}

@@ -162,7 +162,7 @@ describe('SelectPageAssetInput', () => {
 		fireEvent.click(getByRole('combobox', {name}));
 
 	describe('default asset type', () => {
-		it('should preselect the first compatible type with a select-asset button', () => {
+		it('should preselect the first compatible type with an add-assets button', () => {
 			const {getAllByRole, getByText} = render(
 				<DefaultComponent action='view' />
 			);
@@ -175,7 +175,7 @@ describe('SelectPageAssetInput', () => {
 
 			// A type is always selected, so a specific asset can be picked at once.
 
-			expect(getByText(/select asset/i)).toBeTruthy();
+			expect(getByText(/add assets/i)).toBeTruthy();
 		});
 
 		it('should not emit anything on mount', () => {
@@ -193,7 +193,7 @@ describe('SelectPageAssetInput', () => {
 	});
 
 	describe('page selector', () => {
-		it('should reveal the select-page button and emit Page after choosing Page', () => {
+		it('should reveal the add-pages button and emit Page after choosing Page', () => {
 			const onSelectionsChange = jest.fn();
 
 			const {getByRole, getByText} = render(
@@ -206,7 +206,7 @@ describe('SelectPageAssetInput', () => {
 			openPicker(getByRole, 'Page or Asset Type');
 			fireEvent.click(getByText('Page'));
 
-			expect(getByText(/select page/i)).toBeTruthy();
+			expect(getByText(/add pages/i)).toBeTruthy();
 			expect(onSelectionsChange).toHaveBeenCalledWith({
 				applicationId: 'Page',
 				eventId: 'pageViewed',
@@ -221,7 +221,7 @@ describe('SelectPageAssetInput', () => {
 
 			openPicker(getByRole, 'Page or Asset Type');
 			fireEvent.click(getByText('Page'));
-			fireEvent.click(getByText(/select page/i));
+			fireEvent.click(getByText(/add pages/i));
 
 			expect(open).toHaveBeenCalled();
 
@@ -235,7 +235,7 @@ describe('SelectPageAssetInput', () => {
 	});
 
 	describe('asset type selector', () => {
-		it('should reveal the select-asset button and emit the type after choosing a type', () => {
+		it('should reveal the add-assets button and emit the type after choosing a type', () => {
 			const onSelectionsChange = jest.fn();
 
 			const {getByRole, getByText} = render(
@@ -250,7 +250,7 @@ describe('SelectPageAssetInput', () => {
 			openPicker(getByRole, 'Asset Type');
 			fireEvent.click(getByText('Web Content'));
 
-			expect(getByText(/select asset/i)).toBeTruthy();
+			expect(getByText(/add assets/i)).toBeTruthy();
 			expect(onSelectionsChange).toHaveBeenCalledWith({
 				applicationId: 'WebContent',
 				eventId: 'webContentViewed',
@@ -261,9 +261,7 @@ describe('SelectPageAssetInput', () => {
 		it('should open the modal with the select-asset config', () => {
 			const {getByText} = render(<DefaultComponent action='view' />);
 
-			// A type is preselected, so the select-asset button is available.
-
-			fireEvent.click(getByText(/select asset/i));
+			fireEvent.click(getByText(/add assets/i));
 
 			const config = open.mock.calls[0][1];
 
@@ -303,7 +301,7 @@ describe('SelectPageAssetInput', () => {
 
 			openPicker(getByRole, 'Page or Asset Type');
 			fireEvent.click(getByText('Page'));
-			fireEvent.click(getByText(/select page/i));
+			fireEvent.click(getByText(/add pages/i));
 
 			const {onSubmit} = open.mock.calls[0][1];
 
@@ -405,7 +403,7 @@ describe('SelectPageAssetInput', () => {
 			// offer no page option; only the asset-type picker is a dropdown.
 
 			expect(getByText('Asset Type')).toBeTruthy();
-			expect(queryByText(/select page/i)).toBeNull();
+			expect(queryByText(/add pages/i)).toBeNull();
 			expect(getAllByRole('combobox')).toHaveLength(1);
 		});
 
@@ -416,7 +414,7 @@ describe('SelectPageAssetInput', () => {
 			// be picked right away.
 
 			expect(getByText('Blogs')).toBeTruthy();
-			expect(getByText(/select asset/i)).toBeTruthy();
+			expect(getByText(/add assets/i)).toBeTruthy();
 		});
 
 		it('should build a valid activityKey from the default click type', () => {
@@ -431,7 +429,7 @@ describe('SelectPageAssetInput', () => {
 
 			// Click defaults to Blog; pick a specific asset for it.
 
-			fireEvent.click(getByText(/select asset/i));
+			fireEvent.click(getByText(/add assets/i));
 
 			const {onSubmit} = open.mock.calls[0][1];
 
@@ -493,7 +491,7 @@ describe('SelectPageAssetInput', () => {
 
 			// Download defaults to its first type, Document (Documents and Media).
 
-			fireEvent.click(getByText(/select asset/i));
+			fireEvent.click(getByText(/add assets/i));
 
 			const {dataSourceFn} = open.mock.calls[0][1];
 
@@ -529,7 +527,7 @@ describe('SelectPageAssetInput', () => {
 				expect(getByText('CMSBasicWebContent')).toBeTruthy()
 			);
 
-			fireEvent.click(getByText(/select asset/i));
+			fireEvent.click(getByText(/add assets/i));
 
 			const {dataSourceFn} = open.mock.calls[0][1];
 
@@ -559,7 +557,7 @@ describe('SelectPageAssetInput', () => {
 
 			// Download defaults to Document (Documents and Media).
 
-			fireEvent.click(getByText(/select asset/i));
+			fireEvent.click(getByText(/add assets/i));
 
 			const {onSubmit} = open.mock.calls[0][1];
 
@@ -615,6 +613,18 @@ describe('SelectPageAssetInput', () => {
 
 			expect(API.assets.searchTypes).toHaveBeenCalled();
 		});
+
+		it('should request asset-summary-types with a null rangeKey so recently tracked object definitions still list', () => {
+			// A null rangeKey lifts the time-range restriction (LPD-97671):
+			// CMS objects whose only activity is recent (e.g. the last 24
+			// hours) must still surface as selectable asset types.
+
+			renderAndFlush({action: 'download'});
+
+			expect(API.assets.searchTypes).toHaveBeenCalledWith(
+				expect.objectContaining({rangeKey: null})
+			);
+		});
 	});
 
 	describe('modal columns', () => {
@@ -623,7 +633,7 @@ describe('SelectPageAssetInput', () => {
 
 			openPicker(getByRole, 'Page or Asset Type');
 			fireEvent.click(getByText('Page'));
-			fireEvent.click(getByText(/select page/i));
+			fireEvent.click(getByText(/add pages/i));
 
 			const config = open.mock.calls[0][1];
 			const byAccessor = Object.fromEntries(
@@ -644,6 +654,24 @@ describe('SelectPageAssetInput', () => {
 			expect(config.rowIdentifier).toBe('id');
 		});
 
+		it('should title the count column with the selected event label', () => {
+			const {getByRole, getByText} = render(
+				<DefaultComponent action='view' actionLabel='View' />
+			);
+
+			openPicker(getByRole, 'Page or Asset Type');
+			fireEvent.click(getByText('Page'));
+			fireEvent.click(getByText(/add pages/i));
+
+			const config = open.mock.calls[0][1];
+			const countColumn = config.columns.find(
+				(column) => column.accessor === 'count'
+			);
+
+			expect(countColumn.label).toBe('View');
+			expect(config.orderByOptions[0].label).toBe('View');
+		});
+
 		it('should preserve the id, url, data source and total in the mapped page rows', async () => {
 			API.activities.searchAssets.mockResolvedValueOnce({
 				items: [
@@ -662,7 +690,7 @@ describe('SelectPageAssetInput', () => {
 
 			openPicker(getByRole, 'Page or Asset Type');
 			fireEvent.click(getByText('Page'));
-			fireEvent.click(getByText(/select page/i));
+			fireEvent.click(getByText(/add pages/i));
 
 			const {dataSourceFn} = open.mock.calls[0][1];
 

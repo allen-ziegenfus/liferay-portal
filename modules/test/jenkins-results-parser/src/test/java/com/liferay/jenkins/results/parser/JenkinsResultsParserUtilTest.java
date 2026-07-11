@@ -19,6 +19,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import org.junit.After;
+import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -282,6 +284,67 @@ public class JenkinsResultsParserUtilTest
 	}
 
 	@Test
+	public void testGetPropertyNameWithWildcards() {
+		Properties properties = new Properties();
+
+		properties.setProperty("build.caching.enabled", "false");
+		properties.setProperty(
+			"build.caching.enabled[test-portal-acceptance-pullrequest(*)]",
+			"true");
+		properties.setProperty(
+			"build.caching.enabled[test-portal-acceptance-pullrequest(master)]",
+			"false");
+
+		_testGetPropertyName(
+			"build.caching.enabled", "false", properties,
+			"build.caching.enabled", "test-portal-source-format");
+		_testGetPropertyName(
+			"build.caching.enabled[test-portal-acceptance-pullrequest(*)]",
+			"true", properties, "build.caching.enabled",
+			"test-portal-acceptance-pullrequest(ee-7.4.x)");
+		_testGetPropertyName(
+			"build.caching.enabled[test-portal-acceptance-pullrequest(master)]",
+			"false", properties, "build.caching.enabled",
+			"test-portal-acceptance-pullrequest(master)");
+	}
+
+	@Test
+	public void testGetPropertyWithBuildAwsProperties() {
+		Properties properties = _getBuildAwsProperties();
+
+		_testGetProperty(
+			"false", properties, "binaries.cache.enabled",
+			"forward-pullrequest");
+		_testGetProperty(
+			"true", properties, "binaries.cache.enabled",
+			"test-portal-release");
+		_testGetProperty(
+			"false", properties, "binaries.cache.enabled",
+			"test-portal-source-format");
+		_testGetProperty(
+			"false", properties, "build.caching.enabled",
+			"forward-pullrequest");
+		_testGetProperty(
+			"true", properties, "build.caching.enabled",
+			"test-portal-fixpack-release");
+		_testGetProperty(
+			"true", properties, "build.caching.enabled",
+			"test-portal-hotfix-release");
+		_testGetProperty(
+			"true", properties, "build.caching.enabled", "test-portal-release");
+		_testGetProperty(
+			"false", properties, "build.caching.enabled",
+			"test-portal-source-format");
+		_testGetProperty(
+			"false", properties, "git.archive.enabled", "forward-pullrequest");
+		_testGetProperty(
+			"true", properties, "git.archive.enabled", "test-portal-release");
+		_testGetProperty(
+			"false", properties, "git.archive.enabled",
+			"test-portal-source-format");
+	}
+
+	@Test
 	public void testGetRemoteURL() {
 		testEquals(
 			"https://test-1-20.liferay.com/ABC?123=456&xyz=abc",
@@ -359,6 +422,56 @@ public class JenkinsResultsParserUtilTest
 								duration))));
 			}
 		}
+	}
+
+	@Test
+	public void testIsBuildCachingEnabledCloudCINode() {
+		Environment environment = mockEnvironment();
+
+		JenkinsResultsParserUtil.clearCache();
+
+		Mockito.when(
+			environment.doGet("BUILD_CACHING_ENABLED")
+		).thenReturn(
+			"true"
+		);
+
+		Mockito.when(
+			environment.doGet("MASTER_NETWORK_NAME")
+		).thenReturn(
+			"aws-network"
+		);
+
+		Assert.assertTrue(
+			JenkinsResultsParserUtil.isBuildCachingEnabled(
+				"test-portal-release", "default"));
+
+		Mockito.when(
+			environment.doGet("BUILD_CACHING_ENABLED")
+		).thenReturn(
+			"false"
+		);
+
+		Assert.assertFalse(
+			JenkinsResultsParserUtil.isBuildCachingEnabled(
+				"test-portal-release", "default"));
+	}
+
+	@Test
+	public void testIsBuildCachingEnabledNonCINode() {
+		Environment environment = mockEnvironment();
+
+		JenkinsResultsParserUtil.clearCache();
+
+		Mockito.when(
+			environment.doGet("BUILD_CACHING_ENABLED")
+		).thenReturn(
+			"true"
+		);
+
+		Assert.assertFalse(
+			JenkinsResultsParserUtil.isBuildCachingEnabled(
+				"test-portal-release", "default"));
 	}
 
 	@Test
@@ -566,6 +679,21 @@ public class JenkinsResultsParserUtilTest
 		return JenkinsResultsParserUtil.fixURL(
 			JenkinsResultsParserUtil.fixURL(
 				JenkinsResultsParserUtil.fixURL(urlString)));
+	}
+
+	private Properties _getBuildAwsProperties() {
+		File jenkinsRepositoryDir =
+			JenkinsResultsParserUtil.getJenkinsRepositoryDir();
+
+		File buildAwsPropertiesFile = new File(
+			jenkinsRepositoryDir, "commands/build-aws.properties");
+
+		Assume.assumeTrue(
+			JenkinsResultsParserUtil.getCanonicalPath(buildAwsPropertiesFile) +
+				" does not exist",
+			buildAwsPropertiesFile.exists());
+
+		return JenkinsResultsParserUtil.getProperties(buildAwsPropertiesFile);
 	}
 
 	private void _testGetProperty(

@@ -8,7 +8,7 @@ package com.liferay.mcp.server.rest.internal.servlet.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.batch.engine.test.util.BatchEngineTestUtil;
+import com.liferay.mcp.server.rest.test.util.MCPServerTestUtil;
 import com.liferay.oauth.client.persistence.model.OAuthClientASLocalMetadata;
 import com.liferay.oauth.client.persistence.service.OAuthClientASLocalMetadataLocalService;
 import com.liferay.oauth2.provider.model.OAuth2Authorization;
@@ -22,6 +22,7 @@ import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.CompanyConfigurationTemporarySwapper;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -62,8 +63,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.hamcrest.CoreMatchers;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -93,16 +97,8 @@ public class MCPServerServletTest {
 		new LiferayIntegrationTestRule();
 
 	@Before
-	public void setUp() throws Exception {
-		BatchEngineTestUtil.processBatchEngineUnits(
-			"com.liferay.mcp.server.rest.impl", MCPServerServletTest.class,
-			new String[] {
-				".com.liferay.mcp.server.rest.internal.batch.01.object." +
-					"definition",
-				".com.liferay.mcp.server.rest.internal.batch.02.object." +
-					"definition",
-				".com.liferay.mcp.server.rest.internal.batch.03.object.entry"
-			});
+	public void setUp() {
+		MCPServerTestUtil.processBatchEngineUnits();
 	}
 
 	@Test
@@ -175,6 +171,7 @@ public class MCPServerServletTest {
 							Base64.encode(userNameAndPassword.getBytes()),
 						"Bearer " + _getAccessToken())) {
 
+				_testServiceWithDataMasks(authorization);
 				_testServiceWithModifiedProfile(authorization);
 				_testServiceWithNoContentResponse(authorization);
 				_testServiceWithoutProfile(authorization);
@@ -254,6 +251,47 @@ public class MCPServerServletTest {
 				tool.inputSchema()
 			),
 			false);
+	}
+
+	private ObjectEntry _fetchMCPServerProfileDataMaskObjectEntry(
+			long dataMaskObjectEntryId,
+			String mcpServerProfileExternalReferenceCode)
+		throws Exception {
+
+		ObjectDefinition mcpServerProfileDataMaskObjectDefinition =
+			_objectDefinitionLocalService.
+				fetchObjectDefinitionByExternalReferenceCode(
+					"L_MCP_SERVER_PROFILE_DATA_MASK",
+					TestPropsValues.getCompanyId());
+
+		ObjectEntry dataMaskObjectEntry =
+			_objectEntryLocalService.fetchObjectEntry(dataMaskObjectEntryId);
+
+		for (ObjectEntry mcpServerProfileDataMaskObjectEntry :
+				_objectEntryLocalService.getObjectEntries(
+					0,
+					mcpServerProfileDataMaskObjectDefinition.
+						getObjectDefinitionId(),
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS)) {
+
+			Map<String, Serializable> values =
+				mcpServerProfileDataMaskObjectEntry.getValues();
+
+			String dataMaskExternalReferenceCode = (String)values.get(
+				"dataMaskExternalReferenceCode");
+
+			if (Objects.equals(
+					dataMaskExternalReferenceCode,
+					dataMaskObjectEntry.getExternalReferenceCode()) &&
+				Objects.equals(
+					mcpServerProfileExternalReferenceCode,
+					values.get("mcpServerProfileExternalReferenceCode"))) {
+
+				return mcpServerProfileDataMaskObjectEntry;
+			}
+		}
+
+		return null;
 	}
 
 	private String _get(String url) throws Exception {
@@ -559,6 +597,64 @@ public class MCPServerServletTest {
 		_http.URLtoString(options);
 
 		return options.getResponse();
+	}
+
+	private void _testServiceWithDataMasks(String authorization)
+		throws Exception {
+
+		String profileName = RandomTestUtil.randomString();
+
+		ObjectEntry mcpServerProfileObjectEntry =
+			MCPServerTestUtil.addMCPServerProfileObjectEntry(
+				_TEST_EMAIL_ADDRESS, profileName,
+				"mcp-server-profiles getMCPServerProfilesPage");
+
+		McpSyncClient mcpSyncClient = _getMcpSyncClient(
+			authorization, profileName);
+
+		mcpSyncClient.initialize();
+
+		McpSchema.CallToolResult callToolResult = mcpSyncClient.callTool(
+			new McpSchema.CallToolRequest(
+				"getMCPServerProfilesPage", Collections.emptyMap()));
+
+		List<McpSchema.Content> content = callToolResult.content();
+
+		McpSchema.TextContent textContent = (McpSchema.TextContent)content.get(
+			0);
+
+		Assert.assertThat(
+			textContent.text(),
+			CoreMatchers.allOf(
+				CoreMatchers.containsString("[EMAIL_ADDRESS]"),
+				CoreMatchers.not(
+					CoreMatchers.containsString(_TEST_EMAIL_ADDRESS))));
+
+		ObjectEntry dataMaskObjectEntry =
+			MCPServerTestUtil.fetchDataMaskObjectEntry("Email Address");
+
+		MCPServerTestUtil.deleteMCPServerProfileDataMaskObjectEntry(
+			"Removed by test.",
+			_fetchMCPServerProfileDataMaskObjectEntry(
+				dataMaskObjectEntry.getObjectEntryId(),
+				mcpServerProfileObjectEntry.getExternalReferenceCode()));
+
+		callToolResult = mcpSyncClient.callTool(
+			new McpSchema.CallToolRequest(
+				"getMCPServerProfilesPage", Collections.emptyMap()));
+
+		content = callToolResult.content();
+
+		textContent = (McpSchema.TextContent)content.get(0);
+
+		Assert.assertThat(
+			textContent.text(),
+			CoreMatchers.allOf(
+				CoreMatchers.containsString(_TEST_EMAIL_ADDRESS),
+				CoreMatchers.not(
+					CoreMatchers.containsString("[EMAIL_ADDRESS]"))));
+
+		mcpSyncClient.closeGracefully();
 	}
 
 	private void _testServiceWithModifiedProfile(String authorization)
@@ -953,6 +1049,8 @@ public class MCPServerServletTest {
 
 		mcpSyncClient.closeGracefully();
 	}
+
+	private static final String _TEST_EMAIL_ADDRESS = "example@example.com";
 
 	private static final Pattern _authTokenPattern = Pattern.compile(
 		"authToken:\\s*(['\"])(((?!\\1).)*)\\1,");

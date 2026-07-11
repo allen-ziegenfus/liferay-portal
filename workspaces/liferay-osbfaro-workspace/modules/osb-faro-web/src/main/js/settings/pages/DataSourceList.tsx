@@ -53,6 +53,10 @@ const STANDALONE_DATA_SOURCES: StandaloneDataSourceDescriptor[] = [
 		type: DataSourceTypes.Liferay,
 	},
 	{
+		label: Liferay.Language.get('marketo-campaign'),
+		type: DataSourceTypes.MarketoCampaign,
+	},
+	{
 		label: Liferay.Language.get('salesforce'),
 		requiresLDP: true,
 		type: DataSourceTypes.Salesforce,

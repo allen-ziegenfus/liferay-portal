@@ -33,6 +33,14 @@ const EDITABLE_ELEMENT_OPTIONS = [
 
 const LOCALES = [{id: 'en_US', label: 'English', symbol: 'en-us'}];
 
+const TRANSLATING_PROPS = {
+	languageId: 'es_ES',
+	locales: [
+		{id: 'en_US', label: 'English', symbol: 'en-us'},
+		{id: 'es_ES', label: 'Spanish', symbol: 'es-es'},
+	],
+};
+
 function renderForm(
 	elementVariation: Partial<ElementVariationProp> = {},
 	props: Partial<React.ComponentProps<typeof ElementVariationForm>> = {}
@@ -69,22 +77,22 @@ describe('ElementVariationForm', () => {
 		jest.clearAllMocks();
 	});
 
-	it('hides the toggle and the html and js fields until a page element is selected', () => {
+	it('hides the audience selector, the toggle, and the html and js fields until a page element is selected', () => {
 		renderForm({targetElement: ''});
 
+		expect(screen.queryByLabelText('audience')).not.toBeInTheDocument();
 		expect(
-			screen.queryByLabelText('hide-element-for-this-audience')
+			screen.queryByLabelText('hide-page-element')
 		).not.toBeInTheDocument();
 		expect(screen.queryByLabelText('html')).not.toBeInTheDocument();
 		expect(screen.queryByLabelText('javascript')).not.toBeInTheDocument();
 	});
 
-	it('shows the toggle and the html and js fields once a page element is selected', () => {
+	it('shows the audience selector, the toggle, and the html and js fields once a page element is selected', () => {
 		renderForm({targetElement: '.title'});
 
-		expect(
-			screen.getByLabelText('hide-element-for-this-audience')
-		).toBeInTheDocument();
+		expect(screen.getByLabelText('audience')).toBeInTheDocument();
+		expect(screen.getByLabelText('hide-page-element')).toBeInTheDocument();
 		expect(screen.getByLabelText('html')).toBeInTheDocument();
 		expect(screen.getByLabelText('javascript')).toBeInTheDocument();
 	});
@@ -92,9 +100,7 @@ describe('ElementVariationForm', () => {
 	it('keeps the toggle but hides the html and js fields while the element is hidden', () => {
 		renderForm({hide: {en_US: true}, targetElement: '.title'});
 
-		expect(
-			screen.getByLabelText('hide-element-for-this-audience')
-		).toBeChecked();
+		expect(screen.getByLabelText('hide-page-element')).toBeChecked();
 		expect(screen.queryByLabelText('html')).not.toBeInTheDocument();
 		expect(screen.queryByLabelText('javascript')).not.toBeInTheDocument();
 	});
@@ -106,9 +112,7 @@ describe('ElementVariationForm', () => {
 			targetElement: '.title',
 		});
 
-		await userEvent.click(
-			screen.getByLabelText('hide-element-for-this-audience')
-		);
+		await userEvent.click(screen.getByLabelText('hide-page-element'));
 
 		expect(onChange).toHaveBeenCalledWith({
 			hide: {en_US: true},
@@ -125,11 +129,38 @@ describe('ElementVariationForm', () => {
 			targetElement: '.title',
 		});
 
-		await userEvent.click(
-			screen.getByLabelText('hide-element-for-this-audience')
-		);
+		await userEvent.click(screen.getByLabelText('hide-page-element'));
 
 		expect(onChange).toHaveBeenCalledWith({hide: {en_US: false}});
+	});
+
+	it('marks the not-localizable fields as read-only when translating', () => {
+		renderForm({targetElement: '.title'}, TRANSLATING_PROPS);
+
+		expect(screen.getAllByText('(not-localizable)')).toHaveLength(3);
+		expect(screen.getByDisplayValue('My Variation')).toHaveAttribute(
+			'readonly'
+		);
+	});
+
+	it('does not mark fields as not-localizable on the default language', () => {
+		renderForm({targetElement: '.title'});
+
+		expect(screen.queryByText('(not-localizable)')).not.toBeInTheDocument();
+	});
+
+	it('shows the default language html and javascript values when translating', () => {
+		renderForm(
+			{
+				html: {en_US: 'default html content'},
+				js: {en_US: 'default js content'},
+				targetElement: '.title',
+			},
+			TRANSLATING_PROPS
+		);
+
+		expect(screen.getByText('default html content')).toBeInTheDocument();
+		expect(screen.getByText('default js content')).toBeInTheDocument();
 	});
 
 	it('has no accessibility violations', async () => {

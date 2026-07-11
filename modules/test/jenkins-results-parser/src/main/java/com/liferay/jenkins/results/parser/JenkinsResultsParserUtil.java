@@ -82,6 +82,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -188,14 +189,14 @@ public class JenkinsResultsParserUtil {
 	}
 
 	public static void cancelQueuedItem(
-		long itemID, JenkinsMaster jenkinsMaster) {
+		long itemId, JenkinsMaster jenkinsMaster) {
 
 		StringBuilder sb = new StringBuilder();
 
 		sb.append("def queue = Jenkins.instance.queue;\n");
 
 		sb.append("def items = queue.items.findAll{it.getId() == ");
-		sb.append(itemID);
+		sb.append(itemId);
 		sb.append("};\n");
 
 		sb.append("queue.cancel(items[0]);");
@@ -1202,7 +1203,7 @@ public class JenkinsResultsParserUtil {
 		return sb.toString();
 	}
 
-	public static String getBuildID(String topLevelBuildURL) {
+	public static String getBuildId(String topLevelBuildURL) {
 		Matcher matcher = _buildURLPattern.matcher(topLevelBuildURL);
 
 		matcher.find();
@@ -1450,8 +1451,8 @@ public class JenkinsResultsParserUtil {
 		}
 	}
 
-	public static String getBuildURLByBuildID(String buildID) {
-		Matcher matcher = _buildIDPattern.matcher(buildID);
+	public static String getBuildURLByBuildId(String buildId) {
+		Matcher matcher = _buildIdPattern.matcher(buildId);
 
 		matcher.find();
 
@@ -1480,7 +1481,7 @@ public class JenkinsResultsParserUtil {
 				String propertyValue = buildProperties.getProperty(
 					propertyName);
 
-				if (propertyValue.equals(matcher.group("jobID"))) {
+				if (propertyValue.equals(matcher.group("jobId"))) {
 					jobName = propertyName.substring(
 						7, propertyName.length() - 1);
 
@@ -6205,24 +6206,41 @@ public class JenkinsResultsParserUtil {
 
 					sb.append(command);
 
-					Runtime runtime = Runtime.getRuntime();
+					String bashCommand = sb.toString();
 
-					String[] environmentParameters =
-						new String[environments.size()];
-
-					int i = 0;
-
-					for (Map.Entry<String, String> environment :
-							environments.entrySet()) {
-
-						environmentParameters[i] = combine(
-							environment.getKey(), "=", environment.getValue());
-
-						i++;
+					if (bashCommand.isEmpty()) {
+						throw new IllegalArgumentException("Empty command");
 					}
 
-					Process process = runtime.exec(
-						sb.toString(), environmentParameters, baseDir);
+					StringTokenizer stringTokenizer = new StringTokenizer(
+						bashCommand);
+
+					String[] commands =
+						new String[stringTokenizer.countTokens()];
+
+					for (int i = 0; stringTokenizer.hasMoreTokens(); i++) {
+						commands[i] = stringTokenizer.nextToken();
+					}
+
+					ProcessBuilder processBuilder = new ProcessBuilder(
+						commands);
+
+					Map<String, String> processEnvironment =
+						processBuilder.environment();
+
+					processEnvironment.clear();
+
+					processEnvironment.putAll(environments);
+
+					processBuilder.directory(baseDir);
+
+					// Merge the error stream into the output stream so the
+					// single reader below drains both. An unread error stream
+					// blocks the process once its buffer fills.
+
+					processBuilder.redirectErrorStream(true);
+
+					Process process = processBuilder.start();
 
 					try (CountingInputStream countingInputStream =
 							new CountingInputStream(process.getInputStream());
@@ -6944,9 +6962,9 @@ public class JenkinsResultsParserUtil {
 
 	private static final Pattern _axisVariablePattern = Pattern.compile(
 		".*AXIS_VARIABLE=(?<axisVariable>\\d+).*");
-	private static final Pattern _buildIDPattern = Pattern.compile(
+	private static final Pattern _buildIdPattern = Pattern.compile(
 		"(?<cohortNumber>[\\d]{1})(?<masterNumber>[\\d]{2})" +
-			"(?<jobID>[\\d]+)_(?<buildNumber>[\\d]+)");
+			"(?<jobId>[\\d]+)_(?<buildNumber>[\\d]+)");
 	private static final Hashtable<Object, Object> _buildProperties =
 		new Hashtable<>();
 	private static String[] _buildPropertiesURLs;

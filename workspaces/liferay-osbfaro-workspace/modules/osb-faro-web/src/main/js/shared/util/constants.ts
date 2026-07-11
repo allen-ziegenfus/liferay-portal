@@ -106,7 +106,8 @@ export enum DataSourceTypes {
 	Demandbase = 'DEMANDBASE',
 	Hubspot = 'HUBSPOT',
 	Liferay = 'LIFERAY',
-	Marketo = 'MARKETO',
+	MarketoCampaign = 'MARKETO_CAMPAIGN',
+	MarketoEventStream = 'MARKETO_EVENT_STREAM',
 	Salesforce = 'SALESFORCE',
 }
 

@@ -17,6 +17,7 @@ import com.liferay.osb.faro.engine.client.model.Activity;
 import com.liferay.osb.faro.engine.client.model.ActivityAggregation;
 import com.liferay.osb.faro.engine.client.model.ActivityAsset;
 import com.liferay.osb.faro.engine.client.model.ActivityGroup;
+import com.liferay.osb.faro.engine.client.model.ApiUsageMetric;
 import com.liferay.osb.faro.engine.client.model.Asset;
 import com.liferay.osb.faro.engine.client.model.AssetSummary;
 import com.liferay.osb.faro.engine.client.model.AssetSummaryCategory;
@@ -256,13 +257,16 @@ public interface ContactsEngineClient {
 
 	public Results<ActivityAsset> getActivityAssets(
 		FaroProject faroProject, String query, String applicationId,
-		String channelId, String eventId, int cur, int delta,
-		List<OrderByField> orderByFields);
+		String channelId, String eventId, String objectDefinitionName, int cur,
+		int delta, List<OrderByField> orderByFields);
 
 	public Results<ActivityGroup> getActivityGroups(
 		FaroProject faroProject, String channelId, String ownerId,
 		String ownerType, String query, Date startDate, Date endDate, int cur,
 		int delta, List<OrderByField> orderByFields);
+
+	public Results<ApiUsageMetric> getApiUsageMetrics(
+		FaroProject faroProject, Date usageDate);
 
 	public Asset getAsset(FaroProject faroProject, String id)
 		throws FaroEngineClientException;
@@ -458,11 +462,11 @@ public interface ContactsEngineClient {
 		List<OrderByField> orderByFields);
 
 	public Results<Individual> getIndividuals(
-		FaroProject faroProject, String accountId, String activityStatus,
-		String channelId, String dataSourceId, List<String> fields,
-		String filterString, boolean includeAnonymousUsers,
-		String individualSegmentId, String interestName,
-		String notIndividualSegmentId, List<String> profileTypes, String query,
+		FaroProject faroProject, String accountId, List<String> accountTypes,
+		String activityStatus, String channelId, String dataSourceId,
+		List<String> fields, String filterString, boolean includeAnonymousUsers,
+		String individualSegmentId, List<String> individualTypes,
+		String interestName, String notIndividualSegmentId, String query,
 		String rangeEnd, Integer rangeKey, String rangeStart, int cur,
 		int delta, List<OrderByField> orderByFields);
 

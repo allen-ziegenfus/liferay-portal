@@ -17,7 +17,7 @@ describe('marketo config', () => {
 	});
 
 	it('uses the marketo data source type enum', () => {
-		expect(marketoConfig.type).toBe(DataSourceTypes.Marketo);
+		expect(marketoConfig.type).toBe(DataSourceTypes.MarketoEventStream);
 	});
 
 	it('targets the marketo webhooks endpoint', () => {

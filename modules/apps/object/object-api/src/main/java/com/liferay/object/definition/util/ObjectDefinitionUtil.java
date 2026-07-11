@@ -272,8 +272,6 @@ public class ObjectDefinitionUtil {
 		).put(
 			"LaunchSet", "/launch-sets"
 		).put(
-			"MCPServerDataMask", "/mcp/server-data-masks"
-		).put(
 			"MCPServerProfile", "/mcp/server-profiles"
 		).put(
 			"MCPServerProfileDataMask", "/mcp/server-profile-data-masks"
@@ -297,6 +295,8 @@ public class ObjectDefinitionUtil {
 			"SEOStudioInsightType", "/seo-studio/insight-types"
 		).put(
 			"SEOStudioInstance", "/seo-studio/instances"
+		).put(
+			"SEOStudioIntegration", "/seo-studio/integrations"
 		).put(
 			"SEOStudioPage", "/seo-studio/pages"
 		).put(

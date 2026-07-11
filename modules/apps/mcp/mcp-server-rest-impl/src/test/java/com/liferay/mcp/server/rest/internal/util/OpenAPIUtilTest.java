@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.test.AssertUtils;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 import com.liferay.portal.vulcan.http.VulcanRequestForwarder;
@@ -125,7 +126,7 @@ public class OpenAPIUtilTest {
 		String name = RandomTestUtil.randomString();
 
 		VulcanRequestForwarder.Request request = OpenAPIUtil.getRequest(
-			StringPool.BLANK,
+			StringPool.BLANK, null,
 			JSONUtil.put(
 				"data",
 				JSONUtil.put(
@@ -166,7 +167,7 @@ public class OpenAPIUtilTest {
 		Assert.assertEquals(name, fileItem.getString());
 
 		request = OpenAPIUtil.getRequest(
-			StringPool.BLANK,
+			StringPool.BLANK, null,
 			JSONUtil.put(
 				"boolean", true
 			).put(
@@ -189,6 +190,16 @@ public class OpenAPIUtilTest {
 		Assert.assertEquals(
 			fileContent, _getFileItemValue(fileItems, "string"));
 
+		Map<String, String> headers = HashMapBuilder.put(
+			RandomTestUtil.randomString(), RandomTestUtil.randomString()
+		).build();
+
+		request = OpenAPIUtil.getRequest(
+			StringPool.BLANK, headers, JSONUtil.put("itemId", "123"),
+			_openAPIJSONObject, "getItem", null);
+
+		Assert.assertEquals(headers, request.getHeaders());
+
 		AssertUtils.assertFailure(
 			IllegalArgumentException.class,
 			StringBundler.concat(
@@ -197,7 +208,7 @@ public class OpenAPIUtilTest {
 				"as siblings of \"body\" rather than flattening the payload ",
 				"into the input map."),
 			() -> OpenAPIUtil.getRequest(
-				StringPool.BLANK,
+				StringPool.BLANK, null,
 				JSONUtil.put(
 					RandomTestUtil.randomString(),
 					RandomTestUtil.randomString()),
@@ -403,8 +414,8 @@ public class OpenAPIUtilTest {
 		throws Exception {
 
 		VulcanRequestForwarder.Request request = OpenAPIUtil.getRequest(
-			StringPool.BLANK, inputJSONObject, _openAPIJSONObject, toolName,
-			null);
+			StringPool.BLANK, null, inputJSONObject, _openAPIJSONObject,
+			toolName, null);
 
 		if (expectedBody == null) {
 			Assert.assertNull(request.getBody());

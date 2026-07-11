@@ -111,61 +111,6 @@ definition {
 		NavigationMenusAdmin.viewItem(itemName = "Test Page Name 2");
 	}
 
-	@description = "This test covers LPS-119899, It ensures that the search results can be cleared after filtering everywhere in the item selector."
-	@priority = 4
-	@refactordone
-	test CanClearFilterResults {
-		JSONDepot.addDepot(
-			depotDescription = "This is the description of a depot",
-			depotName = "Test Depot Name");
-
-		JSONWebcontent.addWebContent(
-			content = "Web Content Content From Depot",
-			groupName = "Test Depot Name",
-			site = "false",
-			title = "Web Content From Depot");
-
-		HeadlessSite.addSite(siteName = "Site Name");
-
-		JSONWebcontent.addWebContent(
-			content = "WC WebContent Site",
-			groupName = "Site Name",
-			title = "WC WebContent From Site");
-
-		JSONDepot.connectSite(
-			depotName = "Test Depot Name",
-			groupName = "Site Name");
-
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
-
-		NavItem.gotoStructures();
-
-		WebContentStructures.addCP(
-			structureDescription = "WC Structure Description",
-			structureName = "WC Structure Name");
-
-		DataEngine.addField(
-			fieldFieldLabel = "Web Content",
-			fieldName = "Web Content");
-
-		WebContentStructures.saveCP(structureName = "WC Structure Name");
-
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
-
-		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
-
-		Click(
-			fieldLabel = "Web Content",
-			locator1 = "Button#BUTTON_LABEL",
-			text = "Select");
-
-		ItemSelector.viewWCEverywhereFilterResults(webContentTitle = "Web Content From Depot,WC WebContent From Site");
-
-		ItemSelector.clearFilterResults(
-			currentSiteWebContentTitle = "WC WebContent From Site",
-			webContentTitle = "Web Content From Depot");
-	}
-
 	@description = "This is a test for LPS-107014. It checks that the site pagination can be displayed correctly in item selector."
 	@priority = 4
 	test CanDisplaySitePaginationCorrectly {
@@ -190,45 +135,6 @@ definition {
 		AssertTextNotPresent(
 			locator1 = "Message#EMPTY_INFO",
 			value1 = "No sites were found.");
-	}
-
-	@description = "This test ensures that documents can filter by the current site in the item selector."
-	@priority = 5
-	@refactordone
-	test CanFilterByCurrentSite {
-		HeadlessSite.addSite(siteName = "Site Name");
-
-		JSONDepot.addDepot(
-			depotDescription = "This is the description of a depot",
-			depotName = "Test Depot Name");
-
-		JSONDocument.addFileWithUploadedFile(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "Document_1.jpg",
-			groupName = "Test Depot Name",
-			mimeType = "image/jpeg",
-			sourceFileName = "Document_1.jpg");
-
-		JSONDocument.addFileWithUploadedFile(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "Document_2.jpg",
-			groupName = "Site Name",
-			mimeType = "image/jpeg",
-			sourceFileName = "Document_2.jpg");
-
-		JSONDepot.connectSite(
-			depotName = "Test Depot Name",
-			groupName = "Site Name");
-
-		BlogsNavigator.openToAddEntry(siteURLKey = "site-name");
-
-		BlogsNavigator.gotoSelectFile();
-
-		ItemSelector.viewCurrentSiteFilterResults(
-			imageFileName = "Document_2.jpg",
-			navTab = "Documents and Media",
-			noImageFileName = "Document_1.jpg",
-			viewNoLocationInfo = "Site Name");
 	}
 
 	@description = "This ensures that a message is displayed in the preview section of the item selector when pasting an invalid URL."
@@ -358,44 +264,6 @@ definition {
 			webContentTitle = "WC WebContent Title");
 	}
 
-	@description = "This ensures that users can preview the Facebook video in item selector."
-	@priority = 5
-	@refactordone
-	test CanPreviewFacebookVideo {
-		property test.liferay.virtual.instance = "false";
-		property test.run.type = "single";
-
-		HeadlessSite.addSite(siteName = "Site Name");
-
-		JSONLayout.addPublicLayout(
-			groupName = "Site Name",
-			layoutName = "Page Name");
-
-		JSONDepot.addDepot(
-			depotDescription = "This is the description of a depot",
-			depotName = "Test Depot Name");
-
-		DepotNavigator.openDepotDocumentsAndMediaAdmin(depotName = "Test Depot Name");
-
-		VideoShortcut.addCP(
-			videoShortcutTitle = "Test Facebook Video",
-			videoURL = "https://www.facebook.com/Cristiano/videos/1710977485745946");
-
-		JSONDepot.connectSite(
-			depotName = "Test Depot Name",
-			groupName = "Site Name");
-
-		BlogsNavigator.openToAddEntry(siteURLKey = "site-name");
-
-		ItemSelector.gotoItemSelectorViaAlloyEditor(video = "true");
-
-		ItemSelector.previewVideoFromDM(
-			depotName = "Test Depot Name",
-			navTab = "Documents and Media",
-			validURL = "https://www.facebook.com",
-			videoShortcutTitle = "Test Facebook Video");
-	}
-
 	@description = "This ensures that users can preview the supported videos in the item selector."
 	@priority = 5
 	@refactordone
@@ -459,75 +327,6 @@ definition {
 		ItemSelector.viewPreview(
 			footer = "1 of 1",
 			imageFileName = "Document_1.svg");
-	}
-
-	@description = "This ensures that users can preview the Twitch video in item selector."
-	@priority = 5
-	@refactordone
-	test CanPreviewTwitchVideo {
-		property test.liferay.virtual.instance = "false";
-		property test.run.type = "single";
-
-		HeadlessSite.addSite(siteName = "Site Name");
-
-		JSONLayout.addPublicLayout(
-			groupName = "Site Name",
-			layoutName = "Page Name");
-
-		JSONDepot.addDepot(
-			depotDescription = "This is the description of a depot",
-			depotName = "Test Depot Name");
-
-		JSONDepot.connectSite(
-			depotName = "Test Depot Name",
-			groupName = "Site Name");
-
-		DepotNavigator.openToAddDMEntry(
-			depotName = "Test Depot Name",
-			documentTypeName = "External Video Shortcut");
-
-		VideoShortcut.addCP(
-			skipNavigation = "true",
-			videoShortcutTitle = "Test Twitch Video",
-			videoURL = "https://www.twitch.tv/videos/806178790");
-
-		KBArticle.openToAddKBArticle(
-			groupName = "Site Name",
-			siteURLKey = "site-name");
-
-		ItemSelector.gotoItemSelectorViaCKEditor(video = "true");
-
-		ItemSelector.previewVideoFromDM(
-			depotName = "Test Depot Name",
-			navTab = "Documents and Media",
-			validURL = "https://player.twitch.tv",
-			videoShortcutTitle = "Test Twitch Video");
-	}
-
-	@description = "This ensures that users can preview the Vimeo video in item selector."
-	@priority = 5
-	@refactordone
-	test CanPreviewVimeoVideo {
-		DMNavigator.openToAddEntry(
-			documentTypeName = "External Video Shortcut",
-			groupName = "Guest",
-			siteURLKey = "guest");
-
-		VideoShortcut.addCP(
-			skipNavigation = "true",
-			videoShortcutTitle = "Test Vimeo Video",
-			videoURL = "https://vimeo.com/483035084");
-
-		WebContentNavigator.openToAddBasicArticle(
-			groupName = "Guest",
-			siteURLKey = "guest");
-
-		ItemSelector.gotoItemSelectorViaCKEditor(video = "true");
-
-		ItemSelector.previewVideoFromDM(
-			navTab = "Documents and Media",
-			validURL = "https://player.vimeo.com",
-			videoShortcutTitle = "Test Vimeo Video");
 	}
 
 	@description = "This ensures that users can preview the YouTube video in item selector."
@@ -768,106 +567,6 @@ definition {
 		}
 	}
 
-	@description = "This test covers LPS-118808. It ensures that an image in the depot folder can be viewed through everywhere filter on a connected site."
-	@priority = 4
-	@refactordone
-	test CanViewFolderImageViaFilterResults {
-		HeadlessSite.addSite(siteName = "Site Name");
-
-		JSONDepot.addDepot(
-			depotDescription = "This is the description of a depot",
-			depotName = "Test Depot Name");
-
-		JSONFolder.addFolder(
-			dmFolderDescription = "DM Folder Description",
-			dmFolderName = "DM Folder Name",
-			groupName = "Test Depot Name");
-
-		JSONDocument.addFileWithUploadedFile(
-			dmDocumentDescription = "DM Document Description",
-			dmDocumentTitle = "Document_2.jpg",
-			folderName = "DM Folder Name",
-			groupName = "Test Depot Name",
-			mimeType = "image/jpeg",
-			sourceFileName = "Document_2.jpg");
-
-		JSONDepot.connectSite(
-			depotName = "Test Depot Name",
-			groupName = "Site Name");
-
-		BlogsNavigator.openToAddEntry(siteURLKey = "site-name");
-
-		BlogsNavigator.gotoSelectFile();
-
-		ItemSelector.viewEverywhereFilterResults(
-			dmFolderName = "DM Folder Name",
-			imageFileName = "Document_2.jpg",
-			navTab = "Documents and Media");
-	}
-
-	@description = "This test covers LPS-119707. It ensures that the web content in the depot folder can be viewed through everywhere filter on a connected site."
-	@priority = 4
-	@refactordone
-	test CanViewFolderWCViaFilterResults {
-		HeadlessSite.addSite(siteName = "Site Name");
-
-		JSONDepot.addDepot(
-			depotDescription = "This is the description of a depot",
-			depotName = "Test Depot Name");
-
-		JSONWebcontent.addFolder(
-			folderDescription = "WC Folder Description",
-			folderName = "WC Folder Name",
-			groupName = "Test Depot Name",
-			site = "false");
-
-		JSONWebcontent.addWebContent(
-			content = "Webcontent Content",
-			folderName = "WC Folder Name",
-			groupName = "Test Depot Name",
-			site = "false",
-			title = "WC WebContent From Depot");
-
-		JSONWebcontent.addWebContent(
-			content = "WC WebContent Site",
-			groupName = "Site Name",
-			title = "WC WebContent From Site");
-
-		JSONDepot.connectSite(
-			depotName = "Test Depot Name",
-			groupName = "Site Name");
-
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
-
-		NavItem.gotoStructures();
-
-		WebContentStructures.addCP(
-			structureDescription = "WC Structure Description",
-			structureName = "WC Structure Name");
-
-		DataEngine.addField(
-			fieldFieldLabel = "Web Content",
-			fieldName = "Web Content");
-
-		WebContentStructures.saveCP(structureName = "WC Structure Name");
-
-		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
-
-		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
-
-		Click(
-			fieldLabel = "Web Content",
-			locator1 = "Button#BUTTON_LABEL",
-			text = "Select");
-
-		ItemSelector.viewWCEverywhereFilterResults(
-			folderWebContentTitle = "WC WebContent From Depot",
-			siteName = "Test Depot Name",
-			viewFolderWc = "true",
-			wcFolderName = "WC Folder Name",
-			webContentTitle = "WC WebContent From Site");
-	}
-
 	@description = "This ensures that the video thumbnails can be viewed in Item Selector."
 	@priority = 5
 	@refactordone
@@ -1040,6 +739,138 @@ definition {
 		Pagination.viewResults(results = "Showing 21 to 30 of 30 entries.");
 	}
 
+	@description = "This test covers LPS-118808. It ensures that images can be filtered by the current site and that an image in a connected depot folder can be viewed through the everywhere filter."
+	@priority = 5
+	@refactordone
+	test FilterImagesByScope {
+		HeadlessSite.addSite(siteName = "Site Name");
+
+		JSONDepot.addDepot(
+			depotDescription = "This is the description of a depot",
+			depotName = "Test Depot Name");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_1.jpg",
+			groupName = "Test Depot Name",
+			mimeType = "image/jpeg",
+			sourceFileName = "Document_1.jpg");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_2.jpg",
+			groupName = "Site Name",
+			mimeType = "image/jpeg",
+			sourceFileName = "Document_2.jpg");
+
+		JSONFolder.addFolder(
+			dmFolderDescription = "DM Folder Description",
+			dmFolderName = "DM Folder Name",
+			groupName = "Test Depot Name");
+
+		JSONDocument.addFileWithUploadedFile(
+			dmDocumentDescription = "DM Document Description",
+			dmDocumentTitle = "Document_3.jpg",
+			folderName = "DM Folder Name",
+			groupName = "Test Depot Name",
+			mimeType = "image/jpeg",
+			sourceFileName = "Document_3.jpg");
+
+		JSONDepot.connectSite(
+			depotName = "Test Depot Name",
+			groupName = "Site Name");
+
+		BlogsNavigator.openToAddEntry(siteURLKey = "site-name");
+
+		BlogsNavigator.gotoSelectFile();
+
+		ItemSelector.viewCurrentSiteFilterResults(
+			imageFileName = "Document_2.jpg",
+			navTab = "Documents and Media",
+			noImageFileName = "Document_1.jpg",
+			viewNoLocationInfo = "Site Name");
+
+		ItemSelector.viewEverywhereFilterResults(
+			dmFolderName = "DM Folder Name",
+			imageFileName = "Document_3.jpg",
+			navTab = "Documents and Media");
+	}
+
+	@description = "This test covers LPS-119899 and LPS-119707. It ensures that the search results can be cleared after filtering everywhere in the item selector and that web content in a connected depot folder can be viewed through the everywhere filter."
+	@priority = 4
+	@refactordone
+	test FilterWebContentEverywhere {
+		JSONDepot.addDepot(
+			depotDescription = "This is the description of a depot",
+			depotName = "Test Depot Name");
+
+		JSONWebcontent.addWebContent(
+			content = "Web Content Content From Depot",
+			groupName = "Test Depot Name",
+			site = "false",
+			title = "Web Content From Depot");
+
+		JSONWebcontent.addFolder(
+			folderDescription = "WC Folder Description",
+			folderName = "WC Folder Name",
+			groupName = "Test Depot Name",
+			site = "false");
+
+		JSONWebcontent.addWebContent(
+			content = "Webcontent Content",
+			folderName = "WC Folder Name",
+			groupName = "Test Depot Name",
+			site = "false",
+			title = "WC WebContent From Depot");
+
+		HeadlessSite.addSite(siteName = "Site Name");
+
+		JSONWebcontent.addWebContent(
+			content = "WC WebContent Site",
+			groupName = "Site Name",
+			title = "WC WebContent From Site");
+
+		JSONDepot.connectSite(
+			depotName = "Test Depot Name",
+			groupName = "Site Name");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+
+		NavItem.gotoStructures();
+
+		WebContentStructures.addCP(
+			structureDescription = "WC Structure Description",
+			structureName = "WC Structure Name");
+
+		DataEngine.addField(
+			fieldFieldLabel = "Web Content",
+			fieldName = "Web Content");
+
+		WebContentStructures.saveCP(structureName = "WC Structure Name");
+
+		WebContentNavigator.openWebContentAdmin(siteURLKey = "site-name");
+
+		WebContentNavigator.gotoAddWithStructureCP(structureName = "WC Structure Name");
+
+		Click(
+			fieldLabel = "Web Content",
+			locator1 = "Button#BUTTON_LABEL",
+			text = "Select");
+
+		ItemSelector.viewWCEverywhereFilterResults(webContentTitle = "Web Content From Depot,WC WebContent From Site");
+
+		ItemSelector.clearFilterResults(
+			currentSiteWebContentTitle = "WC WebContent From Site",
+			webContentTitle = "Web Content From Depot");
+
+		ItemSelector.viewWCEverywhereFilterResults(
+			folderWebContentTitle = "WC WebContent From Depot",
+			siteName = "Test Depot Name",
+			viewFolderWc = "true",
+			wcFolderName = "WC Folder Name",
+			webContentTitle = "WC WebContent From Site");
+	}
+
 	@description = "The user should see horizontal nav tabs when less than and equal 5 nav items appear on item selector modal."
 	@priority = 4
 	test HorizontalNavItemsShowsWhenNotMoreThan5Items {
@@ -1088,9 +919,9 @@ definition {
 			navTab = "Web Content");
 	}
 
-	@description = "This is a test for LPS-136945. It checks that only 'File Upload', 'Folder', and 'External Video Shortcut' options appear when adding a document."
+	@description = "This test covers LPS-136945 and LPS-136943. It checks that only 'File Upload', 'Folder', and 'External Video Shortcut' options appear when adding a document and that only 'File Upload' and 'Folder' options appear when adding images."
 	@priority = 3
-	test OnlyRelevantSelectionsAppearWhenAddingDocuments {
+	test OnlyRelevantSelectionsAppearWhenAddingItems {
 		property portal.acceptance = "false";
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
@@ -1114,12 +945,6 @@ definition {
 			locator1 = "Button#ANY_LAST");
 
 		ItemSelector.viewRelevantSelections(addDocumentOptions = "true");
-	}
-
-	@description = "This is a test for LPS-136943. It checks that only 'File Upload' and 'Folder' options appear when adding images."
-	@priority = 3
-	test OnlyRelevantSelectionsAppearWhenAddingImages {
-		property portal.acceptance = "false";
 
 		WebContentNavigator.openWebContentAdmin(siteURLKey = "guest");
 

@@ -120,6 +120,13 @@
 		font-weight: 600;
 	}
 
+	// Anchor for the HTML corner tooltip (the shared `ChartTooltip`), which is
+	// absolutely positioned to the top-left of the plot.
+
+	&__plot {
+		position: relative;
+	}
+
 	// Marker legend icon (the series visual passed to the shared legend).
 
 	&__legend-icon {
@@ -147,6 +154,28 @@
 		fill: var(--charts-line-color, $primary);
 		stroke: $white;
 		stroke-width: 1;
+	}
+
+	// Alignment: place the capped chart block within its container. `start`
+	// (default) needs no rule — block flow keeps it flush-left.
+
+	&--align-center {
+		margin-inline: auto;
+	}
+
+	&--align-end {
+		margin-inline-end: 0;
+		margin-inline-start: auto;
+	}
+
+	// `legendSwatchBorder={false}`: drop the white ring (halo + marker border)
+	// that otherwise keeps the legend icon legible on the active background.
+
+	&--no-swatch-border {
+		.charts-line-chart__legend-icon-line-halo,
+		.charts-line-chart__legend-icon-marker {
+			stroke: transparent;
+		}
 	}
 
 	// Motion: only when the component opts in via the `--motion` modifier.

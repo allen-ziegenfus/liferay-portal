@@ -168,6 +168,11 @@ export function validatePattern(
 	};
 }
 
+export const validateMarketoDomain = validatePattern(
+	/^https:\/\/.*$/,
+	Liferay.Language.get('please-enter-a-valid-marketo-url')
+);
+
 export const validateProtocol = validatePattern(
 	/^(http[s]?:\/\/)/i,
 	Liferay.Language.get(

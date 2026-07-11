@@ -5,7 +5,7 @@ import {fetchConnectorEntityCount} from 'shared/api/connector';
 
 const SLUG = 'marketo';
 
-const displayName = Liferay.Language.get('marketo');
+const displayName = Liferay.Language.get('marketo-event-stream');
 
 const marketoConfig: ConnectorConfig = {
 	displayName,
@@ -21,7 +21,7 @@ const marketoConfig: ConnectorConfig = {
 	requiresLDP: true,
 	singleton: true,
 	slug: SLUG,
-	type: DataSourceTypes.Marketo,
+	type: DataSourceTypes.MarketoEventStream,
 };
 
 export default marketoConfig;

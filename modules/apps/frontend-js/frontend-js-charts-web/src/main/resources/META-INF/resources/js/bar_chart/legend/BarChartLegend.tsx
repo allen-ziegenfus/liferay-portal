@@ -11,13 +11,18 @@ import type {
 	ChartLegendColumn,
 	ChartLegendItem,
 } from '../../chart_legend/types';
-import type {BarChartLegend as BarChartLegendType, BarDatum} from '../types';
+import type {
+	BarChartLegend as BarChartLegendType,
+	BarChartLegendValue,
+	BarDatum,
+} from '../types';
 
 interface Props {
 	activeIndex: number | null;
 	colorFor: (index: number) => string;
 	data: BarDatum[];
 	layout: BarChartLegendType;
+	legendValue: BarChartLegendValue;
 	onActivate: (index: number) => void;
 	onDeactivate: (index: number) => void;
 	onSelect: (index: number) => void;
@@ -29,11 +34,28 @@ function formatShare(value: number, total: number): string {
 	return `${(total === 0 ? 0 : (value / total) * 100).toFixed(1)}%`;
 }
 
+function getListValue(
+	legendValue: BarChartLegendValue,
+	value: number,
+	total: number
+): string | undefined {
+	if (legendValue === 'name') {
+		return undefined;
+	}
+
+	if (legendValue === 'value') {
+		return value.toLocaleString();
+	}
+
+	return formatShare(value, total);
+}
+
 export default function BarChartLegend({
 	activeIndex,
 	colorFor,
 	data,
 	layout,
+	legendValue,
 	onActivate,
 	onDeactivate,
 	onSelect,
@@ -46,7 +68,7 @@ export default function BarChartLegend({
 				active: activeIndex === index,
 				id: index,
 				label: datum.label,
-				listValue: formatShare(datum.value, total),
+				listValue: getListValue(legendValue, datum.value, total),
 				sortValue: datum.value,
 				visual: (
 					<span
@@ -55,7 +77,7 @@ export default function BarChartLegend({
 					/>
 				),
 			})),
-		[activeIndex, colorFor, data, total]
+		[activeIndex, colorFor, data, legendValue, total]
 	);
 
 	const columns = useMemo<ChartLegendColumn[]>(

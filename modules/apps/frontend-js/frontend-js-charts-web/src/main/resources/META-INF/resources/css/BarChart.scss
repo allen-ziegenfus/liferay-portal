@@ -32,10 +32,10 @@
 
 	&__bar {
 		// `--charts-bar-fill` is set inline only when `scheme="categorical"`. The
-		// fallback keeps blue mode rendering with `--primary`.
+		// fallback keeps blue mode rendering with `--chart-color-2`.
 
 		cursor: pointer;
-		fill: var(--charts-bar-fill, $primary);
+		fill: var(--charts-bar-fill, var(--chart-color-2));
 		outline: none;
 		transform-box: fill-box;
 		transform-origin: center bottom;
@@ -53,10 +53,11 @@
 		pointer-events: none;
 	}
 
-	// Blue mode: darken the active bar (resting bars are already `--primary`).
+	// Blue mode: darken the active bar one step down the blue ramp (resting bars
+	// are already `--chart-color-2`).
 
 	&--blue &__bar-group.is-active .charts-bar-chart__bar {
-		fill: $primary-d2;
+		fill: $chart-blue-d1;
 	}
 
 	// Categorical mode: keep the per-bar hue and brighten slightly.
@@ -71,7 +72,7 @@
 	}
 
 	&--blue &__bar:focus-visible {
-		fill: $primary-d2;
+		fill: $chart-blue-d1;
 	}
 
 	&__label {
@@ -99,6 +100,54 @@
 		}
 	}
 
+	// Stacked segmented meter (stacked={true}): a single horizontal row split
+	// into per-datum segments. The dark tooltip surfaces the segment's
+	// label/value on hover or focus, floating above the row.
+
+	&--stacked svg {
+		overflow: visible;
+	}
+
+	&__tip {
+		pointer-events: none;
+	}
+
+	&__tip-bg {
+		fill: $dark;
+	}
+
+	&__tip-text {
+		fill: $white;
+		font-size: 0.8125rem;
+		font-weight: 400;
+	}
+
+	// Alignment: place the capped chart block within its container. `start`
+	// (default) needs no rule — block flow keeps it flush-left, matching the
+	// other charts.
+
+	&--align-center {
+		margin-inline: auto;
+	}
+
+	&--align-end {
+		margin-inline-end: 0;
+		margin-inline-start: auto;
+	}
+
+	// `legendSwatchBorder={false}`: drop the swatch outline (list + table).
+	// `transparent` keeps the 12x12 box so nothing shifts. The active variants
+	// out-specify the rules that would otherwise re-add a white edge on
+	// hover/focus.
+
+	&--no-swatch-border {
+		.charts-legend__swatch,
+		.charts-legend__item.is-active .charts-legend__swatch,
+		.charts-legend-table__row.is-active .charts-legend__swatch {
+			border-color: transparent;
+		}
+	}
+
 	// Motion: only when explicitly enabled by the component.
 
 	&--motion {
@@ -109,6 +158,14 @@
 		}
 
 		&.charts-bar-chart--horizontal .charts-bar-chart__bar {
+			animation-name: charts-bar-grow-x;
+			transform-origin: left center;
+		}
+
+		// Stacked is always a horizontal row regardless of `orientation`, so
+		// each segment grows from its left edge, not up from the axis.
+
+		&.charts-bar-chart--stacked .charts-bar-chart__bar {
 			animation-name: charts-bar-grow-x;
 			transform-origin: left center;
 		}

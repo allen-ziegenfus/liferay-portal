@@ -23,6 +23,8 @@
 {{- $storage := $xr.spec.storage | default dict -}}
 {{- $targetActiveDataPlane := $xr.spec.targetActiveDataPlane | default "blue" -}}
 
+{{- $overlayBucketName := printf "%s-overlay-%s" $env.deploymentName (printf "%.18s-%s" $projectId (printf "%s-%s" $env.deploymentName $projectId | sha256sum | trunc 6)) -}}
+
 {{- $activeDataPlane := $targetActiveDataPlane -}}
 {{- $databaseIamUser := printf "%s@%s.iam" $gsaName $env.projectId -}}
 {{- $databaseInstanceManagementPolicies := $backup.enabled | ternary ((list "*") | toJson) $managementPolicies -}}
@@ -30,6 +32,7 @@
 {{- $gsaEmail := printf "%s@%s.iam.gserviceaccount.com" $gsaName $env.projectId -}}
 {{- $hash := printf "%s-%s" $databaseName $env.projectId | sha256sum | trunc 7 -}}
 {{- $labels := merge ($xr.spec.commonTags | default dict) (dict "app" "liferay" "deployment-name" $env.deploymentName "environment-id" $environmentId "project-id" $projectId) -}}
+
 {{- $projectIdFull := printf "%s-%s" $projectId $environmentId -}}
 {{- $region := $databaseSpec.region | default $xr.spec.region -}}
 {{- $searchNamespace := printf "%s-elasticsearch" $namespace -}}
@@ -49,5 +52,3 @@
 {{- $baseName := printf "%.18s-%s" $projectIdFull $uidHash -}}
 
 {{- $cmkKeyName := printf "projects/%s/locations/%s/keyRings/%s-keyring/cryptoKeys/%s-key" $env.projectId $region $baseName $baseName -}}
-
-{{- include "gcp-infrastructure-provider.overlayBucketName" . }}

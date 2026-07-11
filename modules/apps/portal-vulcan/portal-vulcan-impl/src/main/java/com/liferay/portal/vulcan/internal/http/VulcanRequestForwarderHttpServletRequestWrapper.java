@@ -25,9 +25,11 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.ByteArrayInputStream;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -38,8 +40,9 @@ public class VulcanRequestForwarderHttpServletRequestWrapper
 	extends PersistentHttpServletRequestWrapper {
 
 	public VulcanRequestForwarderHttpServletRequestWrapper(
-		byte[] body, String contentType, HttpServletRequest httpServletRequest,
-		String method, String pathInfo, User user) {
+		byte[] body, String contentType, Map<String, String> headers,
+		HttpServletRequest httpServletRequest, String method, String pathInfo,
+		User user) {
 
 		super(httpServletRequest);
 
@@ -91,6 +94,11 @@ public class VulcanRequestForwarderHttpServletRequestWrapper
 				return csrfToken;
 			}
 		).build();
+
+		if (headers != null) {
+			_headers.putAll(headers);
+		}
+
 		_body = body;
 		_contentType = contentType;
 		_httpServletRequest = httpServletRequest;
@@ -149,6 +157,19 @@ public class VulcanRequestForwarderHttpServletRequestWrapper
 	@Override
 	public String getHeader(String name) {
 		return _headers.get(name);
+	}
+
+	@Override
+	public Enumeration<String> getHeaderNames() {
+		List<String> headerNames = new ArrayList<>();
+
+		for (Map.Entry<String, String> entry : _headers.entrySet()) {
+			if (entry.getValue() != null) {
+				headerNames.add(entry.getKey());
+			}
+		}
+
+		return Collections.enumeration(headerNames);
 	}
 
 	@Override

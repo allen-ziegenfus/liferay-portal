@@ -85,7 +85,7 @@ const ConnectSalesforceStep = ({
 							message: (
 								<Text as="p" size={4}>
 									{Liferay.Language.get(
-										'this-action-will-stop-syncing-data-from-salesforce-to-this-analytics-cloud-workspace.-the-data-that-was-already-synced-will-remain-available-in-the-properties-the-data-source-was-connected-to.-are-you-sure-you-want-to-continue'
+										'this-action-will-stop-syncing-data-from-this-data-source-to-this-liferay-data-platform-workspace.-the-data-that-was-already-synced-will-remain-available-in-the-properties-the-data-source-was-connected-to.-are-you-sure-you-want-to-continue'
 									)}
 								</Text>
 							),

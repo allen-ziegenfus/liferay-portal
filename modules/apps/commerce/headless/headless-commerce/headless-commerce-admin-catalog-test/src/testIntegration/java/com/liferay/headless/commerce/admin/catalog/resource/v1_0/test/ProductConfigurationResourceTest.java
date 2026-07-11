@@ -5,7 +5,6 @@
 
 package com.liferay.headless.commerce.admin.catalog.resource.v1_0.test;
 
-import com.liferay.account.constants.AccountConstants;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.commerce.product.model.CPConfigurationEntry;
 import com.liferay.commerce.product.model.CPConfigurationList;
@@ -63,9 +62,8 @@ public class ProductConfigurationResourceTest
 		_user = UserTestUtil.addUser();
 
 		_commerceCatalog = _commerceCatalogLocalService.addCommerceCatalog(
-			RandomTestUtil.randomString(),
-			AccountConstants.ACCOUNT_ENTRY_ID_DEFAULT,
-			RandomTestUtil.randomString(), "USD", "en_US", false,
+			RandomTestUtil.randomString(), 0, RandomTestUtil.randomString(),
+			"USD", "en_US", false,
 			ServiceContextTestUtil.getServiceContext(
 				testGroup.getGroupId(), _user.getUserId()));
 

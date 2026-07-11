@@ -11,7 +11,7 @@ import {isLDPPlan} from 'shared/util/subscriptions';
 const connectorRegistry: Record<string, ConnectorConfig> = {
 	[DataSourceTypes.Demandbase]: demandbaseConfig,
 	[DataSourceTypes.Hubspot]: hubspotConfig,
-	[DataSourceTypes.Marketo]: marketoConfig,
+	[DataSourceTypes.MarketoEventStream]: marketoConfig,
 };
 
 export function getConnectorConfig(

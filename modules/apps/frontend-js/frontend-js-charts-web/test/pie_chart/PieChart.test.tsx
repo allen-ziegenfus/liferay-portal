@@ -239,9 +239,7 @@ describe('PieChart', () => {
 			<PieChart data={DATA} legend="list" title="Sales" />
 		);
 
-		expect(
-			container.querySelector('.chart-pie-summary')
-		).toBeInTheDocument();
+		expect(container.querySelector('.charts-summary')).toBeInTheDocument();
 	});
 
 	it('suppresses the screen reader summary for the table legend', () => {
@@ -250,7 +248,7 @@ describe('PieChart', () => {
 		);
 
 		expect(
-			container.querySelector('.chart-pie-summary')
+			container.querySelector('.charts-summary')
 		).not.toBeInTheDocument();
 	});
 
@@ -317,6 +315,21 @@ describe('PieChart', () => {
 		expect(
 			container.querySelector('.chart-pie-focus-ring')
 		).not.toBeInTheDocument();
+	});
+
+	it('adds the borderless swatch modifier for legendSwatchBorder=false', () => {
+		const {container} = render(
+			<PieChart
+				data={DATA}
+				legend="list"
+				legendSwatchBorder={false}
+				title="Sales"
+			/>
+		);
+
+		expect(container.querySelector('.chart-pie')).toHaveClass(
+			'chart-pie-no-swatch-border'
+		);
 	});
 
 	it('has no accessibility violations', async () => {

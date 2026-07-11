@@ -12,7 +12,6 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.asset.kernel.model.AssetCategory;
 import com.liferay.commerce.currency.model.CommerceCurrency;
 import com.liferay.commerce.currency.service.CommerceCurrencyLocalService;
-import com.liferay.commerce.price.list.service.CommercePriceListLocalService;
 import com.liferay.commerce.product.model.CPDefinition;
 import com.liferay.commerce.product.model.CPInstance;
 import com.liferay.commerce.product.model.CPOptionCategory;
@@ -117,12 +116,14 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 			_accountGroup);
 
 		_commerceCatalog = CommerceCatalogLocalServiceUtil.addCommerceCatalog(
-			null, RandomTestUtil.randomString(), RandomTestUtil.randomString(),
-			LocaleUtil.US.getDisplayLanguage(), serviceContext);
+			RandomTestUtil.randomString(), 0, RandomTestUtil.randomString(),
+			"USD", LocaleUtil.toLanguageId(LocaleUtil.US), false,
+			serviceContext);
 
 		CommerceCurrency commerceCurrency =
 			_commerceCurrencyLocalService.addCommerceCurrency(
-				null, user.getUserId(), RandomTestUtil.randomString(),
+				RandomTestUtil.randomString(), user.getUserId(),
+				RandomTestUtil.randomString(),
 				RandomTestUtil.randomLocaleStringMap(),
 				RandomTestUtil.randomString(), BigDecimal.ONE,
 				RandomTestUtil.randomLocaleStringMap(), 2, 2, "HALF_EVEN",
@@ -130,16 +131,6 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 
 		_commerceChannel = CommerceTestUtil.addCommerceChannel(
 			testGroup.getGroupId(), commerceCurrency.getCode());
-
-		_commercePriceListLocalService.addCatalogBaseCommercePriceList(
-			user.getUserId(), _commerceCatalog.getGroupId(),
-			commerceCurrency.getCode(), RandomTestUtil.randomString(),
-			"price-list", serviceContext);
-
-		_commercePriceListLocalService.addCatalogBaseCommercePriceList(
-			user.getUserId(), _commerceCatalog.getGroupId(),
-			commerceCurrency.getCode(), RandomTestUtil.randomString(),
-			"promotion", serviceContext);
 
 		_cpOptionCategory = CPTestUtil.addCPOptionCategory(
 			testGroup.getGroupId());
@@ -1213,9 +1204,6 @@ public class ProductResourceTest extends BaseProductResourceTestCase {
 
 	@Inject
 	private CommerceCurrencyLocalService _commerceCurrencyLocalService;
-
-	@Inject
-	private CommercePriceListLocalService _commercePriceListLocalService;
 
 	@Inject
 	private CPDefinitionLocalService _cpDefinitionLocalService;

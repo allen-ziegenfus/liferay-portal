@@ -25,11 +25,13 @@ describe('connector registry', () => {
 		});
 
 		it('returns the marketo config when looked up by enum value', () => {
-			const config = getConnectorConfig(DataSourceTypes.Marketo);
+			const config = getConnectorConfig(
+				DataSourceTypes.MarketoEventStream
+			);
 
 			expect(config).toBeDefined();
 			expect(config?.slug).toBe('marketo');
-			expect(config?.type).toBe(DataSourceTypes.Marketo);
+			expect(config?.type).toBe(DataSourceTypes.MarketoEventStream);
 		});
 
 		it('is case-insensitive on the lookup key', () => {

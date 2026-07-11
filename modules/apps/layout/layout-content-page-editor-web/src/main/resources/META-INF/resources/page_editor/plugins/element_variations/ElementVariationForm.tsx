@@ -67,6 +67,14 @@ export default function ElementVariationForm({
 			targetElementItem.value === elementVariation.targetElement
 	);
 
+	const translating = languageId !== defaultLanguageId;
+
+	const notLocalizableHint = translating ? (
+		<span className="element-variations__not-localizable-label font-weight-lighter">
+			({Liferay.Language.get('not-localizable')})
+		</span>
+	) : null;
+
 	return (
 		<>
 			<div className="align-items-center border-bottom d-flex flex-shrink-0 px-3 py-3">
@@ -119,12 +127,15 @@ export default function ElementVariationForm({
 							className="mr-1 reference-mark"
 							symbol="asterisk"
 						/>
+
+						{notLocalizableHint}
 					</label>
 
 					<ClayInput
 						defaultValue={elementVariation.name}
 						id={nameId}
 						onBlur={(event) => onChange({name: event.target.value})}
+						readOnly={translating}
 						type="text"
 					/>
 				</ClayForm.Group>
@@ -137,11 +148,14 @@ export default function ElementVariationForm({
 							className="mr-1 reference-mark"
 							symbol="asterisk"
 						/>
+
+						{notLocalizableHint}
 					</label>
 
 					<Picker
 						aria-label={Liferay.Language.get('page-element')}
 						className="form-control-sm"
+						disabled={translating}
 						id={targetElementId}
 						items={targetElementItems}
 						onSelectionChange={(selection) => {
@@ -182,58 +196,66 @@ export default function ElementVariationForm({
 					</Picker>
 				</ClayForm.Group>
 
-				<ClayForm.Group small>
-					<label htmlFor={audienceId}>
-						{Liferay.Language.get('audience')}
-
-						<ClayIcon
-							className="mr-1 reference-mark"
-							symbol="asterisk"
-						/>
-					</label>
-
-					<ClayMultiSelect
-						id={audienceId}
-						items={audiences.filter((audience) =>
-							elementVariation.audienceEntryERCs.includes(
-								audience.value
-							)
-						)}
-						onItemsChange={(
-							items: Array<{label: string; value: string}>
-						) => {
-							const existingAudiences = items
-								.map((item) =>
-									audiences.find(
-										(audience) =>
-											audience.value === item.value
-									)
-								)
-								.filter(
-									(
-										audience
-									): audience is {
-										label: string;
-										value: string;
-									} => Boolean(audience)
-								);
-
-							onChange({
-								audienceEntryERCs: existingAudiences.map(
-									(audience) => audience.value
-								),
-							});
-						}}
-						sourceItems={audiences}
-					/>
-				</ClayForm.Group>
-
 				{elementVariation.targetElement ? (
 					<>
-						<ClayForm.Group>
+						<ClayForm.Group small>
+							<label htmlFor={audienceId}>
+								{Liferay.Language.get('audience')}
+
+								<ClayIcon
+									className="mr-1 reference-mark"
+									symbol="asterisk"
+								/>
+
+								{notLocalizableHint}
+							</label>
+
+							<ClayMultiSelect
+								disabled={translating}
+								id={audienceId}
+								items={audiences.filter((audience) =>
+									elementVariation.audienceEntryERCs.includes(
+										audience.value
+									)
+								)}
+								onItemsChange={(
+									items: Array<{
+										label: string;
+										value: string;
+									}>
+								) => {
+									const existingAudiences = items
+										.map((item) =>
+											audiences.find(
+												(audience) =>
+													audience.value ===
+													item.value
+											)
+										)
+										.filter(
+											(
+												audience
+											): audience is {
+												label: string;
+												value: string;
+											} => Boolean(audience)
+										);
+
+									onChange({
+										audienceEntryERCs:
+											existingAudiences.map(
+												(audience) => audience.value
+											),
+									});
+								}}
+								sourceItems={audiences}
+							/>
+						</ClayForm.Group>
+
+						<ClayForm.Group className="my-4">
 							<ClayToggle
 								label={Liferay.Language.get(
-									'hide-element-for-this-audience'
+									'hide-page-element'
 								)}
 								onToggle={(hide) => {
 									const properties: Partial<ElementVariationFormData> =
@@ -288,6 +310,17 @@ export default function ElementVariationForm({
 											})
 										}
 									/>
+
+									{translating &&
+									elementVariation.html[defaultLanguageId] ? (
+										<p className="element-variations__default-language-value font-italic mt-1 pl-2 text-3 text-break text-secondary">
+											{
+												elementVariation.html[
+													defaultLanguageId
+												]
+											}
+										</p>
+									) : null}
 								</ClayForm.Group>
 
 								<ClayForm.Group small>
@@ -319,6 +352,17 @@ export default function ElementVariationForm({
 											})
 										}
 									/>
+
+									{translating &&
+									elementVariation.js[defaultLanguageId] ? (
+										<p className="element-variations__default-language-value font-italic mt-1 pl-2 text-3 text-break text-secondary">
+											{
+												elementVariation.js[
+													defaultLanguageId
+												]
+											}
+										</p>
+									) : null}
 
 									<ClayButton
 										className="mt-2"

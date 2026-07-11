@@ -10,17 +10,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.mcp.server.rest.dto.v1_0.Tool;
 import com.liferay.mcp.server.rest.internal.constants.MCPServerConstants;
 import com.liferay.mcp.server.rest.internal.util.ToolSetUtil;
+import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
+import com.liferay.object.rest.filter.factory.FilterFactory;
 import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.petra.function.transform.TransformUtil;
+import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
@@ -139,6 +144,9 @@ public class MCPServerServlet extends HttpServlet {
 
 		String mcpServerProfileName = (String)values.get("name");
 
+		String mcpServerProfileExternalReferenceCode =
+			mcpServerProfileObjectEntry.getExternalReferenceCode();
+
 		HttpServletStatelessServerTransport
 			httpServletStatelessServerTransport =
 				HttpServletStatelessServerTransport.builder(
@@ -174,8 +182,9 @@ public class MCPServerServlet extends HttpServlet {
 									httpServletRequest, toolName, toolSetName),
 								(mcpTransportContext, callToolRequest) -> _call(
 									mcpTransportContext,
-									callToolRequest.arguments(), toolName,
-									toolSetName));
+									callToolRequest.arguments(), companyId,
+									mcpServerProfileExternalReferenceCode,
+									toolName, toolSetName));
 					}
 					catch (Exception exception) {
 						_log.error(
@@ -241,6 +250,7 @@ public class MCPServerServlet extends HttpServlet {
 
 	private McpSchema.CallToolResult _call(
 		McpTransportContext mcpTransportContext, Object inputObject,
+		long companyId, String mcpServerProfileExternalReferenceCode,
 		String toolName, String toolSetName) {
 
 		HttpServletRequest httpServletRequest =
@@ -248,6 +258,8 @@ public class MCPServerServlet extends HttpServlet {
 
 		try {
 			Response response = ToolSetUtil.invokeTool(
+				_getDataMaskExternalReferenceCodes(
+					companyId, mcpServerProfileExternalReferenceCode),
 				httpServletRequest, inputObject, toolName, toolSetName);
 
 			int responseCode = response.getStatus();
@@ -292,6 +304,35 @@ public class MCPServerServlet extends HttpServlet {
 		if (servlet != null) {
 			servlet.destroy();
 		}
+	}
+
+	private List<String> _getDataMaskExternalReferenceCodes(
+			long companyId, String mcpServerProfileExternalReferenceCode)
+		throws PortalException {
+
+		ObjectDefinition objectDefinition =
+			_objectDefinitionLocalService.
+				fetchObjectDefinitionByExternalReferenceCode(
+					MCPServerConstants.
+						EXTERNAL_REFERENCE_CODE_MCP_SERVER_PROFILE_DATA_MASK,
+					companyId);
+
+		if (objectDefinition == null) {
+			return null;
+		}
+
+		return TransformUtil.transform(
+			_objectEntryLocalService.getValuesList(
+				0, companyId, objectDefinition.getUserId(),
+				objectDefinition.getObjectDefinitionId(),
+				_filterFactory.create(
+					"mcpServerProfileExternalReferenceCode eq '" +
+						mcpServerProfileExternalReferenceCode + "'",
+					objectDefinition),
+				null, QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+				new Sort[] {new Sort("executionOrder", Sort.INT_TYPE, false)}),
+			values -> MapUtil.getString(
+				values, "dataMaskExternalReferenceCode"));
 	}
 
 	private String _getMCPServerProfileName(
@@ -434,6 +475,11 @@ public class MCPServerServlet extends HttpServlet {
 		MCPServerServlet.class);
 
 	private static final ObjectMapper _objectMapper = new ObjectMapper();
+
+	@Reference(
+		target = "(filter.factory.key=" + ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT + ")"
+	)
+	private FilterFactory<Predicate> _filterFactory;
 
 	@Reference
 	private ObjectDefinitionLocalService _objectDefinitionLocalService;

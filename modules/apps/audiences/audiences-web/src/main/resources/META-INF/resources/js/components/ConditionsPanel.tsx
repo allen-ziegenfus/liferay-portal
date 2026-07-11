@@ -15,6 +15,9 @@ import {
 	DEFAULT_ICON_COLOR,
 } from '../constants/categoryIconColors';
 import {DRAG_TYPES} from '../constants/dragTypes';
+import useKeyboardNavigation from '../hooks/useKeyboardNavigation';
+import {useMovementSource} from '../keyboard_movement/KeyboardMovementContext';
+import KeyboardMovementManager from '../keyboard_movement/KeyboardMovementManager';
 import {Action} from '../reducer';
 import {AudiencesCriteria, AudiencesCriteriaType, Rule} from '../types';
 import RuleRow from './RuleRow';
@@ -63,7 +66,11 @@ export default function ConditionsPanel({
 
 	const announce = useScreenReaderAnnounce();
 
-	const dndItems = rules.map((rule) => {
+	const movementSource = useMovementSource();
+
+	const {getItemProps} = useKeyboardNavigation({itemCount: rules.length});
+
+	const movementItems = rules.map((rule) => {
 		const audiencesCriteria = audiencesCriteriasByKey[rule.attribute];
 
 		return {
@@ -108,6 +115,15 @@ export default function ConditionsPanel({
 
 	return (
 		<div className="border mt-4 rounded">
+			{movementSource ? (
+				<KeyboardMovementManager
+					dispatch={dispatch}
+					items={movementItems}
+					rules={rules}
+					source={movementSource}
+				/>
+			) : null}
+
 			<div className="px-4 py-3">
 				<p className="font-weight-bold mb-0 text-6">
 					{Liferay.Language.get('conditions')}
@@ -167,7 +183,12 @@ export default function ConditionsPanel({
 						</span>
 					</div>
 
-					<div className="px-3 py-2">
+					<div
+						aria-label={Liferay.Language.get('conditions')}
+						aria-orientation="vertical"
+						className="px-3 py-2"
+						role="menu"
+					>
 						{rules.map((rule, index) => (
 							<Fragment key={rule.id}>
 								{index > 0 ? (
@@ -187,7 +208,8 @@ export default function ConditionsPanel({
 									}
 									iconColor={iconColorsByKey[rule.attribute]}
 									index={index}
-									items={dndItems}
+									items={movementItems}
+									navigationProps={getItemProps(index)}
 									onAddRule={handleAddRule}
 									onChange={(newRule) =>
 										dispatch({

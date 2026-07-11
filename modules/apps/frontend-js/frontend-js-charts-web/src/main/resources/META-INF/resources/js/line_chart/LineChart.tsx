@@ -6,6 +6,7 @@
 import classNames from 'classnames';
 import React, {useCallback, useId, useMemo, useRef, useState} from 'react';
 
+import ChartTooltip from '../chart_tooltip/ChartTooltip';
 import {getCategoricalColors} from '../palette';
 import LineChartLegend from './legend/LineChartLegend';
 import LineChartPlot from './plot/LineChartPlot';
@@ -29,20 +30,23 @@ interface ActivePoint {
  * a fallback so the chart stays blue on themes that do not define the variable.
  */
 const BLUE_SHADES = [
-	'var(--primary, light-dark(#0b5fff, #6198ff))',
-	'var(--blue-d2, light-dark(#005fcc, #94c4ff))',
-	'var(--blue-l2, light-dark(#66abff, #006be6))',
-	'var(--blue-d1, light-dark(#006be6, #70b1ff))',
-	'var(--blue-l3, light-dark(#97c5ff, #0056b8))',
+	'var(--chart-color-2, light-dark(#006eff, #66abff))',
+	'var(--chart-blue-d2, light-dark(#005fcc, #94c4ff))',
+	'var(--chart-blue-l2, light-dark(#66abff, #006be6))',
+	'var(--chart-blue-d1, light-dark(#006be6, #70b1ff))',
+	'var(--chart-blue-l3, light-dark(#97c5ff, #0056b8))',
 ];
 
 export default function LineChart({
+	alignment = 'start',
 	animated = true,
 	categories,
 	className,
 	description,
 	height = 320,
 	legend = 'list',
+	legendSwatchBorder = true,
+	legendValue = 'value',
 	pointTooltip = 'popover',
 	scheme = 'blue',
 	series,
@@ -58,6 +62,11 @@ export default function LineChart({
 	const [focus, setFocus] = useState<ActivePoint | null>(null);
 	const [hover, setHover] = useState<ActivePoint | null>(null);
 	const active = focus ?? hover;
+
+	const activeValue =
+		active !== null
+			? series[active.seriesIndex].values[active.categoryIndex]
+			: null;
 
 	const pointRefs = useRef<Array<Array<SVGCircleElement | null>>>([]);
 
@@ -101,11 +110,11 @@ export default function LineChart({
 		return series.map((line) => line.description ?? line.label).join('. ');
 	}, [description, series]);
 
-	// Precompute the non-null point indices per series once per geometry, so the
+	// Precompute the non-null point indexes per series once per geometry, so the
 	// keyboard, legend and tabbable lookups stay O(1) instead of re-reducing on
 	// every focus and hover change.
 
-	const allFiniteIndices = useMemo(
+	const allFiniteIndexes = useMemo(
 		() =>
 			geometry.series.map((seriesLayout) =>
 				seriesLayout.points.reduce<number[]>(
@@ -122,9 +131,9 @@ export default function LineChart({
 		[geometry]
 	);
 
-	const finiteIndices = useCallback(
-		(seriesIndex: number): number[] => allFiniteIndices[seriesIndex] ?? [],
-		[allFiniteIndices]
+	const finiteIndexes = useCallback(
+		(seriesIndex: number): number[] => allFiniteIndexes[seriesIndex] ?? [],
+		[allFiniteIndexes]
 	);
 
 	const tabbable = useMemo<ActivePoint | null>(() => {
@@ -133,15 +142,15 @@ export default function LineChart({
 		}
 
 		for (let seriesIndex = 0; seriesIndex < series.length; seriesIndex++) {
-			const indices = finiteIndices(seriesIndex);
+			const indexes = finiteIndexes(seriesIndex);
 
-			if (indices.length) {
-				return {categoryIndex: indices[0], seriesIndex};
+			if (indexes.length) {
+				return {categoryIndex: indexes[0], seriesIndex};
 			}
 		}
 
 		return null;
-	}, [active, finiteIndices, series.length]);
+	}, [active, finiteIndexes, series.length]);
 
 	const setPointRef = useCallback(
 		(
@@ -197,19 +206,19 @@ export default function LineChart({
 
 	const nearestFinite = useCallback(
 		(seriesIndex: number, categoryIndex: number): number | null => {
-			const indices = finiteIndices(seriesIndex);
+			const indexes = finiteIndexes(seriesIndex);
 
-			if (!indices.length) {
+			if (!indexes.length) {
 				return null;
 			}
 
-			return indices.reduce((best, index) =>
+			return indexes.reduce((best, index) =>
 				Math.abs(index - categoryIndex) < Math.abs(best - categoryIndex)
 					? index
 					: best
 			);
 		},
-		[finiteIndices]
+		[finiteIndexes]
 	);
 
 	const onKeyDownPoint = useCallback(
@@ -218,8 +227,8 @@ export default function LineChart({
 			categoryIndex: number,
 			event: React.KeyboardEvent
 		) => {
-			const indices = finiteIndices(seriesIndex);
-			const position = indices.indexOf(categoryIndex);
+			const indexes = finiteIndexes(seriesIndex);
+			const position = indexes.indexOf(categoryIndex);
 
 			const moveSeries = (direction: 1 | -1) => {
 				for (
@@ -245,11 +254,11 @@ export default function LineChart({
 				case 'ArrowRight':
 					focusPoint(
 						seriesIndex,
-						indices[Math.min(position + 1, indices.length - 1)]
+						indexes[Math.min(position + 1, indexes.length - 1)]
 					);
 					break;
 				case 'ArrowLeft':
-					focusPoint(seriesIndex, indices[Math.max(position - 1, 0)]);
+					focusPoint(seriesIndex, indexes[Math.max(position - 1, 0)]);
 					break;
 				case 'ArrowDown':
 					moveSeries(1);
@@ -258,10 +267,10 @@ export default function LineChart({
 					moveSeries(-1);
 					break;
 				case 'Home':
-					focusPoint(seriesIndex, indices[0]);
+					focusPoint(seriesIndex, indexes[0]);
 					break;
 				case 'End':
-					focusPoint(seriesIndex, indices[indices.length - 1]);
+					focusPoint(seriesIndex, indexes[indexes.length - 1]);
 					break;
 				default:
 					handled = false;
@@ -271,7 +280,7 @@ export default function LineChart({
 				event.preventDefault();
 			}
 		},
-		[finiteIndices, focusPoint, nearestFinite, series.length]
+		[finiteIndexes, focusPoint, nearestFinite, series.length]
 	);
 
 	return (
@@ -283,8 +292,10 @@ export default function LineChart({
 				`charts-line-chart--${scheme}`,
 				`charts-line-chart--legend-${legend}`,
 				`charts-line-chart--tooltip-${pointTooltip}`,
+				`charts-line-chart--align-${alignment}`,
 				{
 					'charts-line-chart--motion': animated,
+					'charts-line-chart--no-swatch-border': !legendSwatchBorder,
 				},
 				className
 			)}
@@ -298,30 +309,42 @@ export default function LineChart({
 				{summaryText}
 			</p>
 
-			<LineChartPlot
-				active={active}
-				categories={categories}
-				focus={focus}
-				format={format}
-				geometry={geometry}
-				height={height}
-				onBlurPoint={onBlurPoint}
-				onFocusPoint={onFocusPoint}
-				onHoverPoint={onHoverPoint}
-				onKeyDownPoint={onKeyDownPoint}
-				onLeavePoint={onLeavePoint}
-				pointTooltip={pointTooltip}
-				series={series}
-				setPointRef={setPointRef}
-				styles={styles}
-				tabbable={tabbable}
-				width={width}
-			/>
+			<div className="charts-line-chart__plot">
+				<LineChartPlot
+					active={active}
+					categories={categories}
+					focus={focus}
+					format={format}
+					geometry={geometry}
+					height={height}
+					onBlurPoint={onBlurPoint}
+					onFocusPoint={onFocusPoint}
+					onHoverPoint={onHoverPoint}
+					onKeyDownPoint={onKeyDownPoint}
+					onLeavePoint={onLeavePoint}
+					pointTooltip={pointTooltip}
+					series={series}
+					setPointRef={setPointRef}
+					styles={styles}
+					tabbable={tabbable}
+					width={width}
+				/>
+
+				{pointTooltip === 'corner' &&
+					active !== null &&
+					activeValue !== null && (
+						<ChartTooltip
+							label={series[active.seriesIndex].label}
+							value={format(activeValue)}
+						/>
+					)}
+			</div>
 
 			<LineChartLegend
 				activeSeriesIndex={active?.seriesIndex ?? null}
 				format={format}
 				layout={legend}
+				legendValue={legendValue}
 				onActivate={(seriesIndex) => {
 					const target = nearestFinite(seriesIndex, 0);
 

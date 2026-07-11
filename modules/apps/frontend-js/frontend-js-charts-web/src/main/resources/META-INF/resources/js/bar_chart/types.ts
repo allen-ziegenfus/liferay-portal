@@ -12,6 +12,25 @@ export interface BarDatum {
 }
 
 /**
+ * Horizontal placement of the chart canvas and the legend within the figure
+ * when a `width` cap leaves free space. `start` (default) keeps everything
+ * flush-left like the other charts; `center` / `end` shift the block together.
+ */
+export type BarChartAlignment = 'center' | 'end' | 'start';
+
+/**
+ * What the `legend="list"` rows show next to each label.
+ *
+ * - `percent` (default): the datum's share of the total, e.g. `42.3%`.
+ * - `value`: the raw value, e.g. `68`.
+ * - `name`: nothing extra — just the swatch and label.
+ *
+ * No effect on `legend="table"`, which always breaks value and share into their
+ * own columns.
+ */
+export type BarChartLegendValue = 'name' | 'percent' | 'value';
+
+/**
  * Color scheme.
  *
  * - `blue` (default): every bar uses `--primary`.
@@ -33,6 +52,12 @@ export type BarChartLegend = 'list' | 'none' | 'table';
 
 export interface BarChartProps {
 
+	/**
+	 * Horizontal placement of the chart canvas and legend within the figure.
+	 * Default `start`.
+	 */
+	alignment?: BarChartAlignment;
+
 	/** Enable bar reveal animations (default `true`). */
 	animated?: boolean;
 
@@ -50,6 +75,15 @@ export interface BarChartProps {
 	/** Legend layout. Default `none`. */
 	legend?: BarChartLegend;
 
+	/**
+	 * Draw the 1px border around each legend color swatch (list and table).
+	 * Default `true`. Set `false` for borderless swatches.
+	 */
+	legendSwatchBorder?: boolean;
+
+	/** What the `legend="list"` rows show next to each label. Default `percent`. */
+	legendValue?: BarChartLegendValue;
+
 	/** Layout direction. `vertical` is the default (bars rise upward). */
 	orientation?: 'horizontal' | 'vertical';
 
@@ -64,6 +98,16 @@ export interface BarChartProps {
 	 * flattens every bar to 8px (the progress-bar row).
 	 */
 	size?: 'default' | 'inline';
+
+	/**
+	 * Lay every datum out end-to-end in a single horizontal row, each segment
+	 * sized to its share of the total (a segmented meter, not a bar per band).
+	 * Implies a horizontal, single-line layout and always colors segments from
+	 * the categorical palette so they read as distinct. Pairs naturally with
+	 * `size="inline"` and `rounded`. On hover / focus a segment surfaces a dark
+	 * tooltip with its label and value (or its `description`). Off by default.
+	 */
+	stacked?: boolean;
 
 	/** Accessible name for the chart as a whole. */
 	title: string;
