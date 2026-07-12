@@ -8,13 +8,14 @@ package com.liferay.headless.admin.fragment.internal.dto.v1_0.converter;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.service.DLFolderLocalService;
 import com.liferay.fragment.model.FragmentCollection;
-import com.liferay.fragment.service.FragmentCollectionLocalService;
 import com.liferay.headless.admin.fragment.dto.v1_0.FragmentSet;
 import com.liferay.headless.admin.fragment.dto.v1_0.ResourceFolder;
 import com.liferay.headless.admin.fragment.internal.dto.v1_0.util.CreatorUtil;
+import com.liferay.headless.admin.fragment.internal.resource.v1_0.util.FragmentSetUtil;
 import com.liferay.petra.function.UnsafeSupplierValue;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterContext;
+import com.liferay.portal.vulcan.fields.NestedFieldsSupplier;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -36,8 +37,12 @@ public class ResourceFolderDTOConverter
 			DTOConverterContext dtoConverterContext, DLFolder dlFolder)
 		throws Exception {
 
-		UnsafeSupplierValue<DLFolder, Exception> unsafeSupplierValue =
-			new UnsafeSupplierValue<>(() -> _getParentDLFolder(dlFolder));
+		UnsafeSupplierValue<FragmentCollection, Exception>
+			fragmentCollectionUnsafeSupplierValue = new UnsafeSupplierValue<>(
+				() -> FragmentSetUtil.getFragmentCollection(dlFolder));
+		UnsafeSupplierValue<DLFolder, Exception>
+			parentDLFolderUnsafeSupplierValue = new UnsafeSupplierValue<>(
+				() -> _getParentDLFolder(dlFolder));
 
 		return new ResourceFolder() {
 			{
@@ -45,24 +50,41 @@ public class ResourceFolderDTOConverter
 				setDateCreated(dlFolder::getCreateDate);
 				setDateModified(dlFolder::getModifiedDate);
 				setExternalReferenceCode(dlFolder::getExternalReferenceCode);
-				setFragmentSet(() -> _toFragmentSet(dlFolder));
-				setName(dlFolder::getName);
-				setParentResourceFolder(
+				setFragmentSet(
+					() -> NestedFieldsSupplier.supply(
+						"fragmentSet",
+						fieldName -> _toFragmentSet(
+							fragmentCollectionUnsafeSupplierValue.getValue())));
+				setFragmentSetExternalReferenceCode(
 					() -> {
-						DLFolder parentDLFolder =
-							unsafeSupplierValue.getValue();
+						FragmentCollection fragmentCollection =
+							fragmentCollectionUnsafeSupplierValue.getValue();
 
-						if (parentDLFolder == null) {
+						if (fragmentCollection == null) {
 							return null;
 						}
 
-						return ResourceFolderDTOConverter.this.toDTO(
-							dtoConverterContext, parentDLFolder);
+						return fragmentCollection.getExternalReferenceCode();
 					});
+				setName(dlFolder::getName);
+				setParentResourceFolder(
+					() -> NestedFieldsSupplier.supply(
+						"parentResourceFolder",
+						fieldName -> {
+							DLFolder parentDLFolder =
+								parentDLFolderUnsafeSupplierValue.getValue();
+
+							if (parentDLFolder == null) {
+								return null;
+							}
+
+							return ResourceFolderDTOConverter.this.toDTO(
+								dtoConverterContext, parentDLFolder);
+						}));
 				setParentResourceFolderExternalReferenceCode(
 					() -> {
 						DLFolder parentDLFolder =
-							unsafeSupplierValue.getValue();
+							parentDLFolderUnsafeSupplierValue.getValue();
 
 						if (parentDLFolder == null) {
 							return null;
@@ -72,20 +94,6 @@ public class ResourceFolderDTOConverter
 					});
 			}
 		};
-	}
-
-	private DLFolder _getFragmentCollectionDLFolder(DLFolder dlFolder) {
-		DLFolder parentDLFolder = _dlFolderLocalService.fetchDLFolder(
-			dlFolder.getParentFolderId());
-
-		while ((parentDLFolder != null) && !parentDLFolder.isMountPoint()) {
-			dlFolder = parentDLFolder;
-
-			parentDLFolder = _dlFolderLocalService.fetchDLFolder(
-				dlFolder.getParentFolderId());
-		}
-
-		return dlFolder;
 	}
 
 	private DLFolder _getParentDLFolder(DLFolder dlFolder) {
@@ -108,13 +116,8 @@ public class ResourceFolderDTOConverter
 		return parentDLFolder;
 	}
 
-	private FragmentSet _toFragmentSet(DLFolder dlFolder) throws Exception {
-		DLFolder fragmentCollectionDLFolder = _getFragmentCollectionDLFolder(
-			dlFolder);
-
-		FragmentCollection fragmentCollection =
-			_fragmentCollectionLocalService.fetchFragmentCollection(
-				dlFolder.getGroupId(), fragmentCollectionDLFolder.getName());
+	private FragmentSet _toFragmentSet(FragmentCollection fragmentCollection)
+		throws Exception {
 
 		if (fragmentCollection == null) {
 			return null;
@@ -125,9 +128,6 @@ public class ResourceFolderDTOConverter
 
 	@Reference
 	private DLFolderLocalService _dlFolderLocalService;
-
-	@Reference
-	private FragmentCollectionLocalService _fragmentCollectionLocalService;
 
 	@Reference(
 		target = "(component.name=com.liferay.headless.admin.fragment.internal.dto.v1_0.converter.FragmentSetDTOConverter)"

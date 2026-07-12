@@ -8,30 +8,59 @@ package com.liferay.headless.portal.instances.resource.v1_0.test;
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.headless.portal.instances.client.dto.v1_0.Admin;
 import com.liferay.headless.portal.instances.client.dto.v1_0.PortalInstance;
+import com.liferay.headless.portal.instances.client.dto.v1_0.PortalInstanceExport;
 import com.liferay.headless.portal.instances.client.pagination.Page;
 import com.liferay.headless.portal.instances.client.problem.Problem;
+import com.liferay.headless.portal.instances.client.resource.v1_0.PortalInstanceResource;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
+import com.liferay.portal.kernel.dao.db.DB;
+import com.liferay.portal.kernel.dao.db.DBManagerUtil;
+import com.liferay.portal.kernel.dao.db.DBType;
+import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Company;
+import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.util.CompanyTestUtil;
 import com.liferay.portal.kernel.test.util.PrefsPropsTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
+import com.liferay.portal.kernel.test.util.UserTestUtil;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.test.log.LogCapture;
+import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+import java.util.ArrayList;
+import java.util.Dictionary;
 import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 
 /**
  * @author István András Dézsi
@@ -93,6 +122,21 @@ public class PortalInstanceResourceTest
 		_testPostPortalInstanceWithoutAdmin();
 		_testPostPortalInstanceWithAdmin();
 		_testPostPortalInstanceWithAdminAndCompanyStrangers();
+	}
+
+	@FeatureFlag("LPD-11342")
+	@Override
+	@Test
+	public void testPostPortalInstanceExport() throws Exception {
+		DB db = DBManagerUtil.getDB();
+
+		Assume.assumeTrue(db.isSupportsDBPartition());
+
+		Assume.assumeFalse(PropsValues.DATABASE_PARTITION_ENABLED);
+
+		_testPostPortalInstanceExport();
+		_testPostPortalInstanceExportWithNonexistentPortalInstance();
+		_testPostPortalInstanceExportWithoutOmniadminPermission();
 	}
 
 	@Override
@@ -252,6 +296,60 @@ public class PortalInstanceResourceTest
 		return copyPortalInstance;
 	}
 
+	private Configuration _createScopedConfiguration(
+			Dictionary<String, Object> properties)
+		throws Exception {
+
+		Configuration configuration =
+			_configurationAdmin.createFactoryConfiguration(
+				"com.liferay.headless.portal.instances.internal.test." +
+					RandomTestUtil.randomString(),
+				StringPool.QUESTION);
+
+		configuration.update(properties);
+
+		return configuration;
+	}
+
+	private void _dropExportedSchema(long companyId) throws Exception {
+		DB db = DBManagerUtil.getDB();
+
+		String sql = "drop schema lexported_" + companyId;
+
+		if (db.getDBType() == DBType.POSTGRESQL) {
+			sql = sql + " cascade";
+		}
+
+		try (Connection connection = DataAccess.getConnection();
+
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				sql)) {
+
+			preparedStatement.executeUpdate();
+		}
+	}
+
+	private List<String> _getExportedConfigurationIds(long companyId)
+		throws Exception {
+
+		List<String> configurationIds = new ArrayList<>();
+
+		try (Connection connection = DataAccess.getConnection();
+
+			PreparedStatement preparedStatement = connection.prepareStatement(
+				"select configurationId from lexported_" + companyId +
+					".Configuration_");
+
+			ResultSet resultSet = preparedStatement.executeQuery()) {
+
+			while (resultSet.next()) {
+				configurationIds.add(resultSet.getString("configurationId"));
+			}
+		}
+
+		return configurationIds;
+	}
+
 	private void _testDeletePortalInstanceExisting() throws Exception {
 		PortalInstance randomPortalInstance = randomPortalInstance();
 
@@ -371,6 +469,124 @@ public class PortalInstanceResourceTest
 		_testPatchPortalInstace(portalInstance, false, false, false);
 	}
 
+	private void _testPostPortalInstanceExport() throws Exception {
+		long companyId = _portalInstance.getCompanyId();
+
+		Configuration company1Configuration = _createScopedConfiguration(
+			HashMapDictionaryBuilder.<String, Object>put(
+				ExtendedObjectClassDefinition.Scope.COMPANY.getPropertyKey(),
+				companyId
+			).build());
+
+		Configuration company2Configuration = _createScopedConfiguration(
+			HashMapDictionaryBuilder.<String, Object>put(
+				ExtendedObjectClassDefinition.Scope.COMPANY.getPropertyKey(),
+				RandomTestUtil.randomLong()
+			).build());
+
+		Group group = _groupLocalService.getCompanyGroup(companyId);
+
+		Configuration groupConfiguration = _createScopedConfiguration(
+			HashMapDictionaryBuilder.<String, Object>put(
+				ExtendedObjectClassDefinition.Scope.COMPANY.getPropertyKey(),
+				companyId
+			).put(
+				ExtendedObjectClassDefinition.Scope.GROUP.getPropertyKey(),
+				group.getGroupId()
+			).build());
+
+		Configuration portletInstanceConfiguration = _createScopedConfiguration(
+			HashMapDictionaryBuilder.<String, Object>put(
+				ExtendedObjectClassDefinition.Scope.PORTLET_INSTANCE.
+					getPropertyKey(),
+				RandomTestUtil.randomString()
+			).build());
+
+		try {
+			PortalInstanceExport portalInstanceExport =
+				portalInstanceResource.postPortalInstanceExport(
+					_portalInstance.getPortalInstanceId());
+
+			Assert.assertEquals(
+				"lexported_" + companyId,
+				portalInstanceExport.getExportedPartitionName());
+			Assert.assertEquals(
+				PropsValues.DATABASE_PARTITION_SCHEMA_NAME_PREFIX + companyId,
+				portalInstanceExport.getSourcePartitionName());
+
+			List<String> configurationIds = _getExportedConfigurationIds(
+				companyId);
+
+			Assert.assertTrue(
+				configurationIds.contains(company1Configuration.getPid()));
+			Assert.assertTrue(
+				configurationIds.contains(groupConfiguration.getPid()));
+			Assert.assertTrue(
+				configurationIds.contains(
+					portletInstanceConfiguration.getPid()));
+			Assert.assertFalse(
+				configurationIds.contains(company2Configuration.getPid()));
+		}
+		finally {
+			company1Configuration.delete();
+			company2Configuration.delete();
+			groupConfiguration.delete();
+			portletInstanceConfiguration.delete();
+
+			_dropExportedSchema(companyId);
+		}
+	}
+
+	private void _testPostPortalInstanceExportWithNonexistentPortalInstance()
+		throws Exception {
+
+		try (LogCapture logCapture = LoggerTestUtil.configureLog4JLogger(
+				"com.liferay.portal.vulcan.internal.jaxrs.exception.mapper." +
+					"WebApplicationExceptionMapper",
+				LoggerTestUtil.ERROR)) {
+
+			portalInstanceResource.postPortalInstanceExport(
+				RandomTestUtil.randomString());
+
+			Assert.fail();
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals("NOT_FOUND", problem.getStatus());
+			Assert.assertNull(problem.getTitle());
+		}
+	}
+
+	private void _testPostPortalInstanceExportWithoutOmniadminPermission()
+		throws Exception {
+
+		User user = UserTestUtil.addUser(testCompany, "test");
+
+		PortalInstanceResource userPortalInstanceResource =
+			PortalInstanceResource.builder(
+			).authentication(
+				user.getEmailAddress(), "test"
+			).endpoint(
+				testCompany.getVirtualHostname(),
+				PortalUtil.getPortalServerPort(false), "http"
+			).locale(
+				LocaleUtil.getDefault()
+			).build();
+
+		try {
+			userPortalInstanceResource.postPortalInstanceExport(
+				_portalInstance.getPortalInstanceId());
+
+			Assert.fail();
+		}
+		catch (Problem.ProblemException problemException) {
+			Problem problem = problemException.getProblem();
+
+			Assert.assertEquals("FORBIDDEN", problem.getStatus());
+		}
+	}
+
 	private void _testPostPortalInstanceWithAdmin() throws Exception {
 		PortalInstance randomPortalInstance = randomPortalInstance();
 
@@ -443,6 +659,12 @@ public class PortalInstanceResourceTest
 	private static CompanyLocalService _companyLocalService;
 
 	private static PortalInstance _portalInstance;
+
+	@Inject
+	private ConfigurationAdmin _configurationAdmin;
+
+	@Inject
+	private GroupLocalService _groupLocalService;
 
 	@Inject
 	private UserLocalService _userLocalService;

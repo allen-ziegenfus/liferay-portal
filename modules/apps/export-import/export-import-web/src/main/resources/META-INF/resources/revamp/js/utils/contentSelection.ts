@@ -6,6 +6,7 @@
 import {sub} from 'frontend-js-web';
 
 import {
+	PreviewPortletDataHandler,
 	PreviewPortletDataHandlerBoolean,
 	PreviewPortletDataHandlerControl,
 	PreviewPortletDataHandlerSection,
@@ -13,12 +14,17 @@ import {
 
 import type {ContentSelection} from '../components/forms/content_selector/ContentSelector';
 
-export type HandlerSelection =
+export type PortletDataHandlerSelection =
 	| {
-			[key: string]: HandlerSelection | boolean | number[];
+			[key: string]: PortletDataHandlerSelection | boolean | number[];
 	  }
 	| string
 	| true;
+
+export interface LayoutSetSelection {
+	layoutIds?: number[];
+	privateLayout?: boolean;
+}
 
 export const COMPACT_SECTION_NAMES = [
 	'category.control_panel.users',
@@ -27,6 +33,10 @@ export const COMPACT_SECTION_NAMES = [
 
 export const LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY =
 	'PORTLET_DATA_com_liferay_layout_admin_web_portlet_LayoutSetLayoutsPortlet';
+
+export const PRIVATE_PAGES_CONTROL_NAME = 'privateLayoutPages';
+
+export const PUBLIC_PAGES_CONTROL_NAME = 'publicLayoutPages';
 
 export const SCROLLABLE_SECTION_NAMES = ['objects'];
 
@@ -38,75 +48,111 @@ export const SECTION_KEY_CONTENT_AND_DATA =
 export const SECTION_KEY_SITE_BUILDER = 'category.site_administration.build';
 
 export function isAllLayoutsSelected(
-	value: HandlerSelection | undefined
+	portletDataHandlerSelection: PortletDataHandlerSelection | undefined
 ): boolean {
-	return typeof value === 'object' && !value.layoutIds;
+	return (
+		typeof portletDataHandlerSelection === 'object' &&
+		!portletDataHandlerSelection.layoutIds
+	);
 }
 
 export function isSelected(
-	value: HandlerSelection | undefined,
-	entry: PreviewPortletDataHandlerControl
+	portletDataHandlerSelection: PortletDataHandlerSelection | undefined,
+	previewPortletDataHandlerControl: PreviewPortletDataHandlerControl
 ): boolean {
-	if (!value) {
+	if (!portletDataHandlerSelection) {
 		return false;
 	}
 
-	if (entry.name === LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY) {
-		return isAllLayoutsSelected(value);
+	if (
+		previewPortletDataHandlerControl.name ===
+		LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY
+	) {
+		return isAllLayoutsSelected(portletDataHandlerSelection);
 	}
 
-	if (entry.type === 'Choice') {
+	if (previewPortletDataHandlerControl.type === 'Choice') {
 		return true;
 	}
 
 	if (
-		!entry.previewPortletDataHandlerControls?.length ||
-		typeof value !== 'object'
+		!previewPortletDataHandlerControl.previewPortletDataHandlerControls
+			?.length ||
+		typeof portletDataHandlerSelection !== 'object'
 	) {
 		return true;
 	}
 
-	return entry.previewPortletDataHandlerControls.every((control) =>
-		isSelected(value[control.name] as HandlerSelection, control)
+	return previewPortletDataHandlerControl.previewPortletDataHandlerControls.every(
+		(previewPortletDataHandlerControl) =>
+			isSelected(
+				portletDataHandlerSelection[
+					previewPortletDataHandlerControl.name
+				] as PortletDataHandlerSelection,
+				previewPortletDataHandlerControl
+			)
 	);
 }
 
-export function getHandlerSelection(
-	entry: PreviewPortletDataHandlerControl
-): HandlerSelection {
-	if (entry.name === LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY) {
+export function getPortletDataHandlerSelection(
+	previewPortletDataHandlerControl: PreviewPortletDataHandlerControl
+): PortletDataHandlerSelection {
+	if (
+		previewPortletDataHandlerControl.name ===
+		LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY
+	) {
 		return {privateLayout: false};
 	}
 
-	if (entry.type === 'Choice') {
-		return entry.choices[0].name;
+	if (previewPortletDataHandlerControl.type === 'Choice') {
+		return previewPortletDataHandlerControl.choices[0].name;
 	}
 
-	if (!entry.previewPortletDataHandlerControls?.length) {
+	if (
+		!previewPortletDataHandlerControl.previewPortletDataHandlerControls
+			?.length
+	) {
 		return true;
 	}
 
-	return getHandlerSelections(entry.previewPortletDataHandlerControls);
+	return getPortletDataHandlerSelections(
+		previewPortletDataHandlerControl.previewPortletDataHandlerControls
+	);
 }
 
-export function getHandlerSelections(
-	controls: PreviewPortletDataHandlerControl[]
-): Record<string, HandlerSelection> {
+export function getPortletDataHandlerSelections(
+	previewPortletDataHandlerControls: PreviewPortletDataHandlerControl[]
+): Record<string, PortletDataHandlerSelection> {
 	return Object.fromEntries(
-		controls.map((control) => [control.name, getHandlerSelection(control)])
+		previewPortletDataHandlerControls.map(
+			(previewPortletDataHandlerControl) => [
+				previewPortletDataHandlerControl.name,
+				getPortletDataHandlerSelection(
+					previewPortletDataHandlerControl
+				),
+			]
+		)
 	);
 }
 
 export function getSectionPreviewPortletDataHandlers(
-	section: PreviewPortletDataHandlerSection,
+	previewPortletDataHandlerSection: PreviewPortletDataHandlerSection,
 	{lookAndFeelEnabled = false}: {lookAndFeelEnabled?: boolean} = {}
 ): PreviewPortletDataHandlerBoolean[] {
 	const previewPortletDataHandlers =
-		section.previewPortletDataHandlers.map<PreviewPortletDataHandlerBoolean>(
-			(handler) => ({...handler, type: 'Boolean'})
+		previewPortletDataHandlerSection.previewPortletDataHandlers.map<PreviewPortletDataHandlerBoolean>(
+			(previewPortletDataHandler) => ({
+				...previewPortletDataHandler,
+				type: 'Boolean',
+			})
 		);
 
-	if (!(lookAndFeelEnabled && section.name === SECTION_KEY_SITE_BUILDER)) {
+	if (
+		!(
+			lookAndFeelEnabled &&
+			previewPortletDataHandlerSection.name === SECTION_KEY_SITE_BUILDER
+		)
+	) {
 		return previewPortletDataHandlers;
 	}
 
@@ -143,29 +189,35 @@ export function getSectionPreviewPortletDataHandlers(
 }
 
 export function getSectionSelection(
-	section: PreviewPortletDataHandlerSection,
+	previewPortletDataHandlerSection: PreviewPortletDataHandlerSection,
 	{
 		commentsAndRatingsEnabled = false,
 		lookAndFeelEnabled = false,
 	}: {commentsAndRatingsEnabled?: boolean; lookAndFeelEnabled?: boolean} = {}
-): Record<string, HandlerSelection> {
-	const selection = getHandlerSelections(
-		getSectionPreviewPortletDataHandlers(section, {lookAndFeelEnabled})
+): Record<string, PortletDataHandlerSelection> {
+	const portletDataHandlerSelections = getPortletDataHandlerSelections(
+		getSectionPreviewPortletDataHandlers(previewPortletDataHandlerSection, {
+			lookAndFeelEnabled,
+		})
 	);
 
 	if (
 		commentsAndRatingsEnabled &&
-		(section.name === SECTION_KEY_CONTENT ||
-			section.name === SECTION_KEY_CONTENT_AND_DATA)
+		(previewPortletDataHandlerSection.name === SECTION_KEY_CONTENT ||
+			previewPortletDataHandlerSection.name ===
+				SECTION_KEY_CONTENT_AND_DATA)
 	) {
-		selection.commentsAndRatings = {comments: true, ratings: true};
+		portletDataHandlerSelections.commentsAndRatings = {
+			comments: true,
+			ratings: true,
+		};
 	}
 
-	return selection;
+	return portletDataHandlerSelections;
 }
 
 export function getFullDataSelection(
-	sections: PreviewPortletDataHandlerSection[],
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
 	{
 		commentsAndRatingsEnabled = false,
 		lookAndFeelEnabled = false,
@@ -177,15 +229,16 @@ export function getFullDataSelection(
 	} = {}
 ): ContentSelection {
 	return Object.fromEntries(
-		getVisibleSections(sections, {lookAndFeelEnabled, showDeletions}).map(
-			(section) => [
-				section.name,
-				getSectionSelection(section, {
-					commentsAndRatingsEnabled,
-					lookAndFeelEnabled,
-				}),
-			]
-		)
+		getVisibleSections(previewPortletDataHandlerSections, {
+			lookAndFeelEnabled,
+			showDeletions,
+		}).map((previewPortletDataHandlerSection) => [
+			previewPortletDataHandlerSection.name,
+			getSectionSelection(previewPortletDataHandlerSection, {
+				commentsAndRatingsEnabled,
+				lookAndFeelEnabled,
+			}),
+		])
 	);
 }
 
@@ -201,12 +254,20 @@ export function updateSelection<V>(
 }
 
 export function getSelectionSummary(
-	controls: {label: string; name: string}[],
-	selection: Record<string, HandlerSelection>
+	previewPortletDataHandlerControls: {label: string; name: string}[],
+	portletDataHandlerSelections: Record<string, PortletDataHandlerSelection>
 ): string {
-	const selectedLabels = controls
-		.filter((control) => selection[control.name] !== undefined)
-		.map((control) => control.label);
+	const selectedLabels = previewPortletDataHandlerControls
+		.filter(
+			(previewPortletDataHandlerControl) =>
+				portletDataHandlerSelections[
+					previewPortletDataHandlerControl.name
+				] !== undefined
+		)
+		.map(
+			(previewPortletDataHandlerControl) =>
+				previewPortletDataHandlerControl.label
+		);
 
 	if (selectedLabels.length) {
 		return sub(
@@ -215,7 +276,10 @@ export function getSelectionSummary(
 		);
 	}
 
-	const labels = controls.map((control) => control.label);
+	const labels = previewPortletDataHandlerControls.map(
+		(previewPortletDataHandlerControl) =>
+			previewPortletDataHandlerControl.label
+	);
 
 	if (labels.length) {
 		return sub(Liferay.Language.get('select-x'), labels.join(', '));
@@ -225,15 +289,21 @@ export function getSelectionSummary(
 }
 
 export function withSiteBuilderSection(
-	sections: PreviewPortletDataHandlerSection[],
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
 	label = ''
 ): PreviewPortletDataHandlerSection[] {
-	if (sections.some((section) => section.name === SECTION_KEY_SITE_BUILDER)) {
-		return sections;
+	if (
+		previewPortletDataHandlerSections.some(
+			(previewPortletDataHandlerSection) =>
+				previewPortletDataHandlerSection.name ===
+				SECTION_KEY_SITE_BUILDER
+		)
+	) {
+		return previewPortletDataHandlerSections;
 	}
 
 	return [
-		...sections,
+		...previewPortletDataHandlerSections,
 		{
 			label,
 			name: SECTION_KEY_SITE_BUILDER,
@@ -242,16 +312,26 @@ export function withSiteBuilderSection(
 	];
 }
 
+function isDeletionOnlySection(
+	previewPortletDataHandlerSection: PreviewPortletDataHandlerSection
+): boolean {
+	return (
+		!previewPortletDataHandlerSection.additionCount &&
+		!!previewPortletDataHandlerSection.deletionCount
+	);
+}
+
 export function getVisibleSections(
-	sections: PreviewPortletDataHandlerSection[],
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
 	{
 		lookAndFeelEnabled = false,
 		showDeletions = false,
 	}: {lookAndFeelEnabled?: boolean; showDeletions?: boolean} = {}
 ): PreviewPortletDataHandlerSection[] {
-	const filteredSections = sections.filter(
-		(section) =>
-			showDeletions || !!section.additionCount || !section.deletionCount
+	const filteredSections = previewPortletDataHandlerSections.filter(
+		(previewPortletDataHandlerSection) =>
+			showDeletions ||
+			!isDeletionOnlySection(previewPortletDataHandlerSection)
 	);
 
 	return lookAndFeelEnabled
@@ -280,4 +360,205 @@ export function toProcessRequestFlags(
 		siteTemplateSettings: !!lookAndFeel.siteTemplateSettings,
 		themeSettings: !!lookAndFeel.themeSettings,
 	};
+}
+
+export function getLayoutSetPreviewPortletDataHandler(
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[]
+): PreviewPortletDataHandler | undefined {
+	for (const previewPortletDataHandlerSection of previewPortletDataHandlerSections) {
+		const previewPortletDataHandler =
+			previewPortletDataHandlerSection.previewPortletDataHandlers?.find(
+				(previewPortletDataHandler) =>
+					previewPortletDataHandler.name ===
+					LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY
+			);
+
+		if (previewPortletDataHandler) {
+			return previewPortletDataHandler;
+		}
+	}
+
+	return undefined;
+}
+
+export function getLayoutSetCount(
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
+	privateLayout: boolean,
+	key: 'additionCount' | 'deletionCount' = 'additionCount'
+): number | undefined {
+	const previewPortletDataHandler = getLayoutSetPreviewPortletDataHandler(
+		previewPortletDataHandlerSections
+	);
+
+	if (!previewPortletDataHandler) {
+		return undefined;
+	}
+
+	const choiceControl =
+		previewPortletDataHandler.previewPortletDataHandlerControls?.find(
+			(previewPortletDataHandlerControl) =>
+				previewPortletDataHandlerControl.type === 'Choice'
+		);
+
+	if (choiceControl?.type === 'Choice') {
+		const choiceName = privateLayout
+			? PRIVATE_PAGES_CONTROL_NAME
+			: PUBLIC_PAGES_CONTROL_NAME;
+
+		const choice = choiceControl.choices.find(
+			({name}) => name === choiceName
+		);
+
+		if (choice) {
+			return choice[key];
+		}
+	}
+
+	return previewPortletDataHandler[key];
+}
+
+export function isPrivateLayoutSelected(
+	contentSelection: ContentSelection | undefined
+): boolean {
+	if (!contentSelection) {
+		return false;
+	}
+
+	for (const sectionSelection of Object.values(contentSelection)) {
+		const portletDataHandlerSelection = sectionSelection?.[
+			LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY
+		] as LayoutSetSelection | undefined;
+
+		if (portletDataHandlerSelection) {
+			return !!portletDataHandlerSelection.privateLayout;
+		}
+	}
+
+	return false;
+}
+
+export function getSelectedItemsCount(
+	additionCount: number | undefined,
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
+	contentSelection: ContentSelection | undefined
+): number | undefined {
+	if (additionCount === undefined) {
+		return undefined;
+	}
+
+	return (
+		additionCount +
+		getLayoutSetCountDelta(
+			previewPortletDataHandlerSections,
+			contentSelection,
+			'additionCount'
+		)
+	);
+}
+
+export function getSelectedDeletionCount(
+	deletionCount: number | undefined,
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
+	contentSelection: ContentSelection | undefined
+): number | undefined {
+	if (deletionCount === undefined) {
+		return undefined;
+	}
+
+	return (
+		deletionCount +
+		getLayoutSetCountDelta(
+			previewPortletDataHandlerSections,
+			contentSelection,
+			'deletionCount'
+		)
+	);
+}
+
+export function getLayoutSetCountDelta(
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
+	contentSelection: ContentSelection | undefined,
+	key: 'additionCount' | 'deletionCount' = 'additionCount'
+): number {
+	const privateLayout = isPrivateLayoutSelected(contentSelection);
+
+	const publicCount =
+		getLayoutSetCount(previewPortletDataHandlerSections, false, key) ?? 0;
+	const selectedCount =
+		getLayoutSetCount(
+			previewPortletDataHandlerSections,
+			privateLayout,
+			key
+		) ?? 0;
+
+	return selectedCount - publicCount;
+}
+
+export function withSelectedLayoutSetCount(
+	previewPortletDataHandlerSections: PreviewPortletDataHandlerSection[],
+	contentSelection: ContentSelection | undefined
+): PreviewPortletDataHandlerSection[] {
+	const additionCountDelta = getLayoutSetCountDelta(
+		previewPortletDataHandlerSections,
+		contentSelection,
+		'additionCount'
+	);
+	const deletionCountDelta = getLayoutSetCountDelta(
+		previewPortletDataHandlerSections,
+		contentSelection,
+		'deletionCount'
+	);
+
+	if (!additionCountDelta && !deletionCountDelta) {
+		return previewPortletDataHandlerSections;
+	}
+
+	const privateLayout = isPrivateLayoutSelected(contentSelection);
+
+	const selectedAdditionCount = getLayoutSetCount(
+		previewPortletDataHandlerSections,
+		privateLayout,
+		'additionCount'
+	);
+	const selectedDeletionCount = getLayoutSetCount(
+		previewPortletDataHandlerSections,
+		privateLayout,
+		'deletionCount'
+	);
+
+	return previewPortletDataHandlerSections.map(
+		(previewPortletDataHandlerSection) => {
+			if (
+				!previewPortletDataHandlerSection.previewPortletDataHandlers?.some(
+					(previewPortletDataHandler) =>
+						previewPortletDataHandler.name ===
+						LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY
+				)
+			) {
+				return previewPortletDataHandlerSection;
+			}
+
+			return {
+				...previewPortletDataHandlerSection,
+				additionCount:
+					(previewPortletDataHandlerSection.additionCount ?? 0) +
+					additionCountDelta,
+				deletionCount:
+					(previewPortletDataHandlerSection.deletionCount ?? 0) +
+					deletionCountDelta,
+				previewPortletDataHandlers:
+					previewPortletDataHandlerSection.previewPortletDataHandlers.map(
+						(previewPortletDataHandler) =>
+							previewPortletDataHandler.name ===
+							LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY
+								? {
+										...previewPortletDataHandler,
+										additionCount: selectedAdditionCount,
+										deletionCount: selectedDeletionCount,
+									}
+								: previewPortletDataHandler
+					),
+			};
+		}
+	);
 }

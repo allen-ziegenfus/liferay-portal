@@ -38,7 +38,7 @@ const DEFAULT_PROPS = {
 	pageTreeModalConfiguration: {
 		liveGroupId: 20121,
 		pageSize: 20,
-		privateLayoutsEnabled: false,
+		privateLayoutsAvailable: false,
 	},
 };
 
@@ -330,7 +330,7 @@ describe('NewExport', () => {
 
 		const privatePageTreeModalConfiguration = {
 			...DEFAULT_PROPS.pageTreeModalConfiguration,
-			privateLayoutsEnabled: true,
+			privateLayoutsAvailable: true,
 		};
 
 		const getExportRequest = () => {
@@ -396,7 +396,7 @@ describe('NewExport', () => {
 					{
 						name: LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY,
 						requestPortletDataHandlerControls: [
-							{name: 'privateLayout', values: ['false']},
+							{name: 'publicLayoutPages'},
 						],
 					},
 				])
@@ -418,7 +418,7 @@ describe('NewExport', () => {
 			expect(screen.queryAllByRole('radio')).toHaveLength(0);
 
 			await userEvent.click(
-				screen.getByRole('button', {name: 'select-layouts'})
+				screen.getByRole('button', {name: 'select-x'})
 			);
 
 			expect(await screen.findByLabelText('page-1')).toBeChecked();
@@ -434,8 +434,7 @@ describe('NewExport', () => {
 					{
 						name: LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY,
 						requestPortletDataHandlerControls: [
-							{name: 'privateLayout', values: ['false']},
-							{name: 'layoutIds', values: ['1']},
+							{name: 'publicLayoutPages', values: ['1']},
 						],
 					},
 				])
@@ -468,7 +467,7 @@ describe('NewExport', () => {
 					{
 						name: LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY,
 						requestPortletDataHandlerControls: [
-							{name: 'privateLayout', values: ['true']},
+							{name: 'privateLayoutPages'},
 						],
 					},
 				])
@@ -541,8 +540,7 @@ describe('NewExport', () => {
 					{
 						name: LAYOUT_SET_LAYOUTS_PORTLET_DATA_KEY,
 						requestPortletDataHandlerControls: [
-							{name: 'privateLayout', values: ['true']},
-							{name: 'layoutIds', values: ['1']},
+							{name: 'privateLayoutPages', values: ['1']},
 						],
 					},
 				])
@@ -589,7 +587,8 @@ describe('NewExport', () => {
 			expect(body.siteTemplateSettings).toBe(false);
 
 			const handlerNames = body.requestPortletDataHandlers.map(
-				(handler: {name: string}) => handler.name
+				(previewPortletDataHandler: {name: string}) =>
+					previewPortletDataHandler.name
 			);
 
 			expect(handlerNames).not.toContain('lookAndFeel');
@@ -668,7 +667,8 @@ describe('NewExport', () => {
 			expect(body.ratings).toBe(false);
 
 			const handlerNames = body.requestPortletDataHandlers.map(
-				(handler: {name: string}) => handler.name
+				(previewPortletDataHandler: {name: string}) =>
+					previewPortletDataHandler.name
 			);
 
 			expect(handlerNames).not.toContain('commentsAndRatings');
