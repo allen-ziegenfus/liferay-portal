@@ -33,12 +33,12 @@ describe('implementation', () => {
 			expect(executionOrder).toHaveLength(audienceIds.length);
 		});
 
-		it('clears the registered handlers after running', async () => {
+		it('keeps the registered handlers so they run again on the next navigation', async () => {
 			let runCount = 0;
 
-			store.setAudienceIds(new Set(['a']));
+			store.setAudienceIds(new Set(['persistent']));
 
-			audiences.on('a', () => {
+			audiences.on('persistent', () => {
 				runCount += 1;
 			});
 
@@ -46,7 +46,29 @@ describe('implementation', () => {
 
 			expect(runCount).toBe(1);
 
-			// The handler was cleared, so a second run does not invoke it again
+			// The handler stays registered so a later navigation runs it again
+
+			await audiences.runHandlers();
+
+			expect(runCount).toBe(2);
+		});
+
+		it('does not run handlers after they are cleared', async () => {
+			let runCount = 0;
+
+			store.setAudienceIds(new Set(['cleared']));
+
+			audiences.on('cleared', () => {
+				runCount += 1;
+			});
+
+			await audiences.runHandlers();
+
+			expect(runCount).toBe(1);
+
+			// Navigating to another page clears the previous page's handlers
+
+			audiences.clearHandlers();
 
 			await audiences.runHandlers();
 

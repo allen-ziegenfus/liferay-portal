@@ -203,6 +203,34 @@ public abstract class BaseFragmentSetResourceTestCase {
 	}
 
 	@Test
+	public void testDeleteDesignLibraryFragmentSet() throws Exception {
+		@SuppressWarnings("PMD.UnusedLocalVariable")
+		FragmentSet fragmentSet =
+			testDeleteDesignLibraryFragmentSet_addFragmentSet();
+
+		assertHttpResponseStatusCode(
+			204,
+			fragmentSetResource.deleteDesignLibraryFragmentSetHttpResponse(
+				testDeleteDesignLibraryFragmentSet_getDesignLibraryExternalReferenceCode(),
+				fragmentSet.getExternalReferenceCode()));
+	}
+
+	protected FragmentSet testDeleteDesignLibraryFragmentSet_addFragmentSet()
+		throws Exception {
+
+		return fragmentSetResource.postSiteFragmentSet(
+			testGroup.getExternalReferenceCode(), randomFragmentSet());
+	}
+
+	protected String
+			testDeleteDesignLibraryFragmentSet_getDesignLibraryExternalReferenceCode()
+		throws Exception {
+
+		throw new UnsupportedOperationException(
+			"This method needs to be implemented");
+	}
+
+	@Test
 	public void testDeleteSiteFragmentSet() throws Exception {
 		@SuppressWarnings("PMD.UnusedLocalVariable")
 		FragmentSet fragmentSet = testDeleteSiteFragmentSet_addFragmentSet();
@@ -741,6 +769,14 @@ public abstract class BaseFragmentSetResourceTestCase {
 		for (String additionalAssertFieldName :
 				getAdditionalAssertFieldNames()) {
 
+			if (Objects.equals("actions", additionalAssertFieldName)) {
+				if (fragmentSet.getActions() == null) {
+					valid = false;
+				}
+
+				continue;
+			}
+
 			if (Objects.equals("creator", additionalAssertFieldName)) {
 				if (fragmentSet.getCreator() == null) {
 					valid = false;
@@ -911,6 +947,17 @@ public abstract class BaseFragmentSetResourceTestCase {
 
 		for (String additionalAssertFieldName :
 				getAdditionalAssertFieldNames()) {
+
+			if (Objects.equals("actions", additionalAssertFieldName)) {
+				if (!equals(
+						(Map)fragmentSet1.getActions(),
+						(Map)fragmentSet2.getActions())) {
+
+					return false;
+				}
+
+				continue;
+			}
 
 			if (Objects.equals("creator", additionalAssertFieldName)) {
 				if (!Objects.deepEquals(
@@ -1105,6 +1152,11 @@ public abstract class BaseFragmentSetResourceTestCase {
 		sb.append(" ");
 		sb.append(operator);
 		sb.append(" ");
+
+		if (entityFieldName.equals("actions")) {
+			throw new IllegalArgumentException(
+				"Invalid entity field " + entityFieldName);
+		}
 
 		if (entityFieldName.equals("creator")) {
 			throw new IllegalArgumentException(
@@ -1662,4 +1714,4 @@ public abstract class BaseFragmentSetResourceTestCase {
 			_fragmentSetResource;
 
 }
-// LIFERAY-REST-BUILDER-HASH:570800732
+// LIFERAY-REST-BUILDER-HASH:-1318768798

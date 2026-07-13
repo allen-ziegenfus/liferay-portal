@@ -6,6 +6,9 @@
 package com.liferay.headless.admin.fragment.resource.v1_0.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.depot.constants.DepotConstants;
+import com.liferay.depot.model.DepotEntry;
+import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.fragment.exception.DuplicateFragmentCollectionKeyException;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.service.FragmentCollectionLocalService;
@@ -15,13 +18,18 @@ import com.liferay.headless.admin.fragment.client.problem.Problem;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.kernel.feature.flag.constants.FeatureFlagConstants;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.servlet.HttpHeaders;
+import com.liferay.portal.kernel.test.TestInfo;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.HTTPTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
+import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
+import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ContentTypes;
 import com.liferay.portal.kernel.util.DateFormatFactoryUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -30,10 +38,12 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.util.Validator;
+import com.liferay.portal.props.test.util.PropsTemporarySwapper;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LogEntry;
 import com.liferay.portal.test.log.LoggerTestUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
+import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -42,6 +52,7 @@ import java.io.InputStream;
 
 import java.text.DateFormat;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +60,7 @@ import java.util.Map;
 import java.util.zip.ZipInputStream;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,7 +69,9 @@ import org.junit.runner.RunWith;
 /**
  * @author Rubén Pulido
  */
-@FeatureFlag("LPD-39244")
+@FeatureFlags(
+	featureFlags = {@FeatureFlag("LPD-39244"), @FeatureFlag("LPD-57283")}
+)
 @RunWith(Arquillian.class)
 public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 
@@ -68,12 +82,31 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 			new LiferayIntegrationTestRule(),
 			PermissionCheckerMethodTestRule.INSTANCE);
 
+	@Before
+	@Override
+	public void setUp() throws Exception {
+		super.setUp();
+
+		_depotEntry = _addDepotEntry(DepotConstants.TYPE_DESIGN_LIBRARY);
+	}
+
 	@Override
 	@Test
 	public void testBatchEngineDeleteImportTask() throws Exception {
 		super.testBatchEngineDeleteImportTask();
 
 		_testBatchEngineDeleteImportTask();
+	}
+
+	@Override
+	@Test
+	@TestInfo("LPD-97408")
+	public void testDeleteDesignLibraryFragmentSet() throws Exception {
+		super.testDeleteDesignLibraryFragmentSet();
+
+		_testDeleteDesignLibraryFragmentSetWithAssetLibraryExternalReferenceCodeProblemException();
+		_testDeleteDesignLibraryFragmentSetWithFeatureFlagDisabledProblemException();
+		_testDeleteDesignLibraryFragmentSetWithSiteExternalReferenceCodeProblemException();
 	}
 
 	@Override
@@ -139,7 +172,10 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 			postFragmentSet.getExternalReferenceCode());
 
 		_assertProblemException(
-			"CONFLICT", "this-external-reference-code-is-already-in-use",
+			"CONFLICT",
+			_language.get(
+				LocaleUtil.getDefault(),
+				"this-external-reference-code-is-already-in-use"),
 			() -> fragmentSetResource.postSiteFragmentSet(
 				testGroup.getExternalReferenceCode(), duplicateERCFragmentSet));
 
@@ -148,10 +184,13 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 		duplicateKeyFragmentSet.setKey(postFragmentSet.getKey());
 
 		_assertProblemException(
-			"CONFLICT", "a-fragment-set-with-the-key-x-already-exists",
+			"CONFLICT",
+			_language.format(
+				LocaleUtil.getDefault(),
+				"a-fragment-set-with-the-key-x-already-exists",
+				duplicateKeyFragmentSet.getKey()),
 			() -> fragmentSetResource.postSiteFragmentSet(
-				testGroup.getExternalReferenceCode(), duplicateKeyFragmentSet),
-			duplicateKeyFragmentSet.getKey());
+				testGroup.getExternalReferenceCode(), duplicateKeyFragmentSet));
 
 		FragmentSet invalidNameFragmentSet = randomFragmentSet();
 
@@ -160,7 +199,8 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 				RandomTestUtil.randomString());
 
 		_assertProblemException(
-			"BAD_REQUEST", "name-is-invalid",
+			"BAD_REQUEST",
+			_language.get(LocaleUtil.getDefault(), "name-is-invalid"),
 			() -> fragmentSetResource.postSiteFragmentSet(
 				testGroup.getExternalReferenceCode(), invalidNameFragmentSet));
 
@@ -231,12 +271,15 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 		duplicateKeyFragmentSet.setKey(originalKey);
 
 		_assertProblemException(
-			"CONFLICT", "a-fragment-set-with-the-key-x-already-exists",
+			"CONFLICT",
+			_language.format(
+				LocaleUtil.getDefault(),
+				"a-fragment-set-with-the-key-x-already-exists",
+				duplicateKeyFragmentSet.getKey()),
 			() -> fragmentSetResource.putSiteFragmentSet(
 				testGroup.getExternalReferenceCode(),
 				duplicateKeyFragmentSet.getExternalReferenceCode(),
-				duplicateKeyFragmentSet),
-			duplicateKeyFragmentSet.getKey());
+				duplicateKeyFragmentSet));
 
 		FragmentSet nullNameFragmentSet =
 			testPutSiteFragmentSet_addFragmentSet();
@@ -244,7 +287,8 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 		nullNameFragmentSet.setName((String)null);
 
 		_assertProblemException(
-			"BAD_REQUEST", "name-is-invalid",
+			"BAD_REQUEST",
+			_language.get(LocaleUtil.getDefault(), "name-is-invalid"),
 			() -> fragmentSetResource.putSiteFragmentSet(
 				testGroup.getExternalReferenceCode(),
 				nullNameFragmentSet.getExternalReferenceCode(),
@@ -272,6 +316,31 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 	}
 
 	@Override
+	protected FragmentSet testDeleteDesignLibraryFragmentSet_addFragmentSet()
+		throws Exception {
+
+		FragmentCollection fragmentCollection = _addFragmentCollection(
+			_depotEntry.getGroup());
+
+		return new FragmentSet() {
+			{
+				setExternalReferenceCode(
+					fragmentCollection::getExternalReferenceCode);
+			}
+		};
+	}
+
+	@Override
+	protected String
+			testDeleteDesignLibraryFragmentSet_getDesignLibraryExternalReferenceCode()
+		throws Exception {
+
+		Group group = _depotEntry.getGroup();
+
+		return group.getExternalReferenceCode();
+	}
+
+	@Override
 	protected Map<String, Map<String, String>>
 			testGetSiteFragmentSetsPage_getExpectedActions(
 				String siteExternalReferenceCode)
@@ -287,6 +356,25 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 
 		return fragmentSetResource.postSiteFragmentSet(
 			testGroup.getExternalReferenceCode(), fragmentSet);
+	}
+
+	private DepotEntry _addDepotEntry(int type) throws Exception {
+		return _depotEntryLocalService.addDepotEntry(
+			Collections.singletonMap(
+				LocaleUtil.getDefault(), RandomTestUtil.randomString()),
+			null, type,
+			ServiceContextTestUtil.getServiceContext(
+				testGroup.getGroupId(), TestPropsValues.getUserId()));
+	}
+
+	private FragmentCollection _addFragmentCollection(Group group)
+		throws Exception {
+
+		return _fragmentCollectionLocalService.addFragmentCollection(
+			null, TestPropsValues.getUserId(), group.getGroupId(),
+			RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+			ServiceContextTestUtil.getServiceContext(
+				group.getGroupId(), TestPropsValues.getUserId()));
 	}
 
 	private void _assertFragmentCollection(FragmentSet fragmentSet, Group group)
@@ -323,8 +411,8 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 	}
 
 	private void _assertProblemException(
-			String status, String titleKey,
-			UnsafeRunnable<Exception> unsafeRunnable, Object... titleArguments)
+			String status, String title,
+			UnsafeRunnable<Exception> unsafeRunnable)
 		throws Exception {
 
 		try {
@@ -336,10 +424,7 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 			Problem problem = problemException.getProblem();
 
 			Assert.assertEquals(status, problem.getStatus());
-			Assert.assertEquals(
-				_language.format(
-					LocaleUtil.getDefault(), titleKey, titleArguments),
-				problem.getTitle());
+			Assert.assertEquals(title, problem.getTitle());
 		}
 	}
 
@@ -402,6 +487,54 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 				fetchFragmentCollectionByExternalReferenceCode(
 					fragmentSet2.getExternalReferenceCode(),
 					irrelevantGroup.getGroupId()));
+	}
+
+	private void _testDeleteDesignLibraryFragmentSetWithAssetLibraryExternalReferenceCodeProblemException()
+		throws Exception {
+
+		DepotEntry assetLibraryDepotEntry = _addDepotEntry(
+			DepotConstants.TYPE_ASSET_LIBRARY);
+
+		Group group = assetLibraryDepotEntry.getGroup();
+
+		_assertProblemException(
+			"BAD_REQUEST", null,
+			() -> fragmentSetResource.deleteDesignLibraryFragmentSet(
+				group.getExternalReferenceCode(),
+				RandomTestUtil.randomString()));
+	}
+
+	private void _testDeleteDesignLibraryFragmentSetWithFeatureFlagDisabledProblemException()
+		throws Exception {
+
+		try (PropsTemporarySwapper propsTemporarySwapper =
+				new PropsTemporarySwapper(
+					FeatureFlagConstants.getKey("LPD-57283"),
+					Boolean.FALSE.toString())) {
+
+			Group group = _depotEntry.getGroup();
+
+			FragmentCollection fragmentCollection = _addFragmentCollection(
+				group);
+
+			_assertProblemException(
+				"BAD_REQUEST",
+				"Feature flag LPD-57283 is disabled for company " +
+					testCompany.getCompanyId(),
+				() -> fragmentSetResource.deleteDesignLibraryFragmentSet(
+					group.getExternalReferenceCode(),
+					fragmentCollection.getExternalReferenceCode()));
+		}
+	}
+
+	private void _testDeleteDesignLibraryFragmentSetWithSiteExternalReferenceCodeProblemException()
+		throws Exception {
+
+		_assertProblemException(
+			"BAD_REQUEST", null,
+			() -> fragmentSetResource.deleteDesignLibraryFragmentSet(
+				testGroup.getExternalReferenceCode(),
+				RandomTestUtil.randomString()));
 	}
 
 	private void _testPostSiteFragmentSetBatch() throws Exception {
@@ -561,6 +694,12 @@ public class FragmentSetResourceTest extends BaseFragmentSetResourceTestCase {
 	private static final long _EXPORT_POLL_INTERVAL = 500;
 
 	private static final long _EXPORT_TIMEOUT = 60000;
+
+	@DeleteAfterTestRun
+	private DepotEntry _depotEntry;
+
+	@Inject
+	private DepotEntryLocalService _depotEntryLocalService;
 
 	@Inject
 	private FragmentCollectionLocalService _fragmentCollectionLocalService;

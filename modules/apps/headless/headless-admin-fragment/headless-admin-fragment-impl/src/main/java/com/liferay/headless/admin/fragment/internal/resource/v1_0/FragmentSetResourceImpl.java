@@ -5,6 +5,7 @@
 
 package com.liferay.headless.admin.fragment.internal.resource.v1_0;
 
+import com.liferay.depot.constants.DepotConstants;
 import com.liferay.fragment.model.FragmentCollection;
 import com.liferay.fragment.service.FragmentCollectionLocalService;
 import com.liferay.fragment.service.FragmentCollectionService;
@@ -19,6 +20,7 @@ import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.service.ServiceContextThreadLocal;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.odata.entity.EntityModel;
+import com.liferay.portal.vulcan.crud.VulcanCRUDItemDelegate;
 import com.liferay.portal.vulcan.dto.converter.DTOConverter;
 import com.liferay.portal.vulcan.dto.converter.DTOConverterRegistry;
 import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
@@ -39,9 +41,31 @@ import org.osgi.service.component.annotations.ServiceScope;
  */
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/fragment-set.properties",
+	property = {
+		"crud.entity.class.name=com.liferay.headless.admin.fragment.dto.v1_0.FragmentSet",
+		"crud.item.delegate=true"
+	},
 	scope = ServiceScope.PROTOTYPE, service = FragmentSetResource.class
 )
-public class FragmentSetResourceImpl extends BaseFragmentSetResourceImpl {
+public class FragmentSetResourceImpl
+	extends BaseFragmentSetResourceImpl
+	implements VulcanCRUDItemDelegate<FragmentSet> {
+
+	@Override
+	public void deleteDesignLibraryFragmentSet(
+			String designLibraryExternalReferenceCode,
+			String fragmentSetExternalReferenceCode)
+		throws Exception {
+
+		EnabledUtil.checkDesignLibrariesEnabled(contextCompany);
+
+		_fragmentCollectionService.deleteFragmentCollection(
+			fragmentSetExternalReferenceCode,
+			GroupUtil.getDepotGroupId(
+				contextCompany.getCompanyId(),
+				designLibraryExternalReferenceCode,
+				DepotConstants.TYPE_DESIGN_LIBRARY));
+	}
 
 	@Override
 	public void deleteSiteFragmentSet(
@@ -61,6 +85,14 @@ public class FragmentSetResourceImpl extends BaseFragmentSetResourceImpl {
 	@Override
 	public EntityModel getEntityModel(MultivaluedMap multivaluedMap) {
 		return _entityModel;
+	}
+
+	@Override
+	public FragmentSet getItem(Long id) throws Exception {
+		EnabledUtil.checkDesignLibrariesEnabled(contextCompany);
+
+		return _toFragmentSet(
+			_fragmentCollectionService.getFragmentCollection(id));
 	}
 
 	@Override

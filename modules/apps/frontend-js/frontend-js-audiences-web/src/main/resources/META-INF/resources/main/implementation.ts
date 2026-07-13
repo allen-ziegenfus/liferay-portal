@@ -19,6 +19,12 @@ export function clear(): void {
 	store.clear();
 }
 
+export function clearHandlers(): void {
+	for (const audienceId of Object.keys(handlers)) {
+		delete handlers[audienceId];
+	}
+}
+
 export function get(): Set<AudienceId> {
 	return store.getAudienceIds();
 }
@@ -116,10 +122,6 @@ export async function runHandlers(): Promise<void> {
 				);
 			}
 		}
-	}
-
-	for (const key of Object.keys(handlers)) {
-		delete handlers[key];
 	}
 }
 
