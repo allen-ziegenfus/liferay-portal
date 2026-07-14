@@ -9,6 +9,7 @@ import ClayIcon from '@clayui/icon';
 import ClayLoadingIndicator from '@clayui/loading-indicator';
 import {ClayPaginationBarWithBasicItems} from '@clayui/pagination-bar';
 import {toThousands} from '@liferay/analytics-reports-js-components-web';
+import {BarChart} from '@liferay/frontend-js-charts-web';
 import {sub} from 'frontend-js-web';
 import React, {useContext, useEffect, useMemo, useState} from 'react';
 
@@ -45,7 +46,7 @@ export function AssetConsumption() {
 	const [loading, setLoading] = useState(true);
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(20);
-	const [viewType, setViewType] = useState<ViewType>('table');
+	const [viewType, setViewType] = useState<ViewType>('chart');
 
 	const depotEntryIds = useMemo(
 		() => (space.value === 'all' ? undefined : [space.value]),
@@ -109,7 +110,22 @@ export function AssetConsumption() {
 		}
 
 		if (viewType === 'chart') {
-			return null;
+			return (
+				<BarChart
+					data={items.map(({count, title}) => ({
+						label:
+							title ||
+							sub(Liferay.Language.get('no-x'), groupByLabel),
+						value: count,
+					}))}
+					legend="none"
+					orientation="horizontal"
+					rounded
+					size="inline"
+					title={Liferay.Language.get('asset-consumption')}
+					track
+				/>
+			);
 		}
 
 		return (

@@ -3011,6 +3011,54 @@ components:
                         -   WidgetPageSpecification
                     type: string
             type: object
+        PageSpecificationVersion:
+            description:
+                A page specification version of a content page.
+            properties:
+                creator:
+                    $ref: ../../headless-admin-user/headless-admin-user-impl/rest-openapi.yaml#Creator
+                    description:
+                        The page specification version's creator. It is not returned by default. It can be embedded via nestedFields.
+                dateCreated:
+                    description:
+                        The page specification version's creation date.
+                    format: date-time
+                    type: string
+                dateModified:
+                    description:
+                        The last time the page specification version changed.
+                    format: date-time
+                    type: string
+                externalReferenceCode:
+                    description:
+                        The page specification version's external reference code.
+                    type: string
+                name:
+                    description:
+                        The page specification version's name.
+                    type: string
+                pageSpecification:
+                    $ref: "#/components/schemas/PageSpecification"
+                    description:
+                        The page specification version's page specification. It is not returned by default. It can be embedded via nestedFields.
+                status:
+                    description:
+                        The page specification version's status.
+                    enum:
+                        -   Approved
+                        -   Draft
+                    type: string
+                statusDate:
+                    description:
+                        The page specification version's status date.
+                    format: date-time
+                    type: string
+                version:
+                    description:
+                        The page specification version's version.
+                    format: int32
+                    type: integer
+            type: object
         PageTemplate:
             discriminator:
                 mapping:
@@ -3592,6 +3640,12 @@ components:
                     # @review
                     description:
                         Settings of the page, such as SEO or OpenGraph.
+                pageSpecificationVersions:
+                    description:
+                        The page's page specification versions. This field is not returned by default. It can be requested via nestedFields.
+                    items:
+                        $ref: "#/components/schemas/PageSpecificationVersion"
+                    type: array
                 pageSpecifications:
                     # @review
                     description:
@@ -3855,6 +3909,10 @@ components:
                     description:
                         The style book's preview file entry external reference code.
                     type: string
+                scope:
+                    description:
+                        The style book's scope, identifying its owning site or asset library.
+                    type: scope
                 themeId:
                     description:
                         The theme id or the themeCSS client extension external reference code this style book is based on.
@@ -7456,6 +7514,52 @@ paths:
                                 $ref: "#/components/schemas/PageSpecification"
             # @review
             tags: ["PageSpecification"]
+    "/sites/{siteExternalReferenceCode}/page-specifications/{pageSpecificationExternalReferenceCode}/style-books":
+        get:
+            description:
+                Retrieves the style books that can be assigned to the page specification.
+            operationId: getSitePageSpecificationStyleBooksPage
+            parameters:
+                -   in: path
+                    name: siteExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: path
+                    name: pageSpecificationExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: query
+                    name: nestedFields
+                    schema:
+                        type: string
+                -   in: query
+                    name: page
+                    schema:
+                        type: integer
+                -   in: query
+                    name: pageSize
+                    schema:
+                        type: integer
+                -   in: query
+                    name: search
+                    schema:
+                        type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/StyleBook"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/StyleBook"
+                                type: array
+            tags: ["StyleBook"]
     "/sites/{siteExternalReferenceCode}/page-template-sets":
         get:
             # @review
@@ -8595,6 +8699,134 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/FriendlyUrlHistory"
             tags: ["FriendlyUrlHistory"]
+    "/sites/{siteExternalReferenceCode}/site-pages/{sitePageExternalReferenceCode}/page-specification-versions":
+        get:
+            description:
+                Retrieves all the page specification versions of a site page.
+            operationId: getSiteSitePagePageSpecificationVersionsPage
+            parameters:
+                -   in: path
+                    name: siteExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: path
+                    name: sitePageExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: query
+                    name: fields
+                    schema:
+                        type: string
+                -   in: query
+                    name: nestedFields
+                    schema:
+                        type: string
+                -   in: query
+                    name: restrictFields
+                    schema:
+                        type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/PageSpecificationVersion"
+                                type: array
+                        application/xml:
+                            schema:
+                                items:
+                                    $ref: "#/components/schemas/PageSpecificationVersion"
+                                type: array
+            tags: ["PageSpecificationVersion"]
+    "/sites/{siteExternalReferenceCode}/site-pages/{sitePageExternalReferenceCode}/page-specification-versions/{pageSpecificationVersionExternalReferenceCode}":
+        get:
+            description:
+                Retrieves a specific page specification version of a site page.
+            operationId: getSiteSitePagePageSpecificationVersion
+            parameters:
+                -   in: path
+                    name: siteExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: path
+                    name: sitePageExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: path
+                    name: pageSpecificationVersionExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: query
+                    name: fields
+                    schema:
+                        type: string
+                -   in: query
+                    name: nestedFields
+                    schema:
+                        type: string
+                -   in: query
+                    name: restrictFields
+                    schema:
+                        type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PageSpecificationVersion"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/PageSpecificationVersion"
+            tags: ["PageSpecificationVersion"]
+    "/sites/{siteExternalReferenceCode}/site-pages/{sitePageExternalReferenceCode}/page-specification-versions/{pageSpecificationVersionExternalReferenceCode}/page-specification":
+        get:
+            description:
+                Retrieves the page specification of a page specification version.
+            operationId: getSiteSitePagePageSpecificationVersionPageSpecification
+            parameters:
+                -   in: path
+                    name: siteExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: path
+                    name: sitePageExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: path
+                    name: pageSpecificationVersionExternalReferenceCode
+                    required: true
+                    schema:
+                        type: string
+                -   in: query
+                    name: fields
+                    schema:
+                        type: string
+                -   in: query
+                    name: nestedFields
+                    schema:
+                        type: string
+                -   in: query
+                    name: restrictFields
+                    schema:
+                        type: string
+            responses:
+                200:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PageSpecification"
+                        application/xml:
+                            schema:
+                                $ref: "#/components/schemas/PageSpecification"
+            tags: ["PageSpecification"]
     "/sites/{siteExternalReferenceCode}/site-pages/{sitePageExternalReferenceCode}/page-specifications":
         get:
             # @review

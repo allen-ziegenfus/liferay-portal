@@ -114,14 +114,14 @@ public class PBKDF2PasswordEncryptor implements PasswordEncryptor {
 		}
 	}
 
-	private static final int _KEY_SIZE = 160;
+	private static final int _KEY_SIZE = 256;
 
 	private static final int _ROUNDS = 1300000;
 
 	private static final int _SALT_BYTES_LENGTH = 16;
 
 	private static final Pattern _pattern = Pattern.compile(
-		"^.*/?([0-9]+)?/([0-9]+)$");
+		"^[^/]*(?:/([0-9]+))?/([0-9]+)$");
 
 	private static class PBKDF2EncryptionConfiguration {
 
@@ -140,8 +140,10 @@ public class PBKDF2PasswordEncryptor implements PasswordEncryptor {
 					_rounds = GetterUtil.getInteger(matcher.group(2), _ROUNDS);
 				}
 
-				BigEndianCodec.putLong(
-					_saltBytes, 0, SecureRandomUtil.nextLong());
+				for (int i = 0; i < _SALT_BYTES_LENGTH; i += 8) {
+					BigEndianCodec.putLong(
+						_saltBytes, i, SecureRandomUtil.nextLong());
+				}
 			}
 			else {
 				ByteBuffer byteBuffer = ByteBuffer.wrap(

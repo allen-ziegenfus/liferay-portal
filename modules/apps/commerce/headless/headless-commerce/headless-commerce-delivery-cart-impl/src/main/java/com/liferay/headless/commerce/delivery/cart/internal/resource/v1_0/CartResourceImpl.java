@@ -6,11 +6,14 @@
 package com.liferay.headless.commerce.delivery.cart.internal.resource.v1_0;
 
 import com.liferay.account.constants.AccountConstants;
+import com.liferay.account.constants.AccountEntryValidatorConstants;
 import com.liferay.account.model.AccountEntry;
 import com.liferay.account.service.AccountEntryLocalService;
 import com.liferay.account.validator.AccountEntryValidatorRegistry;
 import com.liferay.account.validator.AccountEntryValidatorResult;
+import com.liferay.commerce.configuration.CommerceAccountEntryValidationConfiguration;
 import com.liferay.commerce.configuration.CommerceOrderCheckoutConfiguration;
+import com.liferay.commerce.constants.CommerceAccountEntryValidationConstants;
 import com.liferay.commerce.constants.CommerceAddressConstants;
 import com.liferay.commerce.constants.CommerceConstants;
 import com.liferay.commerce.constants.CommerceOrderActionKeys;
@@ -127,6 +130,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -825,38 +829,59 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 		if (FeatureFlagManagerUtil.isEnabled(
 				commerceOrder.getCompanyId(), "LPD-89850")) {
 
-			for (AccountEntryValidatorResult accountEntryValidatorResult :
-					_accountEntryValidatorRegistry.validate(
-						_accountEntryLocalService.fetchAccountEntry(
-							commerceOrder.getCommerceAccountId()),
-						JSONUtil.put(
-							"billingAddressId",
-							commerceOrder.getBillingAddressId()
-						).put(
-							"commerceOrderId",
-							commerceOrder.getCommerceOrderId()
-						).put(
-							"shippingAddressId",
-							commerceOrder.getShippingAddressId()
-						))) {
+			CommerceAccountEntryValidationConfiguration
+				commerceAccountEntryValidationConfiguration =
+					_configurationProvider.getConfiguration(
+						CommerceAccountEntryValidationConfiguration.class,
+						new GroupServiceSettingsLocator(
+							commerceOrder.getGroupId(),
+							CommerceConstants.
+								SERVICE_NAME_COMMERCE_ACCOUNT_ENTRY_VALIDATION));
 
-				if (accountEntryValidatorResult.isValid()) {
-					continue;
+			String validationMode =
+				commerceAccountEntryValidationConfiguration.validationMode();
+
+			if (!Objects.equals(
+					validationMode,
+					CommerceAccountEntryValidationConstants.
+						VALIDATION_MODE_DISABLED)) {
+
+				for (AccountEntryValidatorResult accountEntryValidatorResult :
+						_accountEntryValidatorRegistry.validate(
+							_accountEntryLocalService.fetchAccountEntry(
+								commerceOrder.getCommerceAccountId()),
+							JSONUtil.put(
+								"billingAddressId",
+								commerceOrder.getBillingAddressId()
+							).put(
+								"commerceOrderId",
+								commerceOrder.getCommerceOrderId()
+							).put(
+								"shippingAddressId",
+								commerceOrder.getShippingAddressId()
+							))) {
+
+					if (_isAccountValidationResultValid(
+							accountEntryValidatorResult, validationMode)) {
+
+						continue;
+					}
+
+					cart.setValid(() -> false);
+
+					if (Validator.isNotNull(
+							accountEntryValidatorResult.getResultMessage())) {
+
+						String errorMessage = _language.get(
+							contextAcceptLanguage.getPreferredLocale(),
+							accountEntryValidatorResult.getResultMessage());
+
+						cart.setErrorMessages(
+							() -> new String[] {errorMessage});
+					}
+
+					return cart;
 				}
-
-				cart.setValid(() -> false);
-
-				if (Validator.isNotNull(
-						accountEntryValidatorResult.getResultMessage())) {
-
-					String errorMessage = _language.get(
-						contextAcceptLanguage.getPreferredLocale(),
-						accountEntryValidatorResult.getResultMessage());
-
-					cart.setErrorMessages(() -> new String[] {errorMessage});
-				}
-
-				return cart;
 			}
 		}
 
@@ -1156,6 +1181,32 @@ public class CartResourceImpl extends BaseCartResourceImpl {
 				commerceOrder.getGroupId());
 
 		themeDisplay.setScopeGroupId(commerceChannel.getSiteGroupId());
+	}
+
+	private boolean _isAccountValidationResultValid(
+		AccountEntryValidatorResult accountEntryValidatorResult,
+		String validationMode) {
+
+		if (Objects.equals(
+				validationMode,
+				CommerceAccountEntryValidationConstants.
+					VALIDATION_MODE_ALLOW_ALL)) {
+
+			return true;
+		}
+
+		if (!accountEntryValidatorResult.isValid() ||
+			(Objects.equals(
+				validationMode,
+				CommerceAccountEntryValidationConstants.
+					VALIDATION_MODE_ALLOW_SUCCESSES_ONLY) &&
+			 AccountEntryValidatorConstants.RESULT_WARNING.equals(
+				 accountEntryValidatorResult.getResultStatus()))) {
+
+			return false;
+		}
+
+		return true;
 	}
 
 	private boolean _isValidDeliveryTerm(

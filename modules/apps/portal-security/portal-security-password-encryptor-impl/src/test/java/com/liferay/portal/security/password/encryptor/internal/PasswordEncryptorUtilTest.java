@@ -98,6 +98,22 @@ public class PasswordEncryptorUtilTest {
 	}
 
 	@Test
+	public void testEncryptBCryptWithFIPSMode() throws Exception {
+		String encryptedPassword = PasswordEncryptorUtil.encrypt(
+			PasswordEncryptor.TYPE_BCRYPT, RandomTestUtil.randomString(), null);
+
+		try (SafeCloseable safeCloseable =
+				PropsValuesTestUtil.swapWithSafeCloseable(
+					"FIPS_ENABLED", true)) {
+
+			Assert.assertThrows(
+				PwdEncryptorException.UnavailableAlgorithm.class,
+				() -> PasswordEncryptorUtil.encrypt(
+					RandomTestUtil.randomString(), encryptedPassword));
+		}
+	}
+
+	@Test
 	public void testEncryptCRYPT() throws Exception {
 		_runTests(
 			PasswordEncryptor.TYPE_UFC_CRYPT, "password", "SNbUMVY9kKQpY",
@@ -107,28 +123,19 @@ public class PasswordEncryptorUtilTest {
 	@Test
 	public void testEncryptFailure() throws Exception {
 		_testEncryptFailure(
-			"Some Nonexistent Algorithm", StringPool.BLANK, StringPool.BLANK);
-
-		_testEncryptFailure(null, null, null);
-
-		_testEncryptFailure(null, null, StringPool.BLANK);
-
-		_testEncryptFailure(null, StringPool.BLANK, null);
-
-		_testEncryptFailure(StringPool.BLANK, null, null);
-
-		_testEncryptFailure(StringPool.BLANK, null, StringPool.BLANK);
-
-		_testEncryptFailure(StringPool.BLANK, StringPool.BLANK, null);
-
-		_testEncryptFailure(null, StringPool.BLANK, StringPool.BLANK);
-
-		_testEncryptFailure(
-			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK);
-
-		_testEncryptFailure(
 			PasswordEncryptor.TYPE_SHA, "password",
 			"W6ph5Mm5Pz8GgiULbPgzG37mj9g=");
+		_testEncryptFailure(
+			RandomTestUtil.randomString(), StringPool.BLANK, StringPool.BLANK);
+		_testEncryptFailure(
+			StringPool.BLANK, StringPool.BLANK, StringPool.BLANK);
+		_testEncryptFailure(StringPool.BLANK, StringPool.BLANK, null);
+		_testEncryptFailure(StringPool.BLANK, null, StringPool.BLANK);
+		_testEncryptFailure(StringPool.BLANK, null, null);
+		_testEncryptFailure(null, StringPool.BLANK, StringPool.BLANK);
+		_testEncryptFailure(null, StringPool.BLANK, null);
+		_testEncryptFailure(null, null, StringPool.BLANK);
+		_testEncryptFailure(null, null, null);
 	}
 
 	@Test
@@ -257,6 +264,18 @@ public class PasswordEncryptorUtilTest {
 		_runTests(
 			PasswordEncryptor.TYPE_UFC_CRYPT, "password", "2lrTlR/pWPUOQ",
 			PasswordEncryptor.TYPE_UFC_CRYPT);
+	}
+
+	@Test
+	public void testEncryptUnavailableAlgorithm() throws Exception {
+		DefaultPasswordEncryptor defaultPasswordEncryptor =
+			new DefaultPasswordEncryptor();
+
+		Assert.assertThrows(
+			PwdEncryptorException.UnavailableAlgorithm.class,
+			() -> defaultPasswordEncryptor.encrypt(
+				RandomTestUtil.randomString(), RandomTestUtil.randomString(),
+				null, false));
 	}
 
 	@Test(expected = PwdEncryptorException.MustSetLegacyAlgorithmProperty.class)

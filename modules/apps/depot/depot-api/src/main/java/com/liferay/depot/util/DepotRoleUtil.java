@@ -11,6 +11,7 @@ import com.liferay.depot.service.DepotEntryLocalServiceUtil;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.model.Role;
+import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.ResourceBundleUtil;
@@ -40,8 +41,18 @@ public class DepotRoleUtil {
 	}
 
 	public static List<Role> filter(List<Role> roles, String subtype) {
-		if (Validator.isNull(subtype)) {
+		if (Validator.isNull(subtype) ||
+			!FeatureFlagManagerUtil.isEnabled(
+				CompanyThreadLocal.getCompanyId(), "LPD-96750")) {
+
 			return roles;
+		}
+
+		if (Objects.equals(
+				subtype, DepotRolesConstants.SUBTYPE_DESIGN_LIBRARY)) {
+
+			return ListUtil.filter(
+				roles, role -> Objects.equals(role.getSubtype(), subtype));
 		}
 
 		return ListUtil.filter(
@@ -164,6 +175,31 @@ public class DepotRoleUtil {
 				"asset-library-owners-are-super-users-of-their-asset-library-" +
 					"and-can-assign-asset-library-roles-to-users");
 		}
+		else if (Objects.equals(
+					DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR, name)) {
+
+			return ResourceBundleUtil.getString(
+				resourceBundle,
+				"design-library-administrators-are-super-users-of-their-" +
+					"design-library-but-cannot-make-other-users-into-design-" +
+						"library-administrators");
+		}
+		else if (Objects.equals(
+					DepotRolesConstants.DESIGN_LIBRARY_MEMBER, name)) {
+
+			return ResourceBundleUtil.getString(
+				resourceBundle,
+				"all-users-who-belong-to-a-design-library-have-this-role-" +
+					"within-that-design-library");
+		}
+		else if (Objects.equals(
+					DepotRolesConstants.DESIGN_LIBRARY_OWNER, name)) {
+
+			return ResourceBundleUtil.getString(
+				resourceBundle,
+				"design-library-owners-are-super-users-of-their-design-" +
+					"library-and-can-assign-design-library-roles-to-users");
+		}
 
 		return null;
 	}
@@ -198,6 +234,17 @@ public class DepotRoleUtil {
 				DepotRolesConstants.ASSET_LIBRARY_MEMBER, "space-member"
 			).put(
 				DepotRolesConstants.ASSET_LIBRARY_OWNER, "space-owner"
+			).put(
+				DepotRolesConstants.DESIGN_LIBRARY_ADMINISTRATOR,
+				"design-library-administrator"
+			).put(
+				DepotRolesConstants.DESIGN_LIBRARY_CONTENT_REVIEWER,
+				"design-library-content-reviewer"
+			).put(
+				DepotRolesConstants.DESIGN_LIBRARY_MEMBER,
+				"design-library-member"
+			).put(
+				DepotRolesConstants.DESIGN_LIBRARY_OWNER, "design-library-owner"
 			).build());
 	}
 

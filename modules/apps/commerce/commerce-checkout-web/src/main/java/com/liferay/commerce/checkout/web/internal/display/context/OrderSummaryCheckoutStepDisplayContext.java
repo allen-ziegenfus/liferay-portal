@@ -127,23 +127,8 @@ public class OrderSummaryCheckoutStepDisplayContext {
 	}
 
 	public AccountEntryValidatorResult getAccountEntryValidatorResult() {
-		List<AccountEntryValidatorResult> accountEntryValidatorResults =
-			(List<AccountEntryValidatorResult>)_httpServletRequest.getAttribute(
-				CommerceWebKeys.COMMERCE_ACCOUNT_VALIDATION_RESULTS);
-
-		if (accountEntryValidatorResults == null) {
-			return null;
-		}
-
-		for (AccountEntryValidatorResult accountEntryValidatorResult :
-				accountEntryValidatorResults) {
-
-			if (!accountEntryValidatorResult.isValid()) {
-				return accountEntryValidatorResult;
-			}
-		}
-
-		return null;
+		return (AccountEntryValidatorResult)_httpServletRequest.getAttribute(
+			CommerceWebKeys.COMMERCE_ACCOUNT_VALIDATION_RESULTS);
 	}
 
 	public CommerceOrder getCommerceOrder() {

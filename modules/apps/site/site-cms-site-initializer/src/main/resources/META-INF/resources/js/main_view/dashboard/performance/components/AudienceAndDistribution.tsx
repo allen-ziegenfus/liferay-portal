@@ -4,12 +4,14 @@
  */
 
 import ClayLayout from '@clayui/layout';
-import React, {useContext} from 'react';
+import {ChartState, MapChart, PieChart} from '@liferay/frontend-js-charts-web';
+import React, {useContext, useEffect, useMemo, useState} from 'react';
 
 import {BaseCard} from '../../common/BaseCard';
 import {SectionHeader} from '../../common/SectionHeader';
 import {PerformanceContext} from '../PerformanceContext';
 import PerformanceService from '../PerformanceService';
+import {PerformanceMetric} from '../types';
 import {DownloadButton} from './DownloadButton';
 
 export function AudienceAndDistribution() {
@@ -67,7 +69,35 @@ function Card({
 }) {
 	const {range, space} = useContext(PerformanceContext);
 
-	const depotEntryIds = space.value === 'all' ? undefined : [space.value];
+	const [metric, setMetric] = useState<PerformanceMetric>();
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const depotEntryIds = useMemo(
+		() => (space.value === 'all' ? undefined : [space.value]),
+		[space.value]
+	);
+
+	useEffect(() => {
+		async function fetchData() {
+			setLoading(true);
+
+			const {data, error} = await PerformanceService.getMetric({
+				depotEntryIds,
+				groupBy,
+				metricType: 'viewsMetric',
+				rangeKey: range.rangeKey,
+			});
+
+			setMetric(data ?? undefined);
+			setError(error);
+			setLoading(false);
+		}
+
+		fetchData();
+	}, [depotEntryIds, groupBy, range.rangeKey]);
+
+	const metrics = metric?.metrics ?? [];
 
 	return (
 		<BaseCard
@@ -81,9 +111,37 @@ function Card({
 					})}
 				/>
 			}
+			className="h-100"
 			description={description}
 			title={title}
 			uppercaseTitle={false}
-		/>
+		>
+			<ChartState
+				empty={!loading && !error && !metrics.length}
+				error={error}
+				loading={loading}
+			>
+				{groupBy === 'categories' ? (
+					<PieChart
+						data={metrics.map(({value, valueKey}) => ({
+							label: valueKey,
+							value,
+						}))}
+						legend="table"
+						title=""
+					/>
+				) : (
+					<MapChart
+						data={metrics.map(({value, valueKey}) => ({
+							country: valueKey,
+							value,
+						}))}
+						legend="list"
+						title=""
+						variant="choropleth"
+					/>
+				)}
+			</ChartState>
+		</BaseCard>
 	);
 }
