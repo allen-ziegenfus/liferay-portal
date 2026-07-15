@@ -1252,3 +1252,338 @@ test(
 		});
 	}
 );
+
+test(
+	'All section can be filtered by Category',
+	{tag: ['@LPD-85551', '@LPD-87956']},
+	async ({apiHelpers, assetsPage, page}) => {
+		const applicationName = 'cms/basic-web-contents';
+		const categorizedTitle = getRandomString();
+		const categoryName = getRandomString();
+		const uncategorizedTitle = getRandomString();
+		const vocabularyName = getRandomString();
+
+		await test.step('Create a category and two contents, one categorized', async () => {
+			const site =
+				await apiHelpers.headlessAdminUser.getSiteByFriendlyUrlPath(
+					'cms'
+				);
+
+			const vocabulary =
+				await apiHelpers.headlessAdminTaxonomy.postSiteTaxonomyVocabulary(
+					{
+						assetLibraries: [{id: -1}],
+						assetTypes: [
+							{
+								required: false,
+								subtype: 'AllAssetSubtypes',
+								type: 'AllAssetTypes',
+							},
+						],
+						name: vocabularyName,
+						siteId: site.id,
+						visibilityType: 'PUBLIC',
+					}
+				);
+
+			const category =
+				await apiHelpers.headlessAdminTaxonomy.postTaxonomyVocabularyTaxonomyCategory(
+					{
+						name: categoryName,
+						vocabularyId: vocabulary.id,
+					}
+				);
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					taxonomyCategoryIds: [category.id],
+					title: categorizedTitle,
+				},
+				applicationName,
+				'Default'
+			);
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					title: uncategorizedTitle,
+				},
+				applicationName,
+				'Default'
+			);
+		});
+
+		await test.step('Both contents are visible before filtering', async () => {
+			await assetsPage.gotoAll();
+
+			await expect(assetsPage.getItem(categorizedTitle)).toBeVisible();
+			await expect(assetsPage.getItem(uncategorizedTitle)).toBeVisible();
+		});
+
+		await test.step('Filter by Category and check only the categorized content is visible', async () => {
+			await applyFDSSelectionFilter(page, {
+				filter: 'Category',
+				value: `${categoryName} (${vocabularyName})`,
+			});
+
+			await expect(assetsPage.getItem(categorizedTitle)).toBeVisible();
+			await expect(assetsPage.getItem(uncategorizedTitle)).toBeHidden();
+		});
+	}
+);
+
+test(
+	'All section can be filtered by Tags',
+	{tag: ['@LPD-85551', '@LPD-87956']},
+	async ({apiHelpers, assetsPage, page}) => {
+		const applicationName = 'cms/basic-web-contents';
+		const taggedTitle = getRandomString();
+		const tagName = getRandomString();
+		const untaggedTitle = getRandomString();
+
+		await test.step('Create a tag and two contents, one tagged', async () => {
+			const site =
+				await apiHelpers.headlessAdminUser.getSiteByFriendlyUrlPath(
+					'cms'
+				);
+
+			await apiHelpers.headlessAdminTaxonomy.postSiteKeyword({
+				name: tagName,
+				siteId: site.id,
+			});
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					keywords: [tagName],
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					title: taggedTitle,
+				},
+				applicationName,
+				'Default'
+			);
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					title: untaggedTitle,
+				},
+				applicationName,
+				'Default'
+			);
+		});
+
+		await test.step('Both contents are visible before filtering', async () => {
+			await assetsPage.gotoAll();
+
+			await expect(assetsPage.getItem(taggedTitle)).toBeVisible();
+			await expect(assetsPage.getItem(untaggedTitle)).toBeVisible();
+		});
+
+		await test.step('Filter by Tags and check only the tagged content is visible', async () => {
+			await applyFDSSelectionFilter(page, {
+				filter: 'Tags',
+				value: tagName,
+			});
+
+			await expect(assetsPage.getItem(taggedTitle)).toBeVisible();
+			await expect(assetsPage.getItem(untaggedTitle)).toBeHidden();
+		});
+	}
+);
+
+test(
+	'All section can be filtered by Author',
+	{tag: ['@LPD-85551', '@LPD-87956']},
+	async ({apiHelpers, assetsPage, page}) => {
+		const applicationName = 'cms/basic-web-contents';
+		const authorATitle = getRandomString();
+		const authorBTitle = getRandomString();
+
+		let authorAFullName: string;
+
+		await test.step('Create a Space with two content authors', async () => {
+			const space =
+				await apiHelpers.headlessAssetLibrary.createAssetLibrary({
+					name: getRandomString(),
+					settings: {},
+					type: 'Space',
+				});
+
+			const authorA =
+				await apiHelpers.headlessAdminUser.postUserAccount();
+			authorAFullName = `${authorA.givenName} ${authorA.familyName}`;
+
+			userData[authorA.alternateName] = {
+				name: authorA.givenName,
+				password: 'test',
+				surname: authorA.familyName,
+			};
+
+			await apiHelpers.headlessAssetLibrary.putAssetLibraryUserAccount(
+				space.externalReferenceCode,
+				authorA.externalReferenceCode
+			);
+			await apiHelpers.headlessAssetLibrary.putAssetLibraryUserAccountRoles(
+				space.externalReferenceCode,
+				authorA.externalReferenceCode,
+				['Asset Library Administrator']
+			);
+
+			const authorB =
+				await apiHelpers.headlessAdminUser.postUserAccount();
+
+			userData[authorB.alternateName] = {
+				name: authorB.givenName,
+				password: 'test',
+				surname: authorB.familyName,
+			};
+
+			await apiHelpers.headlessAssetLibrary.putAssetLibraryUserAccount(
+				space.externalReferenceCode,
+				authorB.externalReferenceCode
+			);
+			await apiHelpers.headlessAssetLibrary.putAssetLibraryUserAccountRoles(
+				space.externalReferenceCode,
+				authorB.externalReferenceCode,
+				['Asset Library Administrator']
+			);
+
+			await performUserSwitchViaApi(page, authorA.alternateName);
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					title: authorATitle,
+				},
+				applicationName,
+				space.name
+			);
+
+			await performUserSwitchViaApi(page, authorB.alternateName);
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					title: authorBTitle,
+				},
+				applicationName,
+				space.name
+			);
+
+			await performUserSwitchViaApi(page, authorA.alternateName);
+		});
+
+		await test.step('Both contents are visible before filtering', async () => {
+			await assetsPage.gotoAll();
+
+			await expect(assetsPage.getItem(authorATitle)).toBeVisible();
+			await expect(assetsPage.getItem(authorBTitle)).toBeVisible();
+		});
+
+		await test.step("Filter by Author and check only that author's content is visible", async () => {
+			await applyFDSSelectionFilter(page, {
+				filter: 'Author',
+				value: authorAFullName,
+			});
+
+			await expect(assetsPage.getItem(authorATitle)).toBeVisible();
+			await expect(assetsPage.getItem(authorBTitle)).toBeHidden();
+		});
+	}
+);
+
+test(
+	'All section can be filtered by Type',
+	{tag: ['@LPD-85551', '@LPD-87956', '@LPD-97359']},
+	async ({apiHelpers, assetsPage, page}) => {
+
+		// LPD-97359: the CMS Type filter (objectDefinitionExternalReferenceCode)
+		// returns "No Results Found" for a valid type, in both the Recycle Bin
+		// and the All section. Recorded as an expected failure until the fix
+		// lands, at which point this test turns green and test.fail() is removed.
+
+		test.fail();
+
+		const documentTitle = getRandomString();
+		const webContentTitle = getRandomString();
+
+		await test.step('Create one web content and one document', async () => {
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					title: webContentTitle,
+				},
+				'cms/basic-web-contents',
+				'Default'
+			);
+
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					file: {
+						fileBase64: _PNG_BASE64,
+						name: `${documentTitle}.png`,
+					},
+					objectEntryFolderExternalReferenceCode: 'L_FILES',
+					title: documentTitle,
+				},
+				'cms/basic-documents',
+				'Default'
+			);
+		});
+
+		await test.step('Both are visible before filtering', async () => {
+			await assetsPage.gotoAll();
+
+			await expect(assetsPage.getItem(webContentTitle)).toBeVisible();
+			await expect(assetsPage.getItem(documentTitle)).toBeVisible();
+		});
+
+		await test.step('Filtering by Type Basic Web Content shows only the web content', async () => {
+			await applyFDSSelectionFilter(page, {
+				filter: 'Type',
+				value: 'Basic Web Content',
+			});
+
+			await expect(assetsPage.getItem(webContentTitle)).toBeVisible({
+				timeout: 5000,
+			});
+			await expect(assetsPage.getItem(documentTitle)).toBeHidden();
+		});
+	}
+);
+
+test(
+	'All section renders content details in Cards view',
+	{tag: ['@LPD-85551', '@LPD-87956']},
+	async ({apiHelpers, assetsPage}) => {
+		const contentTitle = getRandomString();
+
+		await test.step('Create a content', async () => {
+			await apiHelpers.objectEntry.postObjectEntry(
+				{
+					objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+					title: contentTitle,
+				},
+				'cms/basic-web-contents',
+				'Default'
+			);
+		});
+
+		await test.step('Switch to Cards view and check the card details', async () => {
+			await assetsPage.gotoAll();
+
+			await assetsPage.changeVisualizationMode('Cards');
+
+			const card = assetsPage.getCardItem(contentTitle);
+
+			await expect(card).toBeVisible();
+			await expect(
+				card.getByRole('link', {name: contentTitle})
+			).toBeVisible();
+			await expect(
+				card.getByText('Approved', {exact: true})
+			).toBeVisible();
+		});
+	}
+);

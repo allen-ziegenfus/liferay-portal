@@ -657,6 +657,24 @@ public class LayoutReferencesExportImportContentProcessorTest {
 	}
 
 	@Test
+	@TestInfo("LPD-97694")
+	public void testValidateContentRelativePrivatePageURLWithVirtualHost()
+		throws Exception {
+
+		Group group = GroupTestUtil.addGroup();
+
+		GroupTestUtil.addLayoutSetVirtualHost(group, false);
+		GroupTestUtil.addLayoutSetVirtualHost(group, true);
+
+		Layout layout = LayoutTestUtil.addTypePortletLayout(group, true);
+
+		_layoutReferencesExportImportContentProcessor.validateContentReferences(
+			group.getGroupId(),
+			StringBundler.concat(
+				_CONTENT_PREFIX, layout.getFriendlyURL(), _CONTENT_POSTFIX));
+	}
+
+	@Test
 	public void testValidateContentRelativePublicDefaultPageURLWithLocale()
 		throws Exception {
 
