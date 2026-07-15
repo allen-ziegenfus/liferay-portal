@@ -64,12 +64,21 @@ public abstract class BaseConfigurationFactory {
 								properties, companyId, externalReferenceCode);
 						});
 
+					// LPP-64799: Register for re-resolution so that scopes whose
+					// provider (e.g. a custom Object or DataSet REST application)
+					// registers AFTER this activation are picked up instead of
+					// being silently dropped. See ScopeProviderReResolver.
+
+					_scopeProviderReResolver.register(this);
+
 					return null;
 				}));
 	}
 
 	@Deactivate
 	protected void deactivate(Integer reason) throws PortalException {
+		_scopeProviderReResolver.unregister(this);
+
 		if ((oAuth2Application == null) ||
 			(reason !=
 				ComponentConstants.DEACTIVATION_REASON_CONFIGURATION_DELETED)) {
@@ -248,9 +257,36 @@ public abstract class BaseConfigurationFactory {
 			_configMapName);
 	}
 
+	protected void reResolveScopes() {
+		OAuth2Application curOAuth2Application = oAuth2Application;
+		List<String> curScopeAliasesList = _scopeAliasesList;
+
+		if ((curOAuth2Application == null) || (curScopeAliasesList == null)) {
+			return;
+		}
+
+		try {
+			ConfigurationFactoryUtil.executeAsCompany(
+				companyLocalService,
+				HashMapBuilder.<String, Object>put(
+					"companyId", curOAuth2Application.getCompanyId()
+				).build(),
+				companyId -> updateScopes(
+					curOAuth2Application, curScopeAliasesList));
+		}
+		catch (Exception exception) {
+			getLog().error("Unable to re-resolve scopes", exception);
+		}
+	}
+
 	protected void updateScopes(
 			OAuth2Application oAuth2Application, List<String> scopeAliasesList)
 		throws Exception {
+
+		// LPP-64799: Remember the declared scope aliases so re-resolution can
+		// re-run this method when a scope provider registers later.
+
+		_scopeAliasesList = scopeAliasesList;
 
 		boolean update = true;
 
@@ -307,6 +343,9 @@ public abstract class BaseConfigurationFactory {
 	@Reference
 	protected UserLocalService userLocalService;
 
+	@Reference
+	private ScopeProviderReResolver _scopeProviderReResolver;
+
 	private static final Snapshot<PortalK8sConfigMapModifier>
 		_portalK8sConfigMapModifierSnapshot = new Snapshot<>(
 			BaseConfigurationFactory.class, PortalK8sConfigMapModifier.class,
@@ -315,6 +354,7 @@ public abstract class BaseConfigurationFactory {
 	private volatile String _configMapName;
 	private volatile Map<String, String> _extensionProperties;
 	private volatile String _projectName;
+	private volatile List<String> _scopeAliasesList;
 	private volatile String _virtualInstanceId;
 
 }
