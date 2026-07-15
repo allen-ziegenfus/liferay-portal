@@ -26,8 +26,11 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Http;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -70,6 +73,8 @@ public abstract class BaseConfigurationFactory {
 
 	@Deactivate
 	protected void deactivate(Integer reason) throws PortalException {
+		_scopeProviderReResolver.unregister(this);
+
 		if ((oAuth2Application == null) ||
 			(reason !=
 				ComponentConstants.DEACTIVATION_REASON_CONFIGURATION_DELETED)) {
@@ -284,6 +289,132 @@ public abstract class BaseConfigurationFactory {
 				oAuth2Application.getUserId(), oAuth2Application.getUserName(),
 				oAuth2Application.getOAuth2ApplicationId(), scopeAliasesList);
 		}
+
+		// LPP-64799: Remember the declared aliases and track which ones have no
+		// registered provider yet, so they can be applied later (when the
+		// provider registers) without re-activating this component.
+
+		_scopeAliasesList = scopeAliasesList;
+
+		_setMissingScopeAliases(
+			oAuth2Application,
+			_getMissingScopeAliases(oAuth2Application, scopeAliasesList));
+	}
+
+	protected void reResolveScopes() {
+		OAuth2Application curOAuth2Application = oAuth2Application;
+		List<String> curScopeAliasesList = _scopeAliasesList;
+
+		if ((curOAuth2Application == null) || (curScopeAliasesList == null)) {
+			return;
+		}
+
+		List<String> missingScopeAliases = _missingScopeAliases;
+
+		if ((missingScopeAliases == null) || missingScopeAliases.isEmpty()) {
+			return;
+		}
+
+		try {
+			ConfigurationFactoryUtil.executeAsCompany(
+				companyLocalService,
+				HashMapBuilder.<String, Object>put(
+					"companyId", curOAuth2Application.getCompanyId()
+				).build(),
+				companyId -> {
+					List<String> newMissingScopeAliases =
+						_getMissingScopeAliases(
+							curOAuth2Application, curScopeAliasesList);
+
+					// Only write when a previously missing scope has actually
+					// become resolvable. This avoids the redundant
+					// OAuth2ApplicationScopeAliases / OAuth2ScopeGrant churn that
+					// motivated LPS-192126, and it never re-applies (and so never
+					// transiently drops a scope) when nothing has been resolved.
+
+					if (!_hasNewlyResolvedScopeAlias(
+							missingScopeAliases, newMissingScopeAliases)) {
+
+						return;
+					}
+
+					oAuth2ApplicationLocalService.updateScopeAliases(
+						curOAuth2Application.getUserId(),
+						curOAuth2Application.getUserName(),
+						curOAuth2Application.getOAuth2ApplicationId(),
+						curScopeAliasesList);
+
+					_setMissingScopeAliases(
+						curOAuth2Application, newMissingScopeAliases);
+				});
+		}
+		catch (Exception exception) {
+			getLog().error("Unable to re-resolve scopes", exception);
+		}
+	}
+
+	private List<String> _getMissingScopeAliases(
+		OAuth2Application oAuth2Application, List<String> scopeAliasesList) {
+
+		long companyId = oAuth2Application.getCompanyId();
+
+		List<String> missingScopeAliases = new ArrayList<>();
+
+		for (String scopeAlias : scopeAliasesList) {
+			Collection<?> liferayOAuth2Scopes =
+				scopeLocator.getLiferayOAuth2Scopes(companyId, scopeAlias);
+
+			if (liferayOAuth2Scopes.isEmpty()) {
+				missingScopeAliases.add(scopeAlias);
+			}
+		}
+
+		return missingScopeAliases;
+	}
+
+	private boolean _hasNewlyResolvedScopeAlias(
+		List<String> missingScopeAliases,
+		List<String> newMissingScopeAliases) {
+
+		for (String scopeAlias : missingScopeAliases) {
+			if (!newMissingScopeAliases.contains(scopeAlias)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private void _setMissingScopeAliases(
+		OAuth2Application oAuth2Application, List<String> missingScopeAliases) {
+
+		List<String> previousMissingScopeAliases = _missingScopeAliases;
+
+		_missingScopeAliases = missingScopeAliases;
+
+		if (missingScopeAliases.isEmpty()) {
+			_scopeProviderReResolver.unregister(this);
+
+			return;
+		}
+
+		_scopeProviderReResolver.register(this);
+
+		if (!missingScopeAliases.equals(previousMissingScopeAliases)) {
+			Log log = getLog();
+
+			if (log.isWarnEnabled()) {
+				log.warn(
+					StringBundler.concat(
+						"OAuth 2 application ",
+						oAuth2Application.getExternalReferenceCode(),
+						" declares scope aliases with no registered provider ",
+						"yet; they were skipped and will be applied ",
+						"automatically when their providers register: ",
+						StringUtil.merge(
+							missingScopeAliases, StringPool.COMMA_AND_SPACE)));
+			}
+		}
 	}
 
 	@Reference
@@ -307,6 +438,9 @@ public abstract class BaseConfigurationFactory {
 	@Reference
 	protected UserLocalService userLocalService;
 
+	@Reference
+	private ScopeProviderReResolver _scopeProviderReResolver;
+
 	private static final Snapshot<PortalK8sConfigMapModifier>
 		_portalK8sConfigMapModifierSnapshot = new Snapshot<>(
 			BaseConfigurationFactory.class, PortalK8sConfigMapModifier.class,
@@ -314,7 +448,9 @@ public abstract class BaseConfigurationFactory {
 
 	private volatile String _configMapName;
 	private volatile Map<String, String> _extensionProperties;
+	private volatile List<String> _missingScopeAliases;
 	private volatile String _projectName;
+	private volatile List<String> _scopeAliasesList;
 	private volatile String _virtualInstanceId;
 
 }
