@@ -8,6 +8,7 @@ package com.liferay.oauth2.provider.internal.configuration;
 import com.liferay.oauth2.provider.model.OAuth2Application;
 import com.liferay.oauth2.provider.model.OAuth2ApplicationScopeAliases;
 import com.liferay.oauth2.provider.scope.liferay.ScopeLocator;
+import com.liferay.oauth2.provider.scope.liferay.UnresolvedScopeAliasesRegistry;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationLocalService;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationScopeAliasesLocalService;
 import com.liferay.osgi.util.configuration.ConfigurationFactoryUtil;
@@ -28,6 +29,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.Validator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -91,6 +93,9 @@ public abstract class BaseConfigurationFactory {
 			companyId -> {
 				oAuth2ApplicationLocalService.deleteOAuth2Application(
 					oAuth2Application);
+
+				unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
+					oAuth2Application.getOAuth2ApplicationId());
 
 				if (Validator.isNull(_configMapName)) {
 					return;
@@ -284,6 +289,11 @@ public abstract class BaseConfigurationFactory {
 				oAuth2Application.getUserId(), oAuth2Application.getUserName(),
 				oAuth2Application.getOAuth2ApplicationId(), scopeAliasesList);
 		}
+
+		_updateUnresolvedScopeAliases(
+			oAuth2ApplicationLocalService.getOAuth2Application(
+				oAuth2Application.getOAuth2ApplicationId()),
+			scopeAliasesList);
 	}
 
 	@Reference
@@ -305,7 +315,44 @@ public abstract class BaseConfigurationFactory {
 	protected ScopeLocator scopeLocator;
 
 	@Reference
+	protected UnresolvedScopeAliasesRegistry unresolvedScopeAliasesRegistry;
+
+	@Reference
 	protected UserLocalService userLocalService;
+
+	private void _updateUnresolvedScopeAliases(
+		OAuth2Application oAuth2Application, List<String> scopeAliasesList) {
+
+		long oAuth2ApplicationId = oAuth2Application.getOAuth2ApplicationId();
+
+		List<String> unresolvedScopeAliasesList = new ArrayList<>(
+			scopeAliasesList);
+
+		unresolvedScopeAliasesList.removeAll(
+			oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
+				oAuth2Application.getOAuth2ApplicationScopeAliasesId()));
+
+		if (unresolvedScopeAliasesList.isEmpty()) {
+			unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
+				oAuth2ApplicationId);
+
+			return;
+		}
+
+		Log log = getLog();
+
+		if (log.isWarnEnabled()) {
+			log.warn(
+				StringBundler.concat(
+					"OAuth 2 application ", oAuth2ApplicationId,
+					" declared scope aliases that resolved to no scopes: ",
+					unresolvedScopeAliasesList));
+		}
+
+		unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
+			oAuth2Application.getCompanyId(), oAuth2ApplicationId,
+			unresolvedScopeAliasesList);
+	}
 
 	private static final Snapshot<PortalK8sConfigMapModifier>
 		_portalK8sConfigMapModifierSnapshot = new Snapshot<>(

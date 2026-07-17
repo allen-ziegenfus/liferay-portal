@@ -1,0 +1,36 @@
+/**
+ * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
+ */
+
+package com.liferay.oauth2.provider.scope.liferay;
+
+import java.util.Collection;
+import java.util.Set;
+
+/**
+ * Tracks the scope aliases an OAuth 2 application declared that did not resolve
+ * to any scope when its configuration was applied. A configuration factory
+ * knows the declared aliases, but an alias whose scope source (such as a custom
+ * object or DataSet) registers later resolves to nothing and is never persisted
+ * as a scope grant. This registry keeps that declared intent available so it
+ * can be resolved live when a token is issued.
+ *
+ * @author Allen Ziegenfus
+ */
+public interface UnresolvedScopeAliasesRegistry {
+
+	public long getCompanyId(long oAuth2ApplicationId);
+
+	public Set<Long> getOAuth2ApplicationIds();
+
+	public Collection<String> getUnresolvedScopeAliases(
+		long oAuth2ApplicationId);
+
+	public void removeUnresolvedScopeAliases(long oAuth2ApplicationId);
+
+	public void setUnresolvedScopeAliases(
+		long companyId, long oAuth2ApplicationId,
+		Collection<String> scopeAliases);
+
+}
