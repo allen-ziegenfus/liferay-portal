@@ -31,8 +31,6 @@ public class BaseServiceTest {
 	@BeforeClass
 	public static void setUpClass() {
 		_clientAndServer = ClientAndServer.startClientAndServer(0);
-
-		_port = _clientAndServer.getPort();
 	}
 
 	@AfterClass
@@ -45,7 +43,7 @@ public class BaseServiceTest {
 		String path = "/" + UUID.randomUUID();
 
 		new MockServerClient(
-			"localhost", _port
+			"localhost", _clientAndServer.getPort()
 		).when(
 			HttpRequest.request(
 			).withMethod(
@@ -64,9 +62,11 @@ public class BaseServiceTest {
 		try {
 			TestService testService = new TestService();
 
-			testService.doGet(URI.create("http://localhost:" + _port + path));
+			testService.doGet(
+				URI.create(
+					"http://localhost:" + _clientAndServer.getPort() + path));
 
-			Assert.fail("Expected WebClientResponseException");
+			Assert.fail();
 		}
 		catch (WebClientResponseException webClientResponseException) {
 			Assert.assertEquals(
@@ -77,7 +77,6 @@ public class BaseServiceTest {
 	}
 
 	private static ClientAndServer _clientAndServer;
-	private static int _port;
 
 	private static class TestService extends BaseService {
 
