@@ -21,6 +21,7 @@ import org.mockserver.matchers.Times;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 /**
@@ -41,7 +42,7 @@ public class BaseServiceTest {
 	}
 
 	@Test
-	public void testEmptyBodyErrorResponseThrows() {
+	public void testDoGet() {
 		String path = "/" + UUID.randomUUID();
 
 		new MockServerClient(
@@ -66,13 +67,12 @@ public class BaseServiceTest {
 
 			testService.doGet(URI.create("http://localhost:" + _port + path));
 
-			Assert.fail("Expected WebClientResponseException");
+			Assert.fail();
 		}
 		catch (WebClientResponseException webClientResponseException) {
-			Assert.assertEquals(
-				403,
-				webClientResponseException.getStatusCode(
-				).value());
+			HttpStatus httpStatus = webClientResponseException.getStatusCode();
+
+			Assert.assertEquals(403, httpStatus.value());
 		}
 	}
 
