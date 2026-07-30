@@ -22,12 +22,16 @@ import com.liferay.one.service.LicenseKeyService;
 import com.liferay.one.service.SubscriptionEntryService;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
+import java.time.Instant;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -214,6 +218,38 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 
 		return false;
+	}
+
+	@PostMapping("/extend")
+	public List<LicenseKey> postLicenseKeysExtend(
+			@AuthenticationPrincipal Jwt jwt, @RequestBody String json)
+		throws Exception {
+
+		JSONArray jsonArray = new JSONArray(json);
+
+		List<LicenseKey> licenseKeys = new ArrayList<>();
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			long licenseKeyId = jsonObject.getLong("licenseKeyId");
+
+			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
+				jwt, licenseKeyId);
+
+			_licenseKeyPermission.check(
+				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
+
+			licenseKeys.add(
+				_licenseKeyService.extendLicenseKey(
+					Date.from(
+						Instant.parse(jsonObject.getString("expirationDate"))),
+					licenseKeyId,
+					Date.from(
+						Instant.parse(jsonObject.getString("startDate")))));
+		}
+
+		return licenseKeys;
 	}
 
 	@PostMapping("/type-free")

@@ -23,8 +23,12 @@ import com.liferay.one.service.UserAccountService;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
+import java.time.Instant;
+
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -563,6 +567,50 @@ public class LicenseKeysRestControllerTest {
 
 		Assertions.assertTrue(
 			licenseKeysRestController.getSubscriptions(null, 5L));
+	}
+
+	@Test
+	public void testPostLicenseKeysExtend() throws Exception {
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+		).thenReturn(
+			licenseKey
+		);
+
+		LicenseKey extendedLicenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			_licenseKeyService.extendLicenseKey(
+				Date.from(Instant.parse("2028-01-01T00:00:00Z")), 1L,
+				Date.from(Instant.parse("2027-01-01T00:00:00Z")))
+		).thenReturn(
+			extendedLicenseKey
+		);
+
+		Assertions.assertEquals(
+			List.of(extendedLicenseKey),
+			licenseKeysRestController.postLicenseKeysExtend(
+				null,
+				"[{\"expirationDate\": \"2028-01-01T00:00:00Z\", " +
+					"\"licenseKeyId\": 1, \"startDate\": " +
+						"\"2027-01-01T00:00:00Z\"}]"));
+
+		Mockito.verify(
+			_licenseKeyPermission
+		).check(
+			_ACCOUNT_ID, ActionKeys.UPDATE, null
+		);
 	}
 
 	@Test
