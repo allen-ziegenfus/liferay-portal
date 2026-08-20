@@ -85,6 +85,8 @@ public abstract class BaseConfigurationFactory {
 			log.debug("Deactivating " + oAuth2Application);
 		}
 
+		long oAuth2ApplicationId = oAuth2Application.getOAuth2ApplicationId();
+
 		ConfigurationFactoryUtil.executeAsCompany(
 			companyLocalService,
 			HashMapBuilder.<String, Object>put(
@@ -93,9 +95,6 @@ public abstract class BaseConfigurationFactory {
 			companyId -> {
 				oAuth2ApplicationLocalService.deleteOAuth2Application(
 					oAuth2Application);
-
-				unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-					oAuth2Application.getOAuth2ApplicationId());
 
 				if (Validator.isNull(_configMapName)) {
 					return;
@@ -119,6 +118,9 @@ public abstract class BaseConfigurationFactory {
 					},
 					_configMapName);
 			});
+
+		unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
+			oAuth2ApplicationId);
 	}
 
 	protected abstract void doActivate(
