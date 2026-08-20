@@ -150,13 +150,6 @@ public class ConfigurationFactoryTest {
 			_oAuth2Application
 		);
 
-		Mockito.when(
-			_oAuth2ApplicationLocalService.getOAuth2Application(
-				Mockito.anyLong())
-		).thenReturn(
-			_oAuth2Application
-		);
-
 		_oAuth2ApplicationScopeAliasesLocalService = Mockito.mock(
 			OAuth2ApplicationScopeAliasesLocalService.class);
 

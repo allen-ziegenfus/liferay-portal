@@ -285,15 +285,14 @@ public abstract class BaseConfigurationFactory {
 			scopeLocator.getLiferayOAuth2Scopes(
 				oAuth2Application.getCompanyId());
 
-			oAuth2ApplicationLocalService.updateScopeAliases(
-				oAuth2Application.getUserId(), oAuth2Application.getUserName(),
-				oAuth2Application.getOAuth2ApplicationId(), scopeAliasesList);
+			_updateUnresolvedScopeAliases(
+				oAuth2ApplicationLocalService.updateScopeAliases(
+					oAuth2Application.getUserId(),
+					oAuth2Application.getUserName(),
+					oAuth2Application.getOAuth2ApplicationId(),
+					scopeAliasesList),
+				scopeAliasesList);
 		}
-
-		_updateUnresolvedScopeAliases(
-			oAuth2ApplicationLocalService.getOAuth2Application(
-				oAuth2Application.getOAuth2ApplicationId()),
-			scopeAliasesList);
 	}
 
 	@Reference
