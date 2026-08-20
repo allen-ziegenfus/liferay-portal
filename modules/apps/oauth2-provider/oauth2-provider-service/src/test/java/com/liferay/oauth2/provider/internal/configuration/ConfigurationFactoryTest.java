@@ -7,6 +7,7 @@ package com.liferay.oauth2.provider.internal.configuration;
 
 import com.liferay.oauth2.provider.model.OAuth2Application;
 import com.liferay.oauth2.provider.scope.liferay.ScopeLocator;
+import com.liferay.oauth2.provider.scope.liferay.UnresolvedScopeAliasesRegistry;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationLocalService;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationScopeAliasesLocalService;
 import com.liferay.portal.k8s.agent.PortalK8sConfigMapModifier;
@@ -149,6 +150,13 @@ public class ConfigurationFactoryTest {
 			_oAuth2Application
 		);
 
+		Mockito.when(
+			_oAuth2ApplicationLocalService.getOAuth2Application(
+				Mockito.anyLong())
+		).thenReturn(
+			_oAuth2Application
+		);
+
 		_oAuth2ApplicationScopeAliasesLocalService = Mockito.mock(
 			OAuth2ApplicationScopeAliasesLocalService.class);
 
@@ -262,6 +270,9 @@ public class ConfigurationFactoryTest {
 			_user
 		);
 
+		_unresolvedScopeAliasesRegistry = Mockito.mock(
+			UnresolvedScopeAliasesRegistry.class);
+
 		Runnable syncCallableFuture = ReflectionTestUtil.getFieldValue(
 			DependencyManagerSyncUtil.class,
 			"_syncCallableDefaultNoticeableFuture");
@@ -282,6 +293,8 @@ public class ConfigurationFactoryTest {
 		oa2pahscf.oAuth2ApplicationScopeAliasesLocalService =
 			_oAuth2ApplicationScopeAliasesLocalService;
 		oa2pahscf.scopeLocator = _scopeLocator;
+		oa2pahscf.unresolvedScopeAliasesRegistry =
+			_unresolvedScopeAliasesRegistry;
 		oa2pahscf.userLocalService = _userLocalService;
 
 		ReflectionTestUtil.setFieldValue(
@@ -346,6 +359,8 @@ public class ConfigurationFactoryTest {
 		oa2pauacf.oAuth2ApplicationScopeAliasesLocalService =
 			_oAuth2ApplicationScopeAliasesLocalService;
 		oa2pauacf.scopeLocator = _scopeLocator;
+		oa2pauacf.unresolvedScopeAliasesRegistry =
+			_unresolvedScopeAliasesRegistry;
 		oa2pauacf.userLocalService = _userLocalService;
 
 		ReflectionTestUtil.setFieldValue(
@@ -422,6 +437,7 @@ public class ConfigurationFactoryTest {
 	private String _serviceId;
 	private String _serviceUid;
 	private Snapshot<PortalK8sConfigMapModifier> _snapshot;
+	private UnresolvedScopeAliasesRegistry _unresolvedScopeAliasesRegistry;
 	private User _user;
 	private UserLocalService _userLocalService;
 	private String _webId;
