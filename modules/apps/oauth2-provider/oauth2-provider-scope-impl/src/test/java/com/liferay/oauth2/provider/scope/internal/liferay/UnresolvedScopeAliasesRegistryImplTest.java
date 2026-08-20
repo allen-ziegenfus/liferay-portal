@@ -42,10 +42,6 @@ public class UnresolvedScopeAliasesRegistryImplTest {
 		Set<Long> oAuth2ApplicationIds =
 			_unresolvedScopeAliasesRegistry.getOAuth2ApplicationIds();
 
-		// The returned set must be a defensive copy so a caller can iterate it
-		// while the registry is concurrently mutated without a
-		// ConcurrentModificationException.
-
 		for (long oAuth2ApplicationId : oAuth2ApplicationIds) {
 			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
 				oAuth2ApplicationId);

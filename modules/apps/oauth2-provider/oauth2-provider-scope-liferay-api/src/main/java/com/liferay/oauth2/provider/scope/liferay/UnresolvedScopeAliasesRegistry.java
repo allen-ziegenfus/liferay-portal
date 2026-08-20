@@ -13,8 +13,8 @@ import java.util.Set;
  * to any scope when its configuration was applied. A configuration factory
  * knows the declared aliases, but an alias whose scope source (such as a custom
  * object or DataSet) registers later resolves to nothing and is never persisted
- * as a scope grant. This registry keeps that declared intent available so it
- * can be resolved live when a token is issued.
+ * as a scope grant. This registry keeps that declared intent available so a
+ * reconciler can bind it once the missing scope sources register.
  *
  * @author Allen Ziegenfus
  */
