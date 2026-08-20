@@ -37,7 +37,7 @@ public class UnresolvedScopeAliasesRegistryImplTest {
 	@Test
 	public void testGetOAuth2ApplicationIdsReturnsSnapshot() {
 		_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-			1L, 100L, Arrays.asList("C_Foo.everything"));
+			100L, Arrays.asList("C_Foo.everything"));
 
 		Set<Long> oAuth2ApplicationIds =
 			_unresolvedScopeAliasesRegistry.getOAuth2ApplicationIds();
@@ -46,7 +46,7 @@ public class UnresolvedScopeAliasesRegistryImplTest {
 			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
 				oAuth2ApplicationId);
 			_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-				1L, 200L, Arrays.asList("C_Bar.everything"));
+				200L, Arrays.asList("C_Bar.everything"));
 		}
 
 		Assert.assertFalse(oAuth2ApplicationIds.contains(200L));
@@ -55,12 +55,9 @@ public class UnresolvedScopeAliasesRegistryImplTest {
 	@Test
 	public void testRemoveUnresolvedScopeAliases() {
 		_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-			1L, 100L, Arrays.asList("C_Foo.everything"));
+			100L, Arrays.asList("C_Foo.everything"));
 
 		_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(100L);
-
-		Assert.assertEquals(
-			0L, _unresolvedScopeAliasesRegistry.getCompanyId(100L));
 
 		Set<Long> oAuth2ApplicationIds =
 			_unresolvedScopeAliasesRegistry.getOAuth2ApplicationIds();
@@ -71,9 +68,9 @@ public class UnresolvedScopeAliasesRegistryImplTest {
 	@Test
 	public void testSetOverwritesPreviousScopeAliases() {
 		_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-			1L, 100L, Arrays.asList("C_Foo.everything"));
+			100L, Arrays.asList("C_Foo.everything"));
 		_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-			1L, 100L, Arrays.asList("C_Bar.everything"));
+			100L, Arrays.asList("C_Bar.everything"));
 
 		Collection<String> scopeAliases =
 			_unresolvedScopeAliasesRegistry.getUnresolvedScopeAliases(100L);
@@ -85,10 +82,7 @@ public class UnresolvedScopeAliasesRegistryImplTest {
 	@Test
 	public void testSetUnresolvedScopeAliases() {
 		_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-			1L, 100L, Arrays.asList("C_Foo.everything", "C_Bar.everything"));
-
-		Assert.assertEquals(
-			1L, _unresolvedScopeAliasesRegistry.getCompanyId(100L));
+			100L, Arrays.asList("C_Foo.everything", "C_Bar.everything"));
 
 		Collection<String> scopeAliases =
 			_unresolvedScopeAliasesRegistry.getUnresolvedScopeAliases(100L);
@@ -104,9 +98,6 @@ public class UnresolvedScopeAliasesRegistryImplTest {
 
 	@Test
 	public void testUnknownOAuth2ApplicationId() {
-		Assert.assertEquals(
-			0L, _unresolvedScopeAliasesRegistry.getCompanyId(999L));
-
 		Collection<String> scopeAliases =
 			_unresolvedScopeAliasesRegistry.getUnresolvedScopeAliases(999L);
 

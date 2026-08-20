@@ -351,8 +351,7 @@ public abstract class BaseConfigurationFactory {
 		}
 
 		unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-			oAuth2Application.getCompanyId(), oAuth2ApplicationId,
-			unresolvedScopeAliasesList);
+			oAuth2ApplicationId, unresolvedScopeAliasesList);
 	}
 
 	private static final Snapshot<PortalK8sConfigMapModifier>

@@ -25,77 +25,33 @@ public class UnresolvedScopeAliasesRegistryImpl
 	implements UnresolvedScopeAliasesRegistry {
 
 	@Override
-	public long getCompanyId(long oAuth2ApplicationId) {
-		UnresolvedScopeAliases unresolvedScopeAliases =
-			_unresolvedScopeAliasesMap.get(oAuth2ApplicationId);
-
-		if (unresolvedScopeAliases == null) {
-			return 0;
-		}
-
-		return unresolvedScopeAliases.getCompanyId();
-	}
-
-	@Override
 	public Set<Long> getOAuth2ApplicationIds() {
-		return new HashSet<>(_unresolvedScopeAliasesMap.keySet());
+		return new HashSet<>(_scopeAliasesMap.keySet());
 	}
 
 	@Override
 	public Collection<String> getUnresolvedScopeAliases(
 		long oAuth2ApplicationId) {
 
-		UnresolvedScopeAliases unresolvedScopeAliases =
-			_unresolvedScopeAliasesMap.get(oAuth2ApplicationId);
-
-		if (unresolvedScopeAliases == null) {
-			return Collections.emptySet();
-		}
-
-		return unresolvedScopeAliases.getScopeAliases();
+		return _scopeAliasesMap.getOrDefault(
+			oAuth2ApplicationId, Collections.emptySet());
 	}
 
 	@Override
 	public void removeUnresolvedScopeAliases(long oAuth2ApplicationId) {
-		_unresolvedScopeAliasesMap.remove(oAuth2ApplicationId);
+		_scopeAliasesMap.remove(oAuth2ApplicationId);
 	}
 
 	@Override
 	public void setUnresolvedScopeAliases(
-		long companyId, long oAuth2ApplicationId,
-		Collection<String> scopeAliases) {
+		long oAuth2ApplicationId, Collection<String> scopeAliases) {
 
-		_unresolvedScopeAliasesMap.put(
+		_scopeAliasesMap.put(
 			oAuth2ApplicationId,
-			new UnresolvedScopeAliases(
-				companyId,
-				Collections.unmodifiableSet(
-					new LinkedHashSet<>(scopeAliases))));
+			Collections.unmodifiableSet(new LinkedHashSet<>(scopeAliases)));
 	}
 
-	private final Map<Long, UnresolvedScopeAliases> _unresolvedScopeAliasesMap =
+	private final Map<Long, Set<String>> _scopeAliasesMap =
 		new ConcurrentHashMap<>();
-
-	private static class UnresolvedScopeAliases {
-
-		public UnresolvedScopeAliases(
-			long companyId, Set<String> scopeAliases) {
-
-			_companyId = companyId;
-			_scopeAliases = scopeAliases;
-		}
-
-		public long getCompanyId() {
-			return _companyId;
-		}
-
-		public Set<String> getScopeAliases() {
-			return _scopeAliases;
-		}
-
-		private final long _companyId;
-		private final Set<String> _scopeAliases;
-
-	}
 
 }

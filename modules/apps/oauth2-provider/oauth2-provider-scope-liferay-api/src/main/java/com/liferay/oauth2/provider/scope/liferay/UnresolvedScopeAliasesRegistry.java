@@ -20,8 +20,6 @@ import java.util.Set;
  */
 public interface UnresolvedScopeAliasesRegistry {
 
-	public long getCompanyId(long oAuth2ApplicationId);
-
 	public Set<Long> getOAuth2ApplicationIds();
 
 	public Collection<String> getUnresolvedScopeAliases(
@@ -30,7 +28,6 @@ public interface UnresolvedScopeAliasesRegistry {
 	public void removeUnresolvedScopeAliases(long oAuth2ApplicationId);
 
 	public void setUnresolvedScopeAliases(
-		long companyId, long oAuth2ApplicationId,
-		Collection<String> scopeAliases);
+		long oAuth2ApplicationId, Collection<String> scopeAliases);
 
 }
