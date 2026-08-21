@@ -25,6 +25,8 @@ public interface UnresolvedScopeAliasesRegistry {
 	public Collection<String> getUnresolvedScopeAliases(
 		long oAuth2ApplicationId);
 
+	public boolean isEmpty();
+
 	public void removeUnresolvedScopeAliases(long oAuth2ApplicationId);
 
 	public void setUnresolvedScopeAliases(

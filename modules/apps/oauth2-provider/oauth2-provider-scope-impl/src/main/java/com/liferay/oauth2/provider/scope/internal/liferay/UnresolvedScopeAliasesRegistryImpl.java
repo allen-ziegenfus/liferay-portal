@@ -38,6 +38,11 @@ public class UnresolvedScopeAliasesRegistryImpl
 	}
 
 	@Override
+	public boolean isEmpty() {
+		return _scopeAliasesMap.isEmpty();
+	}
+
+	@Override
 	public void removeUnresolvedScopeAliases(long oAuth2ApplicationId) {
 		_scopeAliasesMap.remove(oAuth2ApplicationId);
 	}
