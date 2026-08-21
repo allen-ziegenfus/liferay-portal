@@ -37,12 +37,19 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 	@Override
 	public void reconcile() throws Exception {
+		_pending.set(true);
+
 		if (!_reconciling.compareAndSet(false, true)) {
 			return;
 		}
 
 		try {
-			_reconcileOnce();
+			do {
+				_pending.set(false);
+
+				_reconcileOnce();
+			}
+			while (_pending.get());
 		}
 		finally {
 			_reconciling.set(false);
@@ -239,6 +246,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 	private OAuth2ApplicationScopeAliasesLocalService
 		_oAuth2ApplicationScopeAliasesLocalService;
 
+	private final AtomicBoolean _pending = new AtomicBoolean();
 	private final AtomicBoolean _reconciling = new AtomicBoolean();
 
 	@Reference
