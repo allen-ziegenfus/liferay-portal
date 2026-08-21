@@ -21,7 +21,9 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -87,7 +89,31 @@ public class UnresolvedScopeAliasReconcilerImpl
 		return scopeAlias;
 	}
 
-	private void _reconcile(OAuth2Application oAuth2Application)
+	private void _reconcile(
+			long companyId, List<OAuth2Application> oAuth2Applications)
+		throws Exception {
+
+		Collection<String> registeredScopeAliases =
+			_scopeLocator.getScopeAliases(companyId);
+
+		for (OAuth2Application oAuth2Application : oAuth2Applications) {
+			try {
+				_reconcile(oAuth2Application, registeredScopeAliases);
+			}
+			catch (Exception exception) {
+				if (_log.isWarnEnabled()) {
+					_log.warn(
+						"Unable to reconcile OAuth 2 application " +
+							oAuth2Application.getOAuth2ApplicationId(),
+						exception);
+				}
+			}
+		}
+	}
+
+	private void _reconcile(
+			OAuth2Application oAuth2Application,
+			Collection<String> registeredScopeAliases)
 		throws Exception {
 
 		long oAuth2ApplicationId = oAuth2Application.getOAuth2ApplicationId();
@@ -101,9 +127,6 @@ public class UnresolvedScopeAliasReconcilerImpl
 		}
 
 		long companyId = oAuth2Application.getCompanyId();
-
-		Collection<String> registeredScopeAliases =
-			_scopeLocator.getScopeAliases(companyId);
 
 		List<String> normalizedScopeAliasesList = new ArrayList<>();
 
@@ -189,18 +212,21 @@ public class UnresolvedScopeAliasReconcilerImpl
 	}
 
 	private void _reconcileOnce() throws Exception {
-		Set<Long> oAuth2ApplicationIds =
-			_unresolvedScopeAliasesRegistry.getOAuth2ApplicationIds();
-
-		if (oAuth2ApplicationIds.isEmpty()) {
+		if (_unresolvedScopeAliasesRegistry.isEmpty()) {
 			return;
 		}
+
+		Set<Long> oAuth2ApplicationIds =
+			_unresolvedScopeAliasesRegistry.getOAuth2ApplicationIds();
 
 		if (_log.isDebugEnabled()) {
 			_log.debug(
 				"Reconciling unresolved scope aliases for OAuth 2 " +
 					"applications " + oAuth2ApplicationIds);
 		}
+
+		Map<Long, List<OAuth2Application>> oAuth2ApplicationsByCompanyId =
+			new HashMap<>();
 
 		for (long oAuth2ApplicationId : oAuth2ApplicationIds) {
 			OAuth2Application oAuth2Application =
@@ -214,19 +240,34 @@ public class UnresolvedScopeAliasReconcilerImpl
 				continue;
 			}
 
+			List<OAuth2Application> oAuth2Applications =
+				oAuth2ApplicationsByCompanyId.computeIfAbsent(
+					oAuth2Application.getCompanyId(),
+					companyId -> new ArrayList<>());
+
+			oAuth2Applications.add(oAuth2Application);
+		}
+
+		for (Map.Entry<Long, List<OAuth2Application>> entry :
+				oAuth2ApplicationsByCompanyId.entrySet()) {
+
+			long companyId = entry.getKey();
+
+			List<OAuth2Application> oAuth2Applications = entry.getValue();
+
 			try {
 				ConfigurationFactoryUtil.executeAsCompany(
 					_companyLocalService,
 					HashMapBuilder.<String, Object>put(
-						"companyId", oAuth2Application.getCompanyId()
+						"companyId", companyId
 					).build(),
-					curCompanyId -> _reconcile(oAuth2Application));
+					curCompanyId -> _reconcile(companyId, oAuth2Applications));
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
 					_log.warn(
-						"Unable to reconcile OAuth 2 application " +
-							oAuth2ApplicationId,
+						"Unable to reconcile OAuth 2 applications for " +
+							"company " + companyId,
 						exception);
 				}
 			}
