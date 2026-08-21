@@ -46,6 +46,12 @@ public class UnresolvedScopeAliasesRegistryImpl
 	public void setUnresolvedScopeAliases(
 		long oAuth2ApplicationId, Collection<String> scopeAliases) {
 
+		if ((scopeAliases == null) || scopeAliases.isEmpty()) {
+			_scopeAliasesMap.remove(oAuth2ApplicationId);
+
+			return;
+		}
+
 		_scopeAliasesMap.put(
 			oAuth2ApplicationId,
 			Collections.unmodifiableSet(new LinkedHashSet<>(scopeAliases)));
