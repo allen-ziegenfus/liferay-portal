@@ -155,9 +155,6 @@ public class UnresolvedScopeAliasReconcilerImpl
 			}
 		}
 
-		// Another node (or an earlier pass) already persisted every resolvable
-		// alias, so there is nothing to write; just clear the registry entry
-
 		if (!modified) {
 			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
 				oAuth2ApplicationId);
