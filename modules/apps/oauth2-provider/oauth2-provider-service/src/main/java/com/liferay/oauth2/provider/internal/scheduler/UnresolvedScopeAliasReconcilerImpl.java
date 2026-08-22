@@ -41,20 +41,21 @@ public class UnresolvedScopeAliasReconcilerImpl
 	public void reconcile() throws Exception {
 		_pending.set(true);
 
-		if (!_reconciling.compareAndSet(false, true)) {
-			return;
-		}
-
-		try {
-			do {
-				_pending.set(false);
+		while (_reconciling.compareAndSet(false, true)) {
+			try {
+				if (!_pending.compareAndSet(true, false)) {
+					return;
+				}
 
 				_reconcileOnce();
 			}
-			while (_pending.get());
-		}
-		finally {
-			_reconciling.set(false);
+			finally {
+				_reconciling.set(false);
+			}
+
+			if (!_pending.get()) {
+				return;
+			}
 		}
 	}
 
