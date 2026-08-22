@@ -178,7 +178,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 		}
 
 		List<String> unreconciledScopeAliasesList = new ArrayList<>(
-			normalizedScopeAliasesList);
+			scopeAliasesList);
 
 		unreconciledScopeAliasesList.removeAll(
 			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
