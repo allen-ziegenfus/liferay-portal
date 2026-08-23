@@ -29,7 +29,10 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Assume;
@@ -68,7 +71,7 @@ public class ScopeReResolutionConfigurationFactoryTest {
 
 			try {
 				_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-					oAuth2Application.getOAuth2ApplicationId(),
+					companyId, oAuth2Application.getOAuth2ApplicationId(),
 					Collections.singletonList(scopeAlias));
 
 				_runReconcile();
@@ -103,7 +106,7 @@ public class ScopeReResolutionConfigurationFactoryTest {
 				// Declare the alias in a different case than it is registered
 
 				_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-					oAuth2Application.getOAuth2ApplicationId(),
+					companyId, oAuth2Application.getOAuth2ApplicationId(),
 					Collections.singletonList(
 						StringUtil.toUpperCase(scopeAlias)));
 
@@ -139,7 +142,7 @@ public class ScopeReResolutionConfigurationFactoryTest {
 
 			try {
 				_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-					oAuth2Application.getOAuth2ApplicationId(),
+					companyId, oAuth2Application.getOAuth2ApplicationId(),
 					Arrays.asList(
 						resolvableScopeAlias, _UNRESOLVABLE_SCOPE_ALIAS));
 
@@ -183,7 +186,7 @@ public class ScopeReResolutionConfigurationFactoryTest {
 					oAuth2Application.getOAuth2ApplicationScopeAliasesId();
 
 				_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-					oAuth2Application.getOAuth2ApplicationId(),
+					companyId, oAuth2Application.getOAuth2ApplicationId(),
 					Collections.singletonList(_UNRESOLVABLE_SCOPE_ALIAS));
 
 				_runReconcile();
@@ -262,6 +265,7 @@ public class ScopeReResolutionConfigurationFactoryTest {
 		throws Exception {
 
 		_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
+			oAuth2Application.getCompanyId(),
 			oAuth2Application.getOAuth2ApplicationId());
 
 		if (_configuration != null) {
@@ -351,7 +355,19 @@ public class ScopeReResolutionConfigurationFactoryTest {
 	}
 
 	private Collection<Long> _unresolvedApplicationIds() {
-		return _unresolvedScopeAliasesRegistry.getOAuth2ApplicationIds();
+		Set<Long> oAuth2ApplicationIds = new HashSet<>();
+
+		Map<Long, Set<Long>> oAuth2ApplicationIdsByCompanyId =
+			_unresolvedScopeAliasesRegistry.
+				getOAuth2ApplicationIdsByCompanyId();
+
+		for (Set<Long> companyOAuth2ApplicationIds :
+				oAuth2ApplicationIdsByCompanyId.values()) {
+
+			oAuth2ApplicationIds.addAll(companyOAuth2ApplicationIds);
+		}
+
+		return oAuth2ApplicationIds;
 	}
 
 	private static final String _EXTERNAL_REFERENCE_CODE =
