@@ -5,6 +5,8 @@
 
 package com.liferay.oauth2.provider.scope.liferay;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * Reconciles the scope aliases held in the
  * {@link UnresolvedScopeAliasesRegistry} against the scopes that are currently
@@ -16,6 +18,7 @@ package com.liferay.oauth2.provider.scope.liferay;
  *
  * @author Allen Ziegenfus
  */
+@ProviderType
 public interface UnresolvedScopeAliasReconciler {
 
 	public void reconcile() throws Exception;
