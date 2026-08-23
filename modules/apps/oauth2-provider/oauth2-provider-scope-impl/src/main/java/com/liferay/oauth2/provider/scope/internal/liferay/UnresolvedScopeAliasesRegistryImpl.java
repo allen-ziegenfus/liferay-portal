@@ -9,6 +9,7 @@ import com.liferay.oauth2.provider.scope.liferay.UnresolvedScopeAliasesRegistry;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -25,15 +26,33 @@ public class UnresolvedScopeAliasesRegistryImpl
 	implements UnresolvedScopeAliasesRegistry {
 
 	@Override
-	public Set<Long> getOAuth2ApplicationIds() {
-		return new HashSet<>(_scopeAliasesMap.keySet());
+	public Map<Long, Set<Long>> getOAuth2ApplicationIdsByCompanyId() {
+		Map<Long, Set<Long>> oAuth2ApplicationIdsByCompanyId = new HashMap<>();
+
+		for (Map.Entry<Long, Map<Long, Set<String>>> entry :
+				_scopeAliasesMap.entrySet()) {
+
+			Map<Long, Set<String>> value = entry.getValue();
+
+			oAuth2ApplicationIdsByCompanyId.put(
+				entry.getKey(), new HashSet<>(value.keySet()));
+		}
+
+		return oAuth2ApplicationIdsByCompanyId;
 	}
 
 	@Override
 	public Collection<String> getUnresolvedScopeAliases(
-		long oAuth2ApplicationId) {
+		long companyId, long oAuth2ApplicationId) {
 
-		return _scopeAliasesMap.getOrDefault(
+		Map<Long, Set<String>> scopeAliasesMap = _scopeAliasesMap.get(
+			companyId);
+
+		if (scopeAliasesMap == null) {
+			return Collections.emptySet();
+		}
+
+		return scopeAliasesMap.getOrDefault(
 			oAuth2ApplicationId, Collections.emptySet());
 	}
 
@@ -43,26 +62,50 @@ public class UnresolvedScopeAliasesRegistryImpl
 	}
 
 	@Override
-	public void removeUnresolvedScopeAliases(long oAuth2ApplicationId) {
-		_scopeAliasesMap.remove(oAuth2ApplicationId);
+	public void removeUnresolvedScopeAliases(
+		long companyId, long oAuth2ApplicationId) {
+
+		_scopeAliasesMap.computeIfPresent(
+			companyId,
+			(key, scopeAliasesMap) -> {
+				scopeAliasesMap.remove(oAuth2ApplicationId);
+
+				if (scopeAliasesMap.isEmpty()) {
+					return null;
+				}
+
+				return scopeAliasesMap;
+			});
 	}
 
 	@Override
 	public void setUnresolvedScopeAliases(
-		long oAuth2ApplicationId, Collection<String> scopeAliases) {
+		long companyId, long oAuth2ApplicationId,
+		Collection<String> scopeAliases) {
 
 		if ((scopeAliases == null) || scopeAliases.isEmpty()) {
-			_scopeAliasesMap.remove(oAuth2ApplicationId);
+			removeUnresolvedScopeAliases(companyId, oAuth2ApplicationId);
 
 			return;
 		}
 
-		_scopeAliasesMap.put(
-			oAuth2ApplicationId,
-			Collections.unmodifiableSet(new LinkedHashSet<>(scopeAliases)));
+		_scopeAliasesMap.compute(
+			companyId,
+			(key, scopeAliasesMap) -> {
+				if (scopeAliasesMap == null) {
+					scopeAliasesMap = new ConcurrentHashMap<>();
+				}
+
+				scopeAliasesMap.put(
+					oAuth2ApplicationId,
+					Collections.unmodifiableSet(
+						new LinkedHashSet<>(scopeAliases)));
+
+				return scopeAliasesMap;
+			});
 	}
 
-	private final Map<Long, Set<String>> _scopeAliasesMap =
+	private final Map<Long, Map<Long, Set<String>>> _scopeAliasesMap =
 		new ConcurrentHashMap<>();
 
 }

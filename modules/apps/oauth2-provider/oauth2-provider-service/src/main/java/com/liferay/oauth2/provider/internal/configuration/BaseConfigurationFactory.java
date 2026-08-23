@@ -120,7 +120,7 @@ public abstract class BaseConfigurationFactory {
 			});
 
 		unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-			oAuth2ApplicationId);
+			oAuth2Application.getCompanyId(), oAuth2ApplicationId);
 	}
 
 	protected abstract void doActivate(
@@ -276,8 +276,8 @@ public abstract class BaseConfigurationFactory {
 				(grantedScopeAliasesList.size() == scopeAliasesList.size())) {
 
 				_updateUnresolvedScopeAliases(
-					oAuth2ApplicationId, scopeAliasesList,
-					grantedScopeAliasesList);
+					oAuth2Application.getCompanyId(), oAuth2ApplicationId,
+					scopeAliasesList, grantedScopeAliasesList);
 
 				return;
 			}
@@ -293,7 +293,8 @@ public abstract class BaseConfigurationFactory {
 				oAuth2ApplicationId, scopeAliasesList);
 
 		_updateUnresolvedScopeAliases(
-			oAuth2ApplicationId, scopeAliasesList,
+			oAuth2Application.getCompanyId(), oAuth2ApplicationId,
+			scopeAliasesList,
 			oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
 				updatedOAuth2Application.getOAuth2ApplicationScopeAliasesId()));
 	}
@@ -323,7 +324,7 @@ public abstract class BaseConfigurationFactory {
 	protected UserLocalService userLocalService;
 
 	private void _updateUnresolvedScopeAliases(
-		long oAuth2ApplicationId, List<String> scopeAliasesList,
+		long companyId, long oAuth2ApplicationId, List<String> scopeAliasesList,
 		List<String> grantedScopeAliasesList) {
 
 		List<String> unresolvedScopeAliasesList = new ArrayList<>(
@@ -333,7 +334,7 @@ public abstract class BaseConfigurationFactory {
 
 		if (unresolvedScopeAliasesList.isEmpty()) {
 			unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-				oAuth2ApplicationId);
+				companyId, oAuth2ApplicationId);
 
 			return;
 		}
@@ -349,7 +350,7 @@ public abstract class BaseConfigurationFactory {
 		}
 
 		unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-			oAuth2ApplicationId, unresolvedScopeAliasesList);
+			companyId, oAuth2ApplicationId, unresolvedScopeAliasesList);
 	}
 
 	private static final Snapshot<PortalK8sConfigMapModifier>

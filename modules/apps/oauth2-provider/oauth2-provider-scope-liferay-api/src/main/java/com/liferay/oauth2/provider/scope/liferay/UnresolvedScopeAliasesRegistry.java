@@ -6,6 +6,7 @@
 package com.liferay.oauth2.provider.scope.liferay;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 import org.osgi.annotation.versioning.ProviderType;
@@ -18,21 +19,30 @@ import org.osgi.annotation.versioning.ProviderType;
  * as a scope grant. This registry keeps that declared intent available so a
  * reconciler can bind it once the missing scope sources register.
  *
+ * <p>
+ * Entries are keyed on the company together with the application because primary
+ * keys repeat across virtual instances under database partitioning. A caller
+ * must supply the company so a reconciler can select the right schema before it
+ * reads the application.
+ * </p>
+ *
  * @author Allen Ziegenfus
  */
 @ProviderType
 public interface UnresolvedScopeAliasesRegistry {
 
-	public Set<Long> getOAuth2ApplicationIds();
+	public Map<Long, Set<Long>> getOAuth2ApplicationIdsByCompanyId();
 
 	public Collection<String> getUnresolvedScopeAliases(
-		long oAuth2ApplicationId);
+		long companyId, long oAuth2ApplicationId);
 
 	public boolean isEmpty();
 
-	public void removeUnresolvedScopeAliases(long oAuth2ApplicationId);
+	public void removeUnresolvedScopeAliases(
+		long companyId, long oAuth2ApplicationId);
 
 	public void setUnresolvedScopeAliases(
-		long oAuth2ApplicationId, Collection<String> scopeAliases);
+		long companyId, long oAuth2ApplicationId,
+		Collection<String> scopeAliases);
 
 }
