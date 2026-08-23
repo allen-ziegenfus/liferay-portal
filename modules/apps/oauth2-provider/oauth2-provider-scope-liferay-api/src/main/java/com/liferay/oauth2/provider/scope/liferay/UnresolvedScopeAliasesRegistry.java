@@ -8,6 +8,8 @@ package com.liferay.oauth2.provider.scope.liferay;
 import java.util.Collection;
 import java.util.Set;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
  * Tracks the scope aliases an OAuth 2 application declared that did not resolve
  * to any scope when its configuration was applied. A configuration factory
@@ -18,6 +20,7 @@ import java.util.Set;
  *
  * @author Allen Ziegenfus
  */
+@ProviderType
 public interface UnresolvedScopeAliasesRegistry {
 
 	public Set<Long> getOAuth2ApplicationIds();
