@@ -49,6 +49,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 				_reconcileOnce();
 			}
+			catch (Exception exception) {
+				_pending.set(true);
+
+				throw exception;
+			}
 			finally {
 				_reconciling.set(false);
 			}
@@ -268,7 +273,8 @@ public class UnresolvedScopeAliasReconcilerImpl
 					HashMapBuilder.<String, Object>put(
 						"companyId", companyId
 					).build(),
-					curCompanyId -> _reconcile(companyId, oAuth2Applications));
+					curCompanyId -> _reconcile(
+						curCompanyId, oAuth2Applications));
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
