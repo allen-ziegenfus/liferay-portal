@@ -21,10 +21,10 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.osgi.service.component.annotations.Component;
@@ -64,6 +64,20 @@ public class UnresolvedScopeAliasReconcilerImpl
 		}
 	}
 
+	private void _clearBlocked(long companyId, long oAuth2ApplicationId) {
+		_blockedOAuth2ApplicationIdsByCompanyId.computeIfPresent(
+			companyId,
+			(key, blockedOAuth2ApplicationIds) -> {
+				blockedOAuth2ApplicationIds.remove(oAuth2ApplicationId);
+
+				if (blockedOAuth2ApplicationIds.isEmpty()) {
+					return null;
+				}
+
+				return blockedOAuth2ApplicationIds;
+			});
+	}
+
 	private boolean _hasNewlyResolvedScopeAlias(
 		long companyId, Collection<String> scopeAliases) {
 
@@ -95,14 +109,24 @@ public class UnresolvedScopeAliasReconcilerImpl
 		return scopeAlias;
 	}
 
-	private void _reconcile(
-			long companyId, List<OAuth2Application> oAuth2Applications)
+	private void _reconcile(long companyId, Set<Long> oAuth2ApplicationIds)
 		throws Exception {
 
 		Collection<String> registeredScopeAliases =
 			_scopeLocator.getScopeAliases(companyId);
 
-		for (OAuth2Application oAuth2Application : oAuth2Applications) {
+		for (long oAuth2ApplicationId : oAuth2ApplicationIds) {
+			OAuth2Application oAuth2Application =
+				_oAuth2ApplicationLocalService.fetchOAuth2Application(
+					oAuth2ApplicationId);
+
+			if (oAuth2Application == null) {
+				_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
+					companyId, oAuth2ApplicationId);
+
+				continue;
+			}
+
 			try {
 				_reconcile(oAuth2Application, registeredScopeAliases);
 			}
@@ -110,7 +134,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 				if (_log.isWarnEnabled()) {
 					_log.warn(
 						"Unable to reconcile OAuth 2 application " +
-							oAuth2Application.getOAuth2ApplicationId(),
+							oAuth2ApplicationId,
 						exception);
 				}
 			}
@@ -122,17 +146,16 @@ public class UnresolvedScopeAliasReconcilerImpl
 			Collection<String> registeredScopeAliases)
 		throws Exception {
 
+		long companyId = oAuth2Application.getCompanyId();
 		long oAuth2ApplicationId = oAuth2Application.getOAuth2ApplicationId();
 
 		Collection<String> unresolvedScopeAliases =
 			_unresolvedScopeAliasesRegistry.getUnresolvedScopeAliases(
-				oAuth2ApplicationId);
+				companyId, oAuth2ApplicationId);
 
 		if (unresolvedScopeAliases.isEmpty()) {
 			return;
 		}
-
-		long companyId = oAuth2Application.getCompanyId();
 
 		List<String> normalizedScopeAliasesList = new ArrayList<>();
 
@@ -151,14 +174,30 @@ public class UnresolvedScopeAliasReconcilerImpl
 			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
 				oAuth2Application.getOAuth2ApplicationScopeAliasesId()));
 
+		boolean grantedScopeAliasUnresolvable = false;
+
 		for (String grantedScopeAlias : scopeAliasesList) {
 			if (_scopeLocator.getLiferayOAuth2Scopes(
 					companyId, grantedScopeAlias
 				).isEmpty()) {
 
+				grantedScopeAliasUnresolvable = true;
+
+				break;
+			}
+		}
+
+		if (grantedScopeAliasUnresolvable) {
+			Set<Long> blockedOAuth2ApplicationIds =
+				_blockedOAuth2ApplicationIdsByCompanyId.computeIfAbsent(
+					companyId, key -> ConcurrentHashMap.newKeySet());
+
+			if (blockedOAuth2ApplicationIds.add(oAuth2ApplicationId)) {
 				return;
 			}
 		}
+
+		_clearBlocked(companyId, oAuth2ApplicationId);
 
 		boolean modified = false;
 
@@ -172,7 +211,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 		if (!modified) {
 			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-				oAuth2ApplicationId);
+				companyId, oAuth2ApplicationId);
 
 			return;
 		}
@@ -187,7 +226,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 		if (reconciledOAuth2Application == null) {
 			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-				oAuth2ApplicationId);
+				companyId, oAuth2ApplicationId);
 
 			return;
 		}
@@ -202,11 +241,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 		if (unreconciledScopeAliasesList.isEmpty()) {
 			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-				oAuth2ApplicationId);
+				companyId, oAuth2ApplicationId);
 		}
 		else {
 			_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-				oAuth2ApplicationId, unreconciledScopeAliasesList);
+				companyId, oAuth2ApplicationId, unreconciledScopeAliasesList);
 		}
 
 		if (_log.isInfoEnabled()) {
@@ -228,44 +267,22 @@ public class UnresolvedScopeAliasReconcilerImpl
 			return;
 		}
 
-		Set<Long> oAuth2ApplicationIds =
-			_unresolvedScopeAliasesRegistry.getOAuth2ApplicationIds();
+		Map<Long, Set<Long>> oAuth2ApplicationIdsByCompanyId =
+			_unresolvedScopeAliasesRegistry.
+				getOAuth2ApplicationIdsByCompanyId();
 
 		if (_log.isDebugEnabled()) {
 			_log.debug(
 				"Reconciling unresolved scope aliases for OAuth 2 " +
-					"applications " + oAuth2ApplicationIds);
+					"applications " + oAuth2ApplicationIdsByCompanyId);
 		}
 
-		Map<Long, List<OAuth2Application>> oAuth2ApplicationsByCompanyId =
-			new HashMap<>();
-
-		for (long oAuth2ApplicationId : oAuth2ApplicationIds) {
-			OAuth2Application oAuth2Application =
-				_oAuth2ApplicationLocalService.fetchOAuth2Application(
-					oAuth2ApplicationId);
-
-			if (oAuth2Application == null) {
-				_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-					oAuth2ApplicationId);
-
-				continue;
-			}
-
-			List<OAuth2Application> oAuth2Applications =
-				oAuth2ApplicationsByCompanyId.computeIfAbsent(
-					oAuth2Application.getCompanyId(),
-					companyId -> new ArrayList<>());
-
-			oAuth2Applications.add(oAuth2Application);
-		}
-
-		for (Map.Entry<Long, List<OAuth2Application>> entry :
-				oAuth2ApplicationsByCompanyId.entrySet()) {
+		for (Map.Entry<Long, Set<Long>> entry :
+				oAuth2ApplicationIdsByCompanyId.entrySet()) {
 
 			long companyId = entry.getKey();
 
-			List<OAuth2Application> oAuth2Applications = entry.getValue();
+			Set<Long> oAuth2ApplicationIds = entry.getValue();
 
 			try {
 				ConfigurationFactoryUtil.executeAsCompany(
@@ -274,7 +291,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 						"companyId", companyId
 					).build(),
 					curCompanyId -> _reconcile(
-						curCompanyId, oAuth2Applications));
+						curCompanyId, oAuth2ApplicationIds));
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
@@ -289,6 +306,9 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		UnresolvedScopeAliasReconcilerImpl.class);
+
+	private final Map<Long, Set<Long>> _blockedOAuth2ApplicationIdsByCompanyId =
+		new ConcurrentHashMap<>();
 
 	@Reference
 	private CompanyLocalService _companyLocalService;
