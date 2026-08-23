@@ -146,6 +146,15 @@ public class UnresolvedScopeAliasReconcilerImpl
 			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
 				oAuth2Application.getOAuth2ApplicationScopeAliasesId()));
 
+		for (String grantedScopeAlias : scopeAliasesList) {
+			if (_scopeLocator.getLiferayOAuth2Scopes(
+					companyId, grantedScopeAlias
+				).isEmpty()) {
+
+				return;
+			}
+		}
+
 		boolean modified = false;
 
 		for (String scopeAlias : normalizedScopeAliasesList) {
