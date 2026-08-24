@@ -137,6 +137,25 @@ public class UnresolvedScopeAliasReconcilerImpl
 					long oAuth2ApplicationScopeAliasesId =
 						oAuth2Application.getOAuth2ApplicationScopeAliasesId();
 
+					Map<String, String> stillResolvingScopeAliases =
+						new LinkedHashMap<>();
+
+					for (Map.Entry<String, String> entry :
+							resolvedScopeAliases.entrySet()) {
+
+						if (!_scopeLocator.getLiferayOAuth2Scopes(
+								companyId, entry.getValue()
+							).isEmpty()) {
+
+							stillResolvingScopeAliases.put(
+								entry.getKey(), entry.getValue());
+						}
+					}
+
+					if (stillResolvingScopeAliases.isEmpty()) {
+						return null;
+					}
+
 					OAuth2ApplicationScopeAliases
 						oAuth2ApplicationScopeAliases =
 							_oAuth2ApplicationScopeAliasesLocalService.
@@ -170,7 +189,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 										}
 
 										for (Map.Entry<String, String> entry :
-												resolvedScopeAliases.
+												stillResolvingScopeAliases.
 													entrySet()) {
 
 											String declaredScopeAlias =
@@ -257,18 +276,19 @@ public class UnresolvedScopeAliasReconcilerImpl
 		boolean bound = false;
 
 		for (long oAuth2ApplicationId : oAuth2ApplicationIds) {
-			OAuth2Application oAuth2Application =
-				_oAuth2ApplicationLocalService.fetchOAuth2Application(
-					oAuth2ApplicationId);
-
-			if (oAuth2Application == null) {
-				_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-					companyId, oAuth2ApplicationId);
-
-				continue;
-			}
-
 			try {
+				OAuth2Application oAuth2Application =
+					_oAuth2ApplicationLocalService.fetchOAuth2Application(
+						oAuth2ApplicationId);
+
+				if (oAuth2Application == null) {
+					_unresolvedScopeAliasesRegistry.
+						removeUnresolvedScopeAliases(
+							companyId, oAuth2ApplicationId);
+
+					continue;
+				}
+
 				if (_reconcile(oAuth2Application, registeredScopeAliases)) {
 					bound = true;
 				}
