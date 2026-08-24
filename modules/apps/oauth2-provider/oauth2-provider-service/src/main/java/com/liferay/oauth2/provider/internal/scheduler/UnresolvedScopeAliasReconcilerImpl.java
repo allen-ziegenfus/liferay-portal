@@ -29,7 +29,9 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,8 +55,11 @@ import org.osgi.service.component.annotations.Reference;
  * The service persists the new snapshot and its grant rows, and
  * {@link #_addScopeAliases} then repoints the application at it; both writes run
  * inside one transaction against an application re-fetched in that transaction,
- * so a failure leaves no orphan snapshot and a concurrent edit of the
- * application is not silently reverted. Existing grants are never re-resolved, so
+ * so a failure leaves no orphan snapshot and the window for losing a concurrent
+ * edit of the application shrinks to that transaction. The application has no
+ * optimistic-lock column, so a configuration redeploy or scope update
+ * interleaving on the same node can still drop one write's aliases; that is a
+ * known limitation. Existing grants are never re-resolved, so
  * an already-granted alias whose source is momentarily unavailable can never be
  * revoked, and there is no need to guard against transient churn. A newly
  * resolved alias is looked up under its registered casing but its grant is
@@ -114,10 +119,12 @@ public class UnresolvedScopeAliasReconcilerImpl
 		return bound;
 	}
 
-	private void _addScopeAliases(
+	private Set<String> _addScopeAliases(
 			long companyId, long oAuth2ApplicationId,
 			Map<String, String> resolvedScopeAliases)
 		throws Exception {
+
+		Set<String> persistedScopeAliases = new HashSet<>();
 
 		try {
 			TransactionInvokerUtil.invoke(
@@ -196,6 +203,9 @@ public class UnresolvedScopeAliasReconcilerImpl
 																	mapToScopeAlias(
 																		declaredScopeAlias
 																	));
+
+												persistedScopeAliases.add(
+													declaredScopeAlias);
 											}
 										}
 									});
@@ -218,6 +228,8 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 			throw new RuntimeException(throwable);
 		}
+
+		return persistedScopeAliases;
 	}
 
 	private String _normalizeScopeAlias(
@@ -294,7 +306,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
 				oAuth2Application.getOAuth2ApplicationScopeAliasesId());
 
-		List<String> boundScopeAliasesList = new ArrayList<>();
+		List<String> grantedResolvedScopeAliasesList = new ArrayList<>();
 
 		Map<String, String> resolvedScopeAliases = new LinkedHashMap<>();
 
@@ -309,20 +321,28 @@ public class UnresolvedScopeAliasReconcilerImpl
 				continue;
 			}
 
-			boundScopeAliasesList.add(scopeAlias);
-
-			if (!grantedScopeAliasesList.contains(scopeAlias)) {
+			if (grantedScopeAliasesList.contains(scopeAlias)) {
+				grantedResolvedScopeAliasesList.add(scopeAlias);
+			}
+			else {
 				resolvedScopeAliases.put(scopeAlias, normalizedScopeAlias);
 			}
 		}
 
-		if (boundScopeAliasesList.isEmpty()) {
-			return false;
-		}
+		Set<String> persistedScopeAliases = Collections.emptySet();
 
 		if (!resolvedScopeAliases.isEmpty()) {
-			_addScopeAliases(
+			persistedScopeAliases = _addScopeAliases(
 				companyId, oAuth2ApplicationId, resolvedScopeAliases);
+		}
+
+		List<String> boundScopeAliasesList = new ArrayList<>(
+			grantedResolvedScopeAliasesList);
+
+		boundScopeAliasesList.addAll(persistedScopeAliases);
+
+		if (boundScopeAliasesList.isEmpty()) {
+			return false;
 		}
 
 		List<String> remainingScopeAliasesList = new ArrayList<>(
@@ -339,15 +359,15 @@ public class UnresolvedScopeAliasReconcilerImpl
 				companyId, oAuth2ApplicationId, remainingScopeAliasesList);
 		}
 
-		if (!resolvedScopeAliases.isEmpty() && _log.isInfoEnabled()) {
+		if (!persistedScopeAliases.isEmpty() && _log.isInfoEnabled()) {
 			_log.info(
 				StringBundler.concat(
 					"Bound previously unresolved scope aliases ",
-					resolvedScopeAliases.keySet(), " for OAuth 2 application ",
+					persistedScopeAliases, " for OAuth 2 application ",
 					oAuth2ApplicationId));
 		}
 
-		return true;
+		return !persistedScopeAliases.isEmpty();
 	}
 
 	private boolean _reconcileOnce() throws Exception {
