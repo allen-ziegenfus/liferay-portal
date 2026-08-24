@@ -29,6 +29,8 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +56,10 @@ import org.osgi.service.component.annotations.Reference;
  * so a failure leaves no orphan snapshot and a concurrent edit of the
  * application is not silently reverted. Existing grants are never re-resolved, so
  * an already-granted alias whose source is momentarily unavailable can never be
- * revoked, and there is no need to guard against transient churn. Tokens issued
+ * revoked, and there is no need to guard against transient churn. A newly
+ * resolved alias is looked up under its registered casing but its grant is
+ * persisted under the alias the client declared, because token matching is case
+ * sensitive and the client only knows the casing it declared. Tokens issued
  * against the old snapshot keep referencing it and are unaffected. An alias that
  * already resolves and is already granted is skipped, so a redundant reconcile
  * writes nothing; because the registry is node-local while reconciling is
@@ -111,7 +116,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 	private void _addScopeAliases(
 			long companyId, long oAuth2ApplicationId,
-			List<String> scopeAliasesList)
+			Map<String, String> resolvedScopeAliases)
 		throws Exception {
 
 		try {
@@ -157,15 +162,20 @@ public class UnresolvedScopeAliasReconcilerImpl
 														));
 										}
 
-										for (String scopeAlias :
-												scopeAliasesList) {
+										for (Map.Entry<String, String> entry :
+												resolvedScopeAliases.
+													entrySet()) {
+
+											String declaredScopeAlias =
+												entry.getKey();
 
 											for (LiferayOAuth2Scope
 													liferayOAuth2Scope :
 														_scopeLocator.
 															getLiferayOAuth2Scopes(
 																companyId,
-																scopeAlias)) {
+																entry.
+																	getValue())) {
 
 												Bundle bundle =
 													liferayOAuth2Scope.
@@ -184,12 +194,13 @@ public class UnresolvedScopeAliasReconcilerImpl
 																		getScope()
 																).
 																	mapToScopeAlias(
-																		scopeAlias
+																		declaredScopeAlias
 																	));
 											}
 										}
 									});
 
+					oAuth2Application.setModifiedDate(new Date());
 					oAuth2Application.setOAuth2ApplicationScopeAliasesId(
 						oAuth2ApplicationScopeAliases.
 							getOAuth2ApplicationScopeAliasesId());
@@ -284,7 +295,8 @@ public class UnresolvedScopeAliasReconcilerImpl
 				oAuth2Application.getOAuth2ApplicationScopeAliasesId());
 
 		List<String> boundScopeAliasesList = new ArrayList<>();
-		List<String> resolvedScopeAliasesList = new ArrayList<>();
+
+		Map<String, String> resolvedScopeAliases = new LinkedHashMap<>();
 
 		for (String scopeAlias : unresolvedScopeAliases) {
 			String normalizedScopeAlias = _normalizeScopeAlias(
@@ -299,8 +311,8 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 			boundScopeAliasesList.add(scopeAlias);
 
-			if (!grantedScopeAliasesList.contains(normalizedScopeAlias)) {
-				resolvedScopeAliasesList.add(normalizedScopeAlias);
+			if (!grantedScopeAliasesList.contains(scopeAlias)) {
+				resolvedScopeAliases.put(scopeAlias, normalizedScopeAlias);
 			}
 		}
 
@@ -308,9 +320,9 @@ public class UnresolvedScopeAliasReconcilerImpl
 			return false;
 		}
 
-		if (!resolvedScopeAliasesList.isEmpty()) {
+		if (!resolvedScopeAliases.isEmpty()) {
 			_addScopeAliases(
-				companyId, oAuth2ApplicationId, resolvedScopeAliasesList);
+				companyId, oAuth2ApplicationId, resolvedScopeAliases);
 		}
 
 		List<String> remainingScopeAliasesList = new ArrayList<>(
@@ -327,11 +339,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 				companyId, oAuth2ApplicationId, remainingScopeAliasesList);
 		}
 
-		if (!resolvedScopeAliasesList.isEmpty() && _log.isInfoEnabled()) {
+		if (!resolvedScopeAliases.isEmpty() && _log.isInfoEnabled()) {
 			_log.info(
 				StringBundler.concat(
 					"Bound previously unresolved scope aliases ",
-					resolvedScopeAliasesList, " for OAuth 2 application ",
+					resolvedScopeAliases.keySet(), " for OAuth 2 application ",
 					oAuth2ApplicationId));
 		}
 
