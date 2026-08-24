@@ -40,6 +40,28 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 /**
+ * Binds the scope aliases tracked in the {@link UnresolvedScopeAliasesRegistry}
+ * once the scope sources they name become resolvable.
+ *
+ * <p>
+ * Binding is additive. Rather than passing the full alias list back through
+ * {@code updateScopeAliases}, which rebuilds the whole scope-aliases snapshot
+ * and re-resolves every alias, {@link #_addScopeAliases} writes a new snapshot
+ * that copies every existing grant verbatim and adds only the grants for the
+ * aliases that resolve now. Existing grants are therefore never re-resolved, so
+ * an already-granted alias whose source is momentarily unavailable can never be
+ * revoked, and there is no need to guard against transient churn. Tokens issued
+ * against the old snapshot keep referencing it and are unaffected.
+ * </p>
+ *
+ * <p>
+ * A single reconcile pass may be requested from several threads at once (the
+ * periodic scheduler and the scope finder trigger). The
+ * {@code _pending} / {@code _reconciling} handshake coalesces overlapping
+ * requests into one pass without dropping a request that arrives while a pass is
+ * already running.
+ * </p>
+ *
  * @author Allen Ziegenfus
  */
 @Component(service = UnresolvedScopeAliasReconciler.class)
@@ -47,16 +69,20 @@ public class UnresolvedScopeAliasReconcilerImpl
 	implements UnresolvedScopeAliasReconciler {
 
 	@Override
-	public void reconcile() throws Exception {
+	public boolean reconcile() throws Exception {
 		_pending.set(true);
+
+		boolean bound = false;
 
 		while (_reconciling.compareAndSet(false, true)) {
 			try {
 				if (!_pending.compareAndSet(true, false)) {
-					return;
+					return bound;
 				}
 
-				_reconcileOnce();
+				if (_reconcileOnce()) {
+					bound = true;
+				}
 			}
 			catch (Exception exception) {
 				_pending.set(true);
@@ -68,9 +94,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 			}
 
 			if (!_pending.get()) {
-				return;
+				return bound;
 			}
 		}
+
+		return bound;
 	}
 
 	private void _addScopeAliases(
@@ -157,11 +185,13 @@ public class UnresolvedScopeAliasReconcilerImpl
 		return scopeAlias;
 	}
 
-	private void _reconcile(long companyId, Set<Long> oAuth2ApplicationIds)
+	private boolean _reconcile(long companyId, Set<Long> oAuth2ApplicationIds)
 		throws Exception {
 
 		Collection<String> registeredScopeAliases =
 			_scopeLocator.getScopeAliases(companyId);
+
+		boolean bound = false;
 
 		for (long oAuth2ApplicationId : oAuth2ApplicationIds) {
 			OAuth2Application oAuth2Application =
@@ -176,7 +206,9 @@ public class UnresolvedScopeAliasReconcilerImpl
 			}
 
 			try {
-				_reconcile(oAuth2Application, registeredScopeAliases);
+				if (_reconcile(oAuth2Application, registeredScopeAliases)) {
+					bound = true;
+				}
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
@@ -187,9 +219,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 				}
 			}
 		}
+
+		return bound;
 	}
 
-	private void _reconcile(
+	private boolean _reconcile(
 			OAuth2Application oAuth2Application,
 			Collection<String> registeredScopeAliases)
 		throws Exception {
@@ -202,7 +236,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 				companyId, oAuth2ApplicationId);
 
 		if (unresolvedScopeAliases.isEmpty()) {
-			return;
+			return false;
 		}
 
 		List<String> boundScopeAliasesList = new ArrayList<>();
@@ -222,7 +256,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 		}
 
 		if (boundScopeAliasesList.isEmpty()) {
-			return;
+			return false;
 		}
 
 		_addScopeAliases(oAuth2Application, resolvedScopeAliasesList);
@@ -248,11 +282,13 @@ public class UnresolvedScopeAliasReconcilerImpl
 					boundScopeAliasesList, " for OAuth 2 application ",
 					oAuth2ApplicationId));
 		}
+
+		return true;
 	}
 
-	private void _reconcileOnce() throws Exception {
+	private boolean _reconcileOnce() throws Exception {
 		if (_unresolvedScopeAliasesRegistry.isEmpty()) {
-			return;
+			return false;
 		}
 
 		Map<Long, Set<Long>> oAuth2ApplicationIdsByCompanyId =
@@ -264,6 +300,8 @@ public class UnresolvedScopeAliasReconcilerImpl
 				"Reconciling unresolved scope aliases for OAuth 2 " +
 					"applications " + oAuth2ApplicationIdsByCompanyId);
 		}
+
+		boolean[] bound = {false};
 
 		for (Map.Entry<Long, Set<Long>> entry :
 				oAuth2ApplicationIdsByCompanyId.entrySet()) {
@@ -278,8 +316,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 					HashMapBuilder.<String, Object>put(
 						"companyId", companyId
 					).build(),
-					curCompanyId -> _reconcile(
-						curCompanyId, oAuth2ApplicationIds));
+					curCompanyId -> {
+						if (_reconcile(curCompanyId, oAuth2ApplicationIds)) {
+							bound[0] = true;
+						}
+					});
 			}
 			catch (Exception exception) {
 				if (_log.isWarnEnabled()) {
@@ -290,6 +331,8 @@ public class UnresolvedScopeAliasReconcilerImpl
 				}
 			}
 		}
+
+		return bound[0];
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(

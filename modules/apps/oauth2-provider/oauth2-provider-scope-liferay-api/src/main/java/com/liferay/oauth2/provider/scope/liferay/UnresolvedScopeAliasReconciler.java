@@ -21,6 +21,11 @@ import org.osgi.annotation.versioning.ProviderType;
 @ProviderType
 public interface UnresolvedScopeAliasReconciler {
 
-	public void reconcile() throws Exception;
+	/**
+	 * @return <code>true</code> if reconciling bound at least one previously
+	 *         unresolved scope alias, so a caller retrying against a lagging
+	 *         scope source can stop once progress is made
+	 */
+	public boolean reconcile() throws Exception;
 
 }
