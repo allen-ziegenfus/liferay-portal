@@ -31,16 +31,53 @@ import org.osgi.annotation.versioning.ProviderType;
 @ProviderType
 public interface UnresolvedScopeAliasesRegistry {
 
+	/**
+	 * Returns the tracked application IDs grouped by company, so a reconciler
+	 * can select each company's schema before it reads the applications.
+	 *
+	 * @return a snapshot mapping each company ID to the IDs of its applications
+	 *         that have unresolved scope aliases
+	 */
 	public Map<Long, Set<Long>> getOAuth2ApplicationIdsByCompanyId();
 
+	/**
+	 * Returns the unresolved scope aliases tracked for an application.
+	 *
+	 * @param  companyId the company the application belongs to
+	 * @param  oAuth2ApplicationId the application's primary key, unique only
+	 *         within its company under database partitioning
+	 * @return the tracked aliases, or an empty collection if none are tracked
+	 */
 	public Collection<String> getUnresolvedScopeAliases(
 		long companyId, long oAuth2ApplicationId);
 
+	/**
+	 * Returns whether the registry tracks no unresolved scope aliases for any
+	 * application.
+	 *
+	 * @return <code>true</code> if nothing is tracked
+	 */
 	public boolean isEmpty();
 
+	/**
+	 * Stops tracking an application, typically once its aliases are all bound or
+	 * its configuration is dropped.
+	 *
+	 * @param companyId the company the application belongs to
+	 * @param oAuth2ApplicationId the application's primary key
+	 */
 	public void removeUnresolvedScopeAliases(
 		long companyId, long oAuth2ApplicationId);
 
+	/**
+	 * Records the unresolved scope aliases for an application, replacing any
+	 * already tracked for it. An empty or <code>null</code> collection stops
+	 * tracking the application.
+	 *
+	 * @param companyId the company the application belongs to
+	 * @param oAuth2ApplicationId the application's primary key
+	 * @param scopeAliases the declared aliases that resolved to no scope
+	 */
 	public void setUnresolvedScopeAliases(
 		long companyId, long oAuth2ApplicationId,
 		Collection<String> scopeAliases);
