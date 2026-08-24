@@ -5,14 +5,21 @@
 
 package com.liferay.oauth2.provider.internal.scheduler;
 
+import com.liferay.counter.kernel.service.CounterLocalService;
+import com.liferay.oauth2.provider.exception.DuplicateOAuth2ScopeGrantException;
 import com.liferay.oauth2.provider.model.OAuth2Application;
+import com.liferay.oauth2.provider.model.OAuth2ApplicationScopeAliases;
+import com.liferay.oauth2.provider.model.OAuth2ScopeGrant;
+import com.liferay.oauth2.provider.scope.liferay.LiferayOAuth2Scope;
 import com.liferay.oauth2.provider.scope.liferay.ScopeLocator;
 import com.liferay.oauth2.provider.scope.liferay.UnresolvedScopeAliasReconciler;
 import com.liferay.oauth2.provider.scope.liferay.UnresolvedScopeAliasesRegistry;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationLocalService;
 import com.liferay.oauth2.provider.service.OAuth2ApplicationScopeAliasesLocalService;
+import com.liferay.oauth2.provider.service.OAuth2ScopeGrantLocalService;
 import com.liferay.osgi.util.configuration.ConfigurationFactoryUtil;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
@@ -21,12 +28,14 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.osgi.framework.Bundle;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -64,33 +73,72 @@ public class UnresolvedScopeAliasReconcilerImpl
 		}
 	}
 
-	private void _clearBlocked(long companyId, long oAuth2ApplicationId) {
-		_blockedOAuth2ApplicationIdsByCompanyId.computeIfPresent(
-			companyId,
-			(key, blockedOAuth2ApplicationIds) -> {
-				blockedOAuth2ApplicationIds.remove(oAuth2ApplicationId);
+	private void _addScopeAliases(
+			OAuth2Application oAuth2Application, List<String> scopeAliasesList)
+		throws Exception {
 
-				if (blockedOAuth2ApplicationIds.isEmpty()) {
-					return null;
+		long companyId = oAuth2Application.getCompanyId();
+
+		long oAuth2ApplicationScopeAliasesId = _counterLocalService.increment(
+			OAuth2ApplicationScopeAliases.class.getName());
+
+		OAuth2ApplicationScopeAliases oAuth2ApplicationScopeAliases =
+			_oAuth2ApplicationScopeAliasesLocalService.
+				createOAuth2ApplicationScopeAliases(
+					oAuth2ApplicationScopeAliasesId);
+
+		oAuth2ApplicationScopeAliases.setCompanyId(companyId);
+		oAuth2ApplicationScopeAliases.setUserId(oAuth2Application.getUserId());
+		oAuth2ApplicationScopeAliases.setUserName(
+			oAuth2Application.getUserName());
+		oAuth2ApplicationScopeAliases.setCreateDate(new Date());
+		oAuth2ApplicationScopeAliases.setOAuth2ApplicationId(
+			oAuth2Application.getOAuth2ApplicationId());
+
+		_oAuth2ApplicationScopeAliasesLocalService.
+			updateOAuth2ApplicationScopeAliases(oAuth2ApplicationScopeAliases);
+
+		for (OAuth2ScopeGrant oAuth2ScopeGrant :
+				_oAuth2ScopeGrantLocalService.getOAuth2ScopeGrants(
+					oAuth2Application.getOAuth2ApplicationScopeAliasesId(),
+					QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+
+			_oAuth2ScopeGrantLocalService.createOAuth2ScopeGrant(
+				companyId, oAuth2ApplicationScopeAliasesId,
+				oAuth2ScopeGrant.getApplicationName(),
+				oAuth2ScopeGrant.getBundleSymbolicName(),
+				oAuth2ScopeGrant.getScope(),
+				oAuth2ScopeGrant.getScopeAliasesList());
+		}
+
+		for (String scopeAlias : scopeAliasesList) {
+			for (LiferayOAuth2Scope liferayOAuth2Scope :
+					_scopeLocator.getLiferayOAuth2Scopes(
+						companyId, scopeAlias)) {
+
+				Bundle bundle = liferayOAuth2Scope.getBundle();
+
+				try {
+					_oAuth2ScopeGrantLocalService.createOAuth2ScopeGrant(
+						companyId, oAuth2ApplicationScopeAliasesId,
+						liferayOAuth2Scope.getApplicationName(),
+						bundle.getSymbolicName(), liferayOAuth2Scope.getScope(),
+						Collections.singletonList(scopeAlias));
 				}
+				catch (DuplicateOAuth2ScopeGrantException
+							duplicateOAuth2ScopeGrantException) {
 
-				return blockedOAuth2ApplicationIds;
-			});
-	}
+					// The scope is already granted by an existing alias
 
-	private boolean _hasNewlyResolvedScopeAlias(
-		long companyId, Collection<String> scopeAliases) {
-
-		for (String scopeAlias : scopeAliases) {
-			if (!_scopeLocator.getLiferayOAuth2Scopes(
-					companyId, scopeAlias
-				).isEmpty()) {
-
-				return true;
+				}
 			}
 		}
 
-		return false;
+		oAuth2Application.setOAuth2ApplicationScopeAliasesId(
+			oAuth2ApplicationScopeAliasesId);
+
+		_oAuth2ApplicationLocalService.updateOAuth2Application(
+			oAuth2Application);
 	}
 
 	private String _normalizeScopeAlias(
@@ -157,103 +205,43 @@ public class UnresolvedScopeAliasReconcilerImpl
 			return;
 		}
 
-		List<String> normalizedScopeAliasesList = new ArrayList<>();
+		List<String> boundScopeAliasesList = new ArrayList<>();
+		List<String> resolvedScopeAliasesList = new ArrayList<>();
 
 		for (String scopeAlias : unresolvedScopeAliases) {
-			normalizedScopeAliasesList.add(
-				_normalizeScopeAlias(registeredScopeAliases, scopeAlias));
-		}
+			String normalizedScopeAlias = _normalizeScopeAlias(
+				registeredScopeAliases, scopeAlias);
 
-		if (!_hasNewlyResolvedScopeAlias(
-				companyId, normalizedScopeAliasesList)) {
-
-			return;
-		}
-
-		List<String> scopeAliasesList = new ArrayList<>(
-			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
-				oAuth2Application.getOAuth2ApplicationScopeAliasesId()));
-
-		boolean grantedScopeAliasUnresolvable = false;
-
-		for (String grantedScopeAlias : scopeAliasesList) {
-			if (_scopeLocator.getLiferayOAuth2Scopes(
-					companyId, grantedScopeAlias
+			if (!_scopeLocator.getLiferayOAuth2Scopes(
+					companyId, normalizedScopeAlias
 				).isEmpty()) {
 
-				grantedScopeAliasUnresolvable = true;
-
-				break;
+				boundScopeAliasesList.add(scopeAlias);
+				resolvedScopeAliasesList.add(normalizedScopeAlias);
 			}
 		}
 
-		if (grantedScopeAliasUnresolvable) {
-			Set<Long> blockedOAuth2ApplicationIds =
-				_blockedOAuth2ApplicationIdsByCompanyId.computeIfAbsent(
-					companyId, key -> ConcurrentHashMap.newKeySet());
-
-			if (blockedOAuth2ApplicationIds.add(oAuth2ApplicationId)) {
-				return;
-			}
-		}
-
-		_clearBlocked(companyId, oAuth2ApplicationId);
-
-		boolean modified = false;
-
-		for (String scopeAlias : normalizedScopeAliasesList) {
-			if (!scopeAliasesList.contains(scopeAlias)) {
-				scopeAliasesList.add(scopeAlias);
-
-				modified = true;
-			}
-		}
-
-		if (!modified) {
-			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-				companyId, oAuth2ApplicationId);
-
+		if (boundScopeAliasesList.isEmpty()) {
 			return;
 		}
 
-		_oAuth2ApplicationLocalService.updateScopeAliases(
-			oAuth2Application.getUserId(), oAuth2Application.getUserName(),
-			oAuth2ApplicationId, scopeAliasesList);
+		_addScopeAliases(oAuth2Application, resolvedScopeAliasesList);
 
-		OAuth2Application reconciledOAuth2Application =
-			_oAuth2ApplicationLocalService.fetchOAuth2Application(
-				oAuth2ApplicationId);
+		List<String> remainingScopeAliasesList = new ArrayList<>(
+			unresolvedScopeAliases);
 
-		if (reconciledOAuth2Application == null) {
-			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-				companyId, oAuth2ApplicationId);
+		remainingScopeAliasesList.removeAll(boundScopeAliasesList);
 
-			return;
-		}
-
-		List<String> unreconciledScopeAliasesList = new ArrayList<>(
-			scopeAliasesList);
-
-		unreconciledScopeAliasesList.removeAll(
-			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
-				reconciledOAuth2Application.
-					getOAuth2ApplicationScopeAliasesId()));
-
-		if (unreconciledScopeAliasesList.isEmpty()) {
+		if (remainingScopeAliasesList.isEmpty()) {
 			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
 				companyId, oAuth2ApplicationId);
 		}
 		else {
 			_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-				companyId, oAuth2ApplicationId, unreconciledScopeAliasesList);
+				companyId, oAuth2ApplicationId, remainingScopeAliasesList);
 		}
 
 		if (_log.isInfoEnabled()) {
-			List<String> boundScopeAliasesList = new ArrayList<>(
-				normalizedScopeAliasesList);
-
-			boundScopeAliasesList.removeAll(unreconciledScopeAliasesList);
-
 			_log.info(
 				StringBundler.concat(
 					"Bound previously unresolved scope aliases ",
@@ -307,11 +295,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 	private static final Log _log = LogFactoryUtil.getLog(
 		UnresolvedScopeAliasReconcilerImpl.class);
 
-	private final Map<Long, Set<Long>> _blockedOAuth2ApplicationIdsByCompanyId =
-		new ConcurrentHashMap<>();
-
 	@Reference
 	private CompanyLocalService _companyLocalService;
+
+	@Reference
+	private CounterLocalService _counterLocalService;
 
 	@Reference
 	private OAuth2ApplicationLocalService _oAuth2ApplicationLocalService;
@@ -319,6 +307,9 @@ public class UnresolvedScopeAliasReconcilerImpl
 	@Reference
 	private OAuth2ApplicationScopeAliasesLocalService
 		_oAuth2ApplicationScopeAliasesLocalService;
+
+	@Reference
+	private OAuth2ScopeGrantLocalService _oAuth2ScopeGrantLocalService;
 
 	private final AtomicBoolean _pending = new AtomicBoolean();
 	private final AtomicBoolean _reconciling = new AtomicBoolean();
