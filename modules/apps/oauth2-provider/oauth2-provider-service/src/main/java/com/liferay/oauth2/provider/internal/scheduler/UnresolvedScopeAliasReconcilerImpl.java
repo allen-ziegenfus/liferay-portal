@@ -21,6 +21,9 @@ import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.transaction.Propagation;
+import com.liferay.portal.kernel.transaction.TransactionConfig;
+import com.liferay.portal.kernel.transaction.TransactionInvokerUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.StringUtil;
 
@@ -44,15 +47,19 @@ import org.osgi.service.component.annotations.Reference;
  * {@code updateScopeAliases}, which rebuilds the whole scope-aliases snapshot
  * and re-resolves every alias, {@link #_addScopeAliases} feeds every existing
  * grant plus the grants for the aliases that resolve now to
- * {@code OAuth2ApplicationScopeAliasesLocalService.addOAuth2ApplicationScopeAliases},
- * which persists the new snapshot and its grant rows in one transaction.
- * Existing grants are therefore never re-resolved, so an already-granted alias
- * whose source is momentarily unavailable can never be revoked, and there is no
- * need to guard against transient churn. Tokens issued against the old snapshot
- * keep referencing it and are unaffected. An alias that already resolves and is
- * already granted is skipped, so a redundant reconcile writes nothing; because
- * the registry is node-local while reconciling is master-only, this keeps a new
- * master from rewriting an already-bound alias after a cluster failover.
+ * {@code OAuth2ApplicationScopeAliasesLocalService.addOAuth2ApplicationScopeAliases}.
+ * The service persists the new snapshot and its grant rows, and
+ * {@link #_addScopeAliases} then repoints the application at it; both writes run
+ * inside one transaction against an application re-fetched in that transaction,
+ * so a failure leaves no orphan snapshot and a concurrent edit of the
+ * application is not silently reverted. Existing grants are never re-resolved, so
+ * an already-granted alias whose source is momentarily unavailable can never be
+ * revoked, and there is no need to guard against transient churn. Tokens issued
+ * against the old snapshot keep referencing it and are unaffected. An alias that
+ * already resolves and is already granted is skipped, so a redundant reconcile
+ * writes nothing; because the registry is node-local while reconciling is
+ * master-only, this keeps a new master from rewriting an already-bound alias
+ * after a cluster failover.
  * </p>
  *
  * <p>
@@ -103,63 +110,103 @@ public class UnresolvedScopeAliasReconcilerImpl
 	}
 
 	private void _addScopeAliases(
-			OAuth2Application oAuth2Application, List<String> scopeAliasesList)
+			long companyId, long oAuth2ApplicationId,
+			List<String> scopeAliasesList)
 		throws Exception {
 
-		long companyId = oAuth2Application.getCompanyId();
-		long oAuth2ApplicationScopeAliasesId =
-			oAuth2Application.getOAuth2ApplicationScopeAliasesId();
+		try {
+			TransactionInvokerUtil.invoke(
+				_transactionConfig,
+				() -> {
+					OAuth2Application oAuth2Application =
+						_oAuth2ApplicationLocalService.getOAuth2Application(
+							oAuth2ApplicationId);
 
-		OAuth2ApplicationScopeAliases oAuth2ApplicationScopeAliases =
-			_oAuth2ApplicationScopeAliasesLocalService.
-				addOAuth2ApplicationScopeAliases(
-					companyId, oAuth2Application.getUserId(),
-					oAuth2Application.getUserName(),
-					oAuth2Application.getOAuth2ApplicationId(),
-					oAuth2ScopeBuilder -> {
-						for (OAuth2ScopeGrant oAuth2ScopeGrant :
-								_oAuth2ScopeGrantLocalService.
-									getOAuth2ScopeGrants(
-										oAuth2ApplicationScopeAliasesId,
-										QueryUtil.ALL_POS, QueryUtil.ALL_POS,
-										null)) {
+					long oAuth2ApplicationScopeAliasesId =
+						oAuth2Application.getOAuth2ApplicationScopeAliasesId();
 
-							oAuth2ScopeBuilder.forApplication(
-								oAuth2ScopeGrant.getApplicationName(),
-								oAuth2ScopeGrant.getBundleSymbolicName(),
-								applicationScopeAssigner ->
-									applicationScopeAssigner.assignScope(
-										oAuth2ScopeGrant.getScope()
-									).mapToScopeAlias(
-										oAuth2ScopeGrant.getScopeAliasesList()
-									));
-						}
+					OAuth2ApplicationScopeAliases
+						oAuth2ApplicationScopeAliases =
+							_oAuth2ApplicationScopeAliasesLocalService.
+								addOAuth2ApplicationScopeAliases(
+									companyId, oAuth2Application.getUserId(),
+									oAuth2Application.getUserName(),
+									oAuth2ApplicationId,
+									oAuth2ScopeBuilder -> {
+										for (OAuth2ScopeGrant oAuth2ScopeGrant :
+												_oAuth2ScopeGrantLocalService.
+													getOAuth2ScopeGrants(
+														oAuth2ApplicationScopeAliasesId,
+														QueryUtil.ALL_POS,
+														QueryUtil.ALL_POS,
+														null)) {
 
-						for (String scopeAlias : scopeAliasesList) {
-							for (LiferayOAuth2Scope liferayOAuth2Scope :
-									_scopeLocator.getLiferayOAuth2Scopes(
-										companyId, scopeAlias)) {
+											oAuth2ScopeBuilder.forApplication(
+												oAuth2ScopeGrant.
+													getApplicationName(),
+												oAuth2ScopeGrant.
+													getBundleSymbolicName(),
+												applicationScopeAssigner ->
+													applicationScopeAssigner.
+														assignScope(
+															oAuth2ScopeGrant.
+																getScope()
+														).mapToScopeAlias(
+															oAuth2ScopeGrant.
+																getScopeAliasesList()
+														));
+										}
 
-								Bundle bundle = liferayOAuth2Scope.getBundle();
+										for (String scopeAlias :
+												scopeAliasesList) {
 
-								oAuth2ScopeBuilder.forApplication(
-									liferayOAuth2Scope.getApplicationName(),
-									bundle.getSymbolicName(),
-									applicationScopeAssigner ->
-										applicationScopeAssigner.assignScope(
-											liferayOAuth2Scope.getScope()
-										).mapToScopeAlias(
-											scopeAlias
-										));
-							}
-						}
-					});
+											for (LiferayOAuth2Scope
+													liferayOAuth2Scope :
+														_scopeLocator.
+															getLiferayOAuth2Scopes(
+																companyId,
+																scopeAlias)) {
 
-		oAuth2Application.setOAuth2ApplicationScopeAliasesId(
-			oAuth2ApplicationScopeAliases.getOAuth2ApplicationScopeAliasesId());
+												Bundle bundle =
+													liferayOAuth2Scope.
+														getBundle();
 
-		_oAuth2ApplicationLocalService.updateOAuth2Application(
-			oAuth2Application);
+												oAuth2ScopeBuilder.
+													forApplication(
+														liferayOAuth2Scope.
+															getApplicationName(),
+														bundle.
+															getSymbolicName(),
+														applicationScopeAssigner ->
+															applicationScopeAssigner.
+																assignScope(
+																	liferayOAuth2Scope.
+																		getScope()
+																).
+																	mapToScopeAlias(
+																		scopeAlias
+																	));
+											}
+										}
+									});
+
+					oAuth2Application.setOAuth2ApplicationScopeAliasesId(
+						oAuth2ApplicationScopeAliases.
+							getOAuth2ApplicationScopeAliasesId());
+
+					_oAuth2ApplicationLocalService.updateOAuth2Application(
+						oAuth2Application);
+
+					return null;
+				});
+		}
+		catch (Throwable throwable) {
+			if (throwable instanceof Exception) {
+				throw (Exception)throwable;
+			}
+
+			throw new RuntimeException(throwable);
+		}
 	}
 
 	private String _normalizeScopeAlias(
@@ -262,7 +309,8 @@ public class UnresolvedScopeAliasReconcilerImpl
 		}
 
 		if (!resolvedScopeAliasesList.isEmpty()) {
-			_addScopeAliases(oAuth2Application, resolvedScopeAliasesList);
+			_addScopeAliases(
+				companyId, oAuth2ApplicationId, resolvedScopeAliasesList);
 		}
 
 		List<String> remainingScopeAliasesList = new ArrayList<>(
@@ -341,6 +389,10 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		UnresolvedScopeAliasReconcilerImpl.class);
+
+	private static final TransactionConfig _transactionConfig =
+		TransactionConfig.Factory.create(
+			Propagation.REQUIRED, new Class<?>[] {Exception.class});
 
 	@Reference
 	private CompanyLocalService _companyLocalService;
