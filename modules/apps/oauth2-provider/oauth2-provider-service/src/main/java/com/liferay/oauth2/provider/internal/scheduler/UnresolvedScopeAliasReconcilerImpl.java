@@ -49,7 +49,10 @@ import org.osgi.service.component.annotations.Reference;
  * Existing grants are therefore never re-resolved, so an already-granted alias
  * whose source is momentarily unavailable can never be revoked, and there is no
  * need to guard against transient churn. Tokens issued against the old snapshot
- * keep referencing it and are unaffected.
+ * keep referencing it and are unaffected. An alias that already resolves and is
+ * already granted is skipped, so a redundant reconcile writes nothing; because
+ * the registry is node-local while reconciling is master-only, this keeps a new
+ * master from rewriting an already-bound alias after a cluster failover.
  * </p>
  *
  * <p>
@@ -229,6 +232,10 @@ public class UnresolvedScopeAliasReconcilerImpl
 			return false;
 		}
 
+		List<String> grantedScopeAliasesList =
+			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
+				oAuth2Application.getOAuth2ApplicationScopeAliasesId());
+
 		List<String> boundScopeAliasesList = new ArrayList<>();
 		List<String> resolvedScopeAliasesList = new ArrayList<>();
 
@@ -236,11 +243,16 @@ public class UnresolvedScopeAliasReconcilerImpl
 			String normalizedScopeAlias = _normalizeScopeAlias(
 				registeredScopeAliases, scopeAlias);
 
-			if (!_scopeLocator.getLiferayOAuth2Scopes(
+			if (_scopeLocator.getLiferayOAuth2Scopes(
 					companyId, normalizedScopeAlias
 				).isEmpty()) {
 
-				boundScopeAliasesList.add(scopeAlias);
+				continue;
+			}
+
+			boundScopeAliasesList.add(scopeAlias);
+
+			if (!grantedScopeAliasesList.contains(normalizedScopeAlias)) {
 				resolvedScopeAliasesList.add(normalizedScopeAlias);
 			}
 		}
@@ -249,7 +261,9 @@ public class UnresolvedScopeAliasReconcilerImpl
 			return false;
 		}
 
-		_addScopeAliases(oAuth2Application, resolvedScopeAliasesList);
+		if (!resolvedScopeAliasesList.isEmpty()) {
+			_addScopeAliases(oAuth2Application, resolvedScopeAliasesList);
+		}
 
 		List<String> remainingScopeAliasesList = new ArrayList<>(
 			unresolvedScopeAliases);
@@ -265,11 +279,11 @@ public class UnresolvedScopeAliasReconcilerImpl
 				companyId, oAuth2ApplicationId, remainingScopeAliasesList);
 		}
 
-		if (_log.isInfoEnabled()) {
+		if (!resolvedScopeAliasesList.isEmpty() && _log.isInfoEnabled()) {
 			_log.info(
 				StringBundler.concat(
 					"Bound previously unresolved scope aliases ",
-					boundScopeAliasesList, " for OAuth 2 application ",
+					resolvedScopeAliasesList, " for OAuth 2 application ",
 					oAuth2ApplicationId));
 		}
 
