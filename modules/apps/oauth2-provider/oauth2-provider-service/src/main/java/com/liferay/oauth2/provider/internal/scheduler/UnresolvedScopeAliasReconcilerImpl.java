@@ -5,8 +5,6 @@
 
 package com.liferay.oauth2.provider.internal.scheduler;
 
-import com.liferay.counter.kernel.service.CounterLocalService;
-import com.liferay.oauth2.provider.exception.DuplicateOAuth2ScopeGrantException;
 import com.liferay.oauth2.provider.model.OAuth2Application;
 import com.liferay.oauth2.provider.model.OAuth2ApplicationScopeAliases;
 import com.liferay.oauth2.provider.model.OAuth2ScopeGrant;
@@ -28,8 +26,6 @@ import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,12 +42,14 @@ import org.osgi.service.component.annotations.Reference;
  * <p>
  * Binding is additive. Rather than passing the full alias list back through
  * {@code updateScopeAliases}, which rebuilds the whole scope-aliases snapshot
- * and re-resolves every alias, {@link #_addScopeAliases} writes a new snapshot
- * that copies every existing grant verbatim and adds only the grants for the
- * aliases that resolve now. Existing grants are therefore never re-resolved, so
- * an already-granted alias whose source is momentarily unavailable can never be
- * revoked, and there is no need to guard against transient churn. Tokens issued
- * against the old snapshot keep referencing it and are unaffected.
+ * and re-resolves every alias, {@link #_addScopeAliases} feeds every existing
+ * grant plus the grants for the aliases that resolve now to
+ * {@code OAuth2ApplicationScopeAliasesLocalService.addOAuth2ApplicationScopeAliases},
+ * which persists the new snapshot and its grant rows in one transaction.
+ * Existing grants are therefore never re-resolved, so an already-granted alias
+ * whose source is momentarily unavailable can never be revoked, and there is no
+ * need to guard against transient churn. Tokens issued against the old snapshot
+ * keep referencing it and are unaffected.
  * </p>
  *
  * <p>
@@ -106,64 +104,56 @@ public class UnresolvedScopeAliasReconcilerImpl
 		throws Exception {
 
 		long companyId = oAuth2Application.getCompanyId();
-
-		long oAuth2ApplicationScopeAliasesId = _counterLocalService.increment(
-			OAuth2ApplicationScopeAliases.class.getName());
+		long oAuth2ApplicationScopeAliasesId =
+			oAuth2Application.getOAuth2ApplicationScopeAliasesId();
 
 		OAuth2ApplicationScopeAliases oAuth2ApplicationScopeAliases =
 			_oAuth2ApplicationScopeAliasesLocalService.
-				createOAuth2ApplicationScopeAliases(
-					oAuth2ApplicationScopeAliasesId);
+				addOAuth2ApplicationScopeAliases(
+					companyId, oAuth2Application.getUserId(),
+					oAuth2Application.getUserName(),
+					oAuth2Application.getOAuth2ApplicationId(),
+					oAuth2ScopeBuilder -> {
+						for (OAuth2ScopeGrant oAuth2ScopeGrant :
+								_oAuth2ScopeGrantLocalService.
+									getOAuth2ScopeGrants(
+										oAuth2ApplicationScopeAliasesId,
+										QueryUtil.ALL_POS, QueryUtil.ALL_POS,
+										null)) {
 
-		oAuth2ApplicationScopeAliases.setCompanyId(companyId);
-		oAuth2ApplicationScopeAliases.setUserId(oAuth2Application.getUserId());
-		oAuth2ApplicationScopeAliases.setUserName(
-			oAuth2Application.getUserName());
-		oAuth2ApplicationScopeAliases.setCreateDate(new Date());
-		oAuth2ApplicationScopeAliases.setOAuth2ApplicationId(
-			oAuth2Application.getOAuth2ApplicationId());
+							oAuth2ScopeBuilder.forApplication(
+								oAuth2ScopeGrant.getApplicationName(),
+								oAuth2ScopeGrant.getBundleSymbolicName(),
+								applicationScopeAssigner ->
+									applicationScopeAssigner.assignScope(
+										oAuth2ScopeGrant.getScope()
+									).mapToScopeAlias(
+										oAuth2ScopeGrant.getScopeAliasesList()
+									));
+						}
 
-		_oAuth2ApplicationScopeAliasesLocalService.
-			updateOAuth2ApplicationScopeAliases(oAuth2ApplicationScopeAliases);
+						for (String scopeAlias : scopeAliasesList) {
+							for (LiferayOAuth2Scope liferayOAuth2Scope :
+									_scopeLocator.getLiferayOAuth2Scopes(
+										companyId, scopeAlias)) {
 
-		for (OAuth2ScopeGrant oAuth2ScopeGrant :
-				_oAuth2ScopeGrantLocalService.getOAuth2ScopeGrants(
-					oAuth2Application.getOAuth2ApplicationScopeAliasesId(),
-					QueryUtil.ALL_POS, QueryUtil.ALL_POS, null)) {
+								Bundle bundle = liferayOAuth2Scope.getBundle();
 
-			_oAuth2ScopeGrantLocalService.createOAuth2ScopeGrant(
-				companyId, oAuth2ApplicationScopeAliasesId,
-				oAuth2ScopeGrant.getApplicationName(),
-				oAuth2ScopeGrant.getBundleSymbolicName(),
-				oAuth2ScopeGrant.getScope(),
-				oAuth2ScopeGrant.getScopeAliasesList());
-		}
-
-		for (String scopeAlias : scopeAliasesList) {
-			for (LiferayOAuth2Scope liferayOAuth2Scope :
-					_scopeLocator.getLiferayOAuth2Scopes(
-						companyId, scopeAlias)) {
-
-				Bundle bundle = liferayOAuth2Scope.getBundle();
-
-				try {
-					_oAuth2ScopeGrantLocalService.createOAuth2ScopeGrant(
-						companyId, oAuth2ApplicationScopeAliasesId,
-						liferayOAuth2Scope.getApplicationName(),
-						bundle.getSymbolicName(), liferayOAuth2Scope.getScope(),
-						Collections.singletonList(scopeAlias));
-				}
-				catch (DuplicateOAuth2ScopeGrantException
-							duplicateOAuth2ScopeGrantException) {
-
-					// The scope is already granted by an existing alias
-
-				}
-			}
-		}
+								oAuth2ScopeBuilder.forApplication(
+									liferayOAuth2Scope.getApplicationName(),
+									bundle.getSymbolicName(),
+									applicationScopeAssigner ->
+										applicationScopeAssigner.assignScope(
+											liferayOAuth2Scope.getScope()
+										).mapToScopeAlias(
+											scopeAlias
+										));
+							}
+						}
+					});
 
 		oAuth2Application.setOAuth2ApplicationScopeAliasesId(
-			oAuth2ApplicationScopeAliasesId);
+			oAuth2ApplicationScopeAliases.getOAuth2ApplicationScopeAliasesId());
 
 		_oAuth2ApplicationLocalService.updateOAuth2Application(
 			oAuth2Application);
@@ -340,9 +330,6 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 	@Reference
 	private CompanyLocalService _companyLocalService;
-
-	@Reference
-	private CounterLocalService _counterLocalService;
 
 	@Reference
 	private OAuth2ApplicationLocalService _oAuth2ApplicationLocalService;
