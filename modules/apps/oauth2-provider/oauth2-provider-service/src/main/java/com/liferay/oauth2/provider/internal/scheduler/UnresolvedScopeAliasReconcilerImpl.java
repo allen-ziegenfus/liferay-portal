@@ -36,7 +36,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.osgi.framework.Bundle;
 import org.osgi.service.component.annotations.Component;
@@ -74,11 +75,12 @@ import org.osgi.service.component.annotations.Reference;
  * </p>
  *
  * <p>
- * A single reconcile pass may be requested from several threads at once (the
- * periodic scheduler and the scope finder trigger). The
- * {@code _pending} / {@code _reconciling} handshake coalesces overlapping
- * requests into one pass without dropping a request that arrives while a pass is
- * already running.
+ * Reconciling may be requested from several threads at once (the periodic
+ * scheduler and the scope finder trigger). {@link #reconcile()} serializes on a
+ * lock and runs one pass per call, so a caller only returns after its own pass
+ * has completed and its return value reflects that pass. Concurrent callers run
+ * their passes in turn rather than sharing one; a pass that finds nothing to bind
+ * is cheap, so the redundancy is immaterial.
  * </p>
  *
  * @author Allen Ziegenfus
@@ -89,35 +91,14 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 	@Override
 	public boolean reconcile() throws Exception {
-		_pending.set(true);
+		_reconcileLock.lock();
 
-		boolean bound = false;
-
-		while (_reconciling.compareAndSet(false, true)) {
-			try {
-				if (!_pending.compareAndSet(true, false)) {
-					return bound;
-				}
-
-				if (_reconcileOnce()) {
-					bound = true;
-				}
-			}
-			catch (Exception exception) {
-				_pending.set(true);
-
-				throw exception;
-			}
-			finally {
-				_reconciling.set(false);
-			}
-
-			if (!_pending.get()) {
-				return bound;
-			}
+		try {
+			return _reconcileOnce();
 		}
-
-		return bound;
+		finally {
+			_reconcileLock.unlock();
+		}
 	}
 
 	private Set<String> _addScopeAliases(
@@ -131,13 +112,6 @@ public class UnresolvedScopeAliasReconcilerImpl
 			TransactionInvokerUtil.invoke(
 				_transactionConfig,
 				() -> {
-					OAuth2Application oAuth2Application =
-						_oAuth2ApplicationLocalService.getOAuth2Application(
-							oAuth2ApplicationId);
-
-					long oAuth2ApplicationScopeAliasesId =
-						oAuth2Application.getOAuth2ApplicationScopeAliasesId();
-
 					Map<String, String> stillResolvingScopeAliases =
 						new LinkedHashMap<>();
 
@@ -156,6 +130,13 @@ public class UnresolvedScopeAliasReconcilerImpl
 					if (stillResolvingScopeAliases.isEmpty()) {
 						return null;
 					}
+
+					OAuth2Application oAuth2Application =
+						_oAuth2ApplicationLocalService.getOAuth2Application(
+							oAuth2ApplicationId);
+
+					long oAuth2ApplicationScopeAliasesId =
+						oAuth2Application.getOAuth2ApplicationScopeAliasesId();
 
 					OAuth2ApplicationScopeAliases
 						oAuth2ApplicationScopeAliases =
@@ -461,8 +442,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 	@Reference
 	private OAuth2ScopeGrantLocalService _oAuth2ScopeGrantLocalService;
 
-	private final AtomicBoolean _pending = new AtomicBoolean();
-	private final AtomicBoolean _reconciling = new AtomicBoolean();
+	private final Lock _reconcileLock = new ReentrantLock();
 
 	@Reference
 	private ScopeLocator _scopeLocator;
