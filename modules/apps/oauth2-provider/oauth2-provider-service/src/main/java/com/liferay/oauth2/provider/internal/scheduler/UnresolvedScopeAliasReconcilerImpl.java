@@ -61,11 +61,12 @@ import org.osgi.service.component.annotations.Reference;
  * interleaving on the same node can still drop one write's aliases; that is a
  * known limitation. Existing grants are never re-resolved, so
  * an already-granted alias whose source is momentarily unavailable can never be
- * revoked, and there is no need to guard against transient churn. A newly
- * resolved alias is looked up under its registered casing but its grant is
- * persisted under the alias the client declared, because token matching is case
- * sensitive and the client only knows the casing it declared. Tokens issued
- * against the old snapshot keep referencing it and are unaffected. An alias that
+ * revoked, and there is no need to guard against transient churn. A recorded
+ * alias is looked up under its registered casing, matching what the
+ * headless-server configuration factory does when the scope source is present,
+ * and its grant is persisted under the declared alias the client holds. Tokens
+ * issued against the old snapshot keep referencing it and are unaffected. An
+ * alias that
  * already resolves and is already granted is skipped, so a redundant reconcile
  * writes nothing; because the registry is node-local while reconciling is
  * master-only, this keeps a new master from rewriting an already-bound alias
@@ -326,11 +327,17 @@ public class UnresolvedScopeAliasReconcilerImpl
 			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
 				oAuth2Application.getOAuth2ApplicationScopeAliasesId());
 
-		List<String> grantedResolvedScopeAliasesList = new ArrayList<>();
+		List<String> alreadyGrantedScopeAliasesList = new ArrayList<>();
 
 		Map<String, String> resolvedScopeAliases = new LinkedHashMap<>();
 
 		for (String scopeAlias : unresolvedScopeAliases) {
+			if (grantedScopeAliasesList.contains(scopeAlias)) {
+				alreadyGrantedScopeAliasesList.add(scopeAlias);
+
+				continue;
+			}
+
 			String normalizedScopeAlias = _normalizeScopeAlias(
 				registeredScopeAliases, scopeAlias);
 
@@ -341,12 +348,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 				continue;
 			}
 
-			if (grantedScopeAliasesList.contains(scopeAlias)) {
-				grantedResolvedScopeAliasesList.add(scopeAlias);
-			}
-			else {
-				resolvedScopeAliases.put(scopeAlias, normalizedScopeAlias);
-			}
+			resolvedScopeAliases.put(scopeAlias, normalizedScopeAlias);
 		}
 
 		Set<String> persistedScopeAliases = Collections.emptySet();
@@ -357,7 +359,7 @@ public class UnresolvedScopeAliasReconcilerImpl
 		}
 
 		List<String> boundScopeAliasesList = new ArrayList<>(
-			grantedResolvedScopeAliasesList);
+			alreadyGrantedScopeAliasesList);
 
 		boundScopeAliasesList.addAll(persistedScopeAliases);
 
