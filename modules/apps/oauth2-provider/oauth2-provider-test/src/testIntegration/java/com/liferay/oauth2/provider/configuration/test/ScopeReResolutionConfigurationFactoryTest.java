@@ -22,7 +22,6 @@ import com.liferay.portal.kernel.security.auth.CompanyThreadLocal;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
-import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -550,6 +549,12 @@ public class ScopeReResolutionConfigurationFactoryTest {
 			long companyId, String excludedScopeAlias)
 		throws Exception {
 
+		String anchorScopeAlias = excludedScopeAlias;
+
+		if (anchorScopeAlias == null) {
+			anchorScopeAlias = _resolvableScopeAlias(companyId);
+		}
+
 		_configuration = _configurationAdmin.getFactoryConfiguration(
 			OAuth2ProviderApplicationHeadlessServerConfiguration.class.
 				getName(),
@@ -563,6 +568,8 @@ public class ScopeReResolutionConfigurationFactoryTest {
 				"baseURL", "http://foo.me"
 			).put(
 				"companyId", companyId
+			).put(
+				"scopes", new String[] {anchorScopeAlias}
 			).build());
 
 		OAuth2Application oAuth2Application = _fetchOAuth2Application(
@@ -570,28 +577,26 @@ public class ScopeReResolutionConfigurationFactoryTest {
 
 		Assert.assertNotNull(oAuth2Application);
 
-		// Reset the grant snapshot to a known state that excludes the alias
-		// under test, so the reconcile has to add it
+		long oAuth2ApplicationId = oAuth2Application.getOAuth2ApplicationId();
 
-		List<String> scopeAliasesList =
-			_oAuth2ApplicationScopeAliasesLocalService.getScopeAliasesList(
-				oAuth2Application.getOAuth2ApplicationScopeAliasesId());
+		// Wait until the configuration factory's own updateScopes has granted
+		// the anchor alias, so its asynchronous write cannot land after and
+		// clobber the grant snapshot the test stages below
 
-		if (excludedScopeAlias != null) {
-			scopeAliasesList = ListUtil.remove(
-				scopeAliasesList,
-				Collections.singletonList(excludedScopeAlias));
-		}
-		else {
-			scopeAliasesList = Collections.emptyList();
-		}
+		Assert.assertTrue(
+			"The configuration factory must grant " + anchorScopeAlias +
+				" before the test resets the grants",
+			_waitForScopeAlias(oAuth2ApplicationId, anchorScopeAlias));
+
+		// Reset the grant snapshot to a known empty state, so the reconcile has
+		// to add whatever the test declares as unresolved
 
 		_oAuth2ApplicationLocalService.updateScopeAliases(
 			oAuth2Application.getUserId(), oAuth2Application.getUserName(),
-			oAuth2Application.getOAuth2ApplicationId(), scopeAliasesList);
+			oAuth2ApplicationId, Collections.emptyList());
 
 		return _oAuth2ApplicationLocalService.getOAuth2Application(
-			oAuth2Application.getOAuth2ApplicationId());
+			oAuth2ApplicationId);
 	}
 
 	private void _cleanUp(OAuth2Application oAuth2Application)
