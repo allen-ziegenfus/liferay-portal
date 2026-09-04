@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2026 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -81,6 +81,45 @@ public class UnresolvedScopeAliasesRegistryImpl
 			companyId,
 			(key, scopeAliasesMap) -> {
 				scopeAliasesMap.remove(oAuth2ApplicationId);
+
+				if (scopeAliasesMap.isEmpty()) {
+					return null;
+				}
+
+				return scopeAliasesMap;
+			});
+	}
+
+	@Override
+	public void removeUnresolvedScopeAliases(
+		long companyId, long oAuth2ApplicationId,
+		Collection<String> scopeAliases) {
+
+		if ((scopeAliases == null) || scopeAliases.isEmpty()) {
+			return;
+		}
+
+		_scopeAliasesMap.computeIfPresent(
+			companyId,
+			(key, scopeAliasesMap) -> {
+				Set<String> unresolvedScopeAliases = scopeAliasesMap.get(
+					oAuth2ApplicationId);
+
+				if (unresolvedScopeAliases != null) {
+					Set<String> remainingScopeAliases = new LinkedHashSet<>(
+						unresolvedScopeAliases);
+
+					remainingScopeAliases.removeAll(scopeAliases);
+
+					if (remainingScopeAliases.isEmpty()) {
+						scopeAliasesMap.remove(oAuth2ApplicationId);
+					}
+					else {
+						scopeAliasesMap.put(
+							oAuth2ApplicationId,
+							Collections.unmodifiableSet(remainingScopeAliases));
+					}
+				}
 
 				if (scopeAliasesMap.isEmpty()) {
 					return null;

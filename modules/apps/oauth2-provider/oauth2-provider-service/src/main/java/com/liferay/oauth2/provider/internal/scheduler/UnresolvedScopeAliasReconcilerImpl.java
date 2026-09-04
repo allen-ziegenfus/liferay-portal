@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2026 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -43,40 +43,18 @@ import org.osgi.service.component.annotations.Reference;
  * once the scope sources they name become resolvable.
  *
  * <p>
- * Binding is additive. Rather than passing the full alias list back through
- * {@code updateScopeAliases}, which rebuilds the whole scope-aliases snapshot
- * and re-resolves every alias, {@link #_addScopeAliases} feeds every existing
- * grant plus the grants for the aliases that resolve now to
- * {@code OAuth2ApplicationScopeAliasesLocalService.addOAuth2ApplicationScopeAliasesAndUpdateApplication}.
- * That service method persists the new snapshot and its grant rows and repoints
- * the application at it, both writes running inside the single transaction
- * Service Builder wraps around the method, against an application re-fetched in
- * that transaction, so a failure leaves no orphan snapshot and the window for
- * losing a concurrent edit of the application shrinks to that transaction. The
- * application has no
- * optimistic-lock column, so a configuration redeploy or scope update
- * interleaving on the same node can still drop one write's aliases; that is a
- * known limitation. Existing grants are never re-resolved, so
- * an already-granted alias whose source is momentarily unavailable can never be
- * revoked, and there is no need to guard against transient churn. A recorded
- * alias is looked up under its registered casing, matching what the
- * headless-server configuration factory does when the scope source is present,
- * and its grant is persisted under the declared alias the client holds. Tokens
- * issued against the old snapshot keep referencing it and are unaffected. An
- * alias that
- * already resolves and is already granted is skipped, so a redundant reconcile
- * writes nothing; because the registry is node-local while reconciling is
- * master-only, this keeps a new master from rewriting an already-bound alias
- * after a cluster failover.
+ * Binding is additive: {@link #_addScopeAliases} copies every existing grant and
+ * adds the grants for the aliases that resolve now, so an already-granted alias
+ * is never revoked and a redundant pass writes nothing. The new snapshot and the
+ * application repoint share the single transaction Service Builder wraps around
+ * {@code addOAuth2ApplicationScopeAliasesAndUpdateApplication}, so a failure
+ * leaves no orphan snapshot. Reconciling is master-only, matching the clustered
+ * scheduler that owns the fallback pass.
  * </p>
  *
  * <p>
- * Reconciling may be requested from several threads at once (the periodic
- * scheduler and the scope finder trigger). {@link #reconcile()} serializes on a
- * lock and runs one pass per call, so a caller only returns after its own pass
- * has completed and its return value reflects that pass. Concurrent callers run
- * their passes in turn rather than sharing one; a pass that finds nothing to bind
- * is cheap, so the redundancy is immaterial.
+ * {@link #reconcile()} serializes on a lock and runs one pass per call, so a
+ * caller returns only after its own pass has completed.
  * </p>
  *
  * @author Allen Ziegenfus
@@ -104,21 +82,29 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 		Set<String> persistedScopeAliases = new HashSet<>();
 
-		Map<String, String> stillResolvingScopeAliases = new LinkedHashMap<>();
+		// Resolve each alias once, here, and reuse the result when building the
+		// snapshot. Resolving again inside the builder let a scope source that
+		// deregistered between the two calls leave a no-op snapshot behind
+		// (copied grants, nothing new), orphaning the prior snapshot on every
+		// pass. Guarding on a nonempty resolution keeps the write additive.
+
+		Map<String, Collection<LiferayOAuth2Scope>>
+			resolvedLiferayOAuth2Scopes = new LinkedHashMap<>();
 
 		for (Map.Entry<String, String> entry :
 				resolvedScopeAliases.entrySet()) {
 
-			if (!_scopeLocator.getLiferayOAuth2Scopes(
-					companyId, entry.getValue()
-				).isEmpty()) {
+			Collection<LiferayOAuth2Scope> liferayOAuth2Scopes =
+				_scopeLocator.getLiferayOAuth2Scopes(
+					companyId, entry.getValue());
 
-				stillResolvingScopeAliases.put(
-					entry.getKey(), entry.getValue());
+			if (!liferayOAuth2Scopes.isEmpty()) {
+				resolvedLiferayOAuth2Scopes.put(
+					entry.getKey(), liferayOAuth2Scopes);
 			}
 		}
 
-		if (stillResolvingScopeAliases.isEmpty()) {
+		if (resolvedLiferayOAuth2Scopes.isEmpty()) {
 			return persistedScopeAliases;
 		}
 
@@ -150,14 +136,13 @@ public class UnresolvedScopeAliasReconcilerImpl
 								));
 					}
 
-					for (Map.Entry<String, String> entry :
-							stillResolvingScopeAliases.entrySet()) {
+					for (Map.Entry<String, Collection<LiferayOAuth2Scope>>
+							entry : resolvedLiferayOAuth2Scopes.entrySet()) {
 
 						String declaredScopeAlias = entry.getKey();
 
 						for (LiferayOAuth2Scope liferayOAuth2Scope :
-								_scopeLocator.getLiferayOAuth2Scopes(
-									companyId, entry.getValue())) {
+								entry.getValue()) {
 
 							Bundle bundle = liferayOAuth2Scope.getBundle();
 
@@ -255,7 +240,6 @@ public class UnresolvedScopeAliasReconcilerImpl
 				oAuth2Application.getOAuth2ApplicationScopeAliasesId());
 
 		List<String> alreadyGrantedScopeAliasesList = new ArrayList<>();
-
 		Map<String, String> resolvedScopeAliases = new LinkedHashMap<>();
 
 		for (String scopeAlias : unresolvedScopeAliases) {
@@ -299,14 +283,13 @@ public class UnresolvedScopeAliasReconcilerImpl
 
 		remainingScopeAliasesList.removeAll(boundScopeAliasesList);
 
-		if (remainingScopeAliasesList.isEmpty()) {
-			_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
-				companyId, oAuth2ApplicationId);
-		}
-		else {
-			_unresolvedScopeAliasesRegistry.setUnresolvedScopeAliases(
-				companyId, oAuth2ApplicationId, remainingScopeAliasesList);
-		}
+		// Remove only the aliases this pass actually bound, atomically, rather
+		// than overwriting the whole entry from the snapshot read at the top of
+		// the pass. A configuration update that recorded a new alias while the
+		// pass ran is then preserved instead of being clobbered.
+
+		_unresolvedScopeAliasesRegistry.removeUnresolvedScopeAliases(
+			companyId, oAuth2ApplicationId, boundScopeAliasesList);
 
 		if (!persistedScopeAliases.isEmpty() && _log.isInfoEnabled()) {
 			_log.info(
@@ -349,7 +332,6 @@ public class UnresolvedScopeAliasReconcilerImpl
 				oAuth2ApplicationIdsByCompanyId.entrySet()) {
 
 			long companyId = entry.getKey();
-
 			Set<Long> oAuth2ApplicationIds = entry.getValue();
 
 			try {

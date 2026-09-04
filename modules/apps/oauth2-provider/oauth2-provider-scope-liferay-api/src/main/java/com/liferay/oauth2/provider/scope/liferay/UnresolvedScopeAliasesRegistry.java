@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: (c) 2000 Liferay, Inc. https://liferay.com
+ * SPDX-FileCopyrightText: (c) 2026 Liferay, Inc. https://liferay.com
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
@@ -20,10 +20,10 @@ import org.osgi.annotation.versioning.ProviderType;
  * reconciler can bind it once the missing scope sources register.
  *
  * <p>
- * Entries are keyed on the company together with the application because primary
- * keys repeat across virtual instances under database partitioning. A caller
- * must supply the company so a reconciler can select the right schema before it
- * reads the application.
+ * Entries are keyed on the company together with the application because
+ * primary keys repeat across virtual instances under database partitioning. A
+ * caller must supply the company so a reconciler can select the right schema
+ * before it reads the application.
  * </p>
  *
  * @author Allen Ziegenfus
@@ -68,6 +68,22 @@ public interface UnresolvedScopeAliasesRegistry {
 	 */
 	public void removeUnresolvedScopeAliases(
 		long companyId, long oAuth2ApplicationId);
+
+	/**
+	 * Stops tracking the given scope aliases for an application, leaving any
+	 * others tracked for it in place. Unlike {@link #setUnresolvedScopeAliases},
+	 * which replaces the whole set from the caller's snapshot, this removes only
+	 * the named aliases atomically, so a concurrent update that added an alias is
+	 * not clobbered. The application stops being tracked once its last alias is
+	 * removed.
+	 *
+	 * @param companyId the company the application belongs to
+	 * @param oAuth2ApplicationId the application's primary key
+	 * @param scopeAliases the aliases to stop tracking
+	 */
+	public void removeUnresolvedScopeAliases(
+		long companyId, long oAuth2ApplicationId,
+		Collection<String> scopeAliases);
 
 	/**
 	 * Records the unresolved scope aliases for an application, replacing any
