@@ -306,6 +306,40 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 	}
 
+	@PutMapping("/activate")
+	public void putLicenseKeysActivate(
+			@AuthenticationPrincipal Jwt jwt,
+			@RequestParam("licenseKeyIds") long[] licenseKeyIds)
+		throws Exception {
+
+		for (long licenseKeyId : licenseKeyIds) {
+			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
+				jwt, licenseKeyId);
+
+			_licenseKeyPermission.check(
+				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
+
+			_licenseKeyService.updateLicenseKeyActive(true, licenseKeyId);
+		}
+	}
+
+	@PutMapping("/deactivate")
+	public void putLicenseKeysDeactivate(
+			@AuthenticationPrincipal Jwt jwt,
+			@RequestParam("licenseKeyIds") long[] licenseKeyIds)
+		throws Exception {
+
+		for (long licenseKeyId : licenseKeyIds) {
+			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
+				jwt, licenseKeyId);
+
+			_licenseKeyPermission.check(
+				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
+
+			_licenseKeyService.updateLicenseKeyActive(false, licenseKeyId);
+		}
+	}
+
 	@PutMapping("/subscriptions")
 	public void putSubscriptions(
 			@AuthenticationPrincipal Jwt jwt,
