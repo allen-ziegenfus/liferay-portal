@@ -614,6 +614,50 @@ public class LicenseKeysRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysExtendThrowsForbiddenWhenAccountNotUpdatable()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+		).thenReturn(
+			licenseKey
+		);
+
+		Mockito.doThrow(
+			new PrincipalException()
+		).when(
+			_licenseKeyPermission
+		).check(
+			_ACCOUNT_ID, ActionKeys.UPDATE, null
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> licenseKeysRestController.postLicenseKeysExtend(
+				null,
+				"[{\"expirationDate\": \"2028-01-01T00:00:00Z\", " +
+					"\"licenseKeyId\": 1, \"startDate\": " +
+						"\"2027-01-01T00:00:00Z\"}]"));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).extendLicenseKey(
+			Mockito.any(), Mockito.anyLong(), Mockito.any()
+		);
+	}
+
+	@Test
 	public void testPostLicenseKeysTypeFree() throws Exception {
 		LicenseKeysRestController licenseKeysRestController =
 			_createController();
@@ -734,10 +778,52 @@ public class LicenseKeysRestControllerTest {
 		).check(
 			_ACCOUNT_ID, ActionKeys.UPDATE, null
 		);
+
 		Mockito.verify(
 			_licenseKeyService
 		).updateLicenseKeyActive(
 			true, 1L
+		);
+	}
+
+	@Test
+	public void testPutLicenseKeysActivateThrowsForbiddenWhenAccountNotUpdatable()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+		).thenReturn(
+			licenseKey
+		);
+
+		Mockito.doThrow(
+			new PrincipalException()
+		).when(
+			_licenseKeyPermission
+		).check(
+			_ACCOUNT_ID, ActionKeys.UPDATE, null
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> licenseKeysRestController.putLicenseKeysActivate(
+				null, new long[] {1L}));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).updateLicenseKeyActive(
+			Mockito.anyBoolean(), Mockito.anyLong()
 		);
 	}
 
@@ -768,10 +854,52 @@ public class LicenseKeysRestControllerTest {
 		).check(
 			_ACCOUNT_ID, ActionKeys.UPDATE, null
 		);
+
 		Mockito.verify(
 			_licenseKeyService
 		).updateLicenseKeyActive(
 			false, 1L
+		);
+	}
+
+	@Test
+	public void testPutLicenseKeysDeactivateThrowsForbiddenWhenAccountNotUpdatable()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+		).thenReturn(
+			licenseKey
+		);
+
+		Mockito.doThrow(
+			new PrincipalException()
+		).when(
+			_licenseKeyPermission
+		).check(
+			_ACCOUNT_ID, ActionKeys.UPDATE, null
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> licenseKeysRestController.putLicenseKeysDeactivate(
+				null, new long[] {1L}));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).updateLicenseKeyActive(
+			Mockito.anyBoolean(), Mockito.anyLong()
 		);
 	}
 
