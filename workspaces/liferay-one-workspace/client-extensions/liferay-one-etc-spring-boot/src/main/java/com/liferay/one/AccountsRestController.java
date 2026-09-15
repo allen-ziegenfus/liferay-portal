@@ -17,6 +17,7 @@ import com.liferay.one.jira.synchronizer.AccountSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountSynchronizer;
 import com.liferay.one.license.LicenseKeyCSVExporter;
+import com.liferay.one.license.LicenseKeyProvisioner;
 import com.liferay.one.model.AccountInvitation;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
@@ -66,6 +67,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -424,6 +426,39 @@ public class AccountsRestController extends OneBaseRestController {
 				account, renewedAccountInvitation, inviterUserAccount.getName(),
 				_projectService.fetchProject(projectExternalReferenceCode));
 		}
+	}
+
+	@PostMapping("/{accountKey}/license-keys")
+	public List<LicenseKey> postLicenseKeys(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable("accountKey") String accountKey,
+			@RequestBody String json)
+		throws Exception {
+
+		Account account = _accountService.getAccount(accountKey, jwt);
+
+		_licenseKeyPermission.check(account.getId(), ActionKeys.UPDATE, jwt);
+
+		JSONArray jsonArray = null;
+
+		try {
+			jsonArray = new JSONArray(json);
+		}
+		catch (JSONException jsonException) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Request body is not a valid JSON array", jsonException);
+		}
+
+		List<LicenseKey> licenseKeys = new ArrayList<>();
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			licenseKeys.add(
+				_licenseKeyProvisioner.provision(
+					account, jsonArray.getJSONObject(i)));
+		}
+
+		return licenseKeys;
 	}
 
 	@PostMapping("/{externalReferenceCode}/sync-to-jsm")
@@ -1057,6 +1092,9 @@ public class AccountsRestController extends OneBaseRestController {
 
 	@Autowired
 	private LicenseKeyPermission _licenseKeyPermission;
+
+	@Autowired
+	private LicenseKeyProvisioner _licenseKeyProvisioner;
 
 	@Autowired
 	private LicenseKeyService _licenseKeyService;

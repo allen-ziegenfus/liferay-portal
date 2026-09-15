@@ -16,6 +16,7 @@ import com.liferay.one.jira.synchronizer.AccountSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountSynchronizer;
 import com.liferay.one.license.LicenseKeyCSVExporter;
+import com.liferay.one.license.LicenseKeyProvisioner;
 import com.liferay.one.model.AccountInvitation;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
@@ -1236,6 +1237,68 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeys() throws Exception {
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		LicenseKey firstLicenseKey = Mockito.mock(LicenseKey.class);
+		LicenseKey secondLicenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			_licenseKeyProvisioner.provision(Mockito.eq(account), Mockito.any())
+		).thenReturn(
+			firstLicenseKey
+		).thenReturn(
+			secondLicenseKey
+		);
+
+		List<LicenseKey> licenseKeys = accountsRestController.postLicenseKeys(
+			null, _EXTERNAL_REFERENCE_CODE,
+			"[{\"name\": \"first\"}, {\"name\": \"second\"}]");
+
+		Assertions.assertEquals(2, licenseKeys.size());
+
+		Assertions.assertSame(firstLicenseKey, licenseKeys.get(0));
+
+		Assertions.assertSame(secondLicenseKey, licenseKeys.get(1));
+
+		Mockito.verify(
+			_licenseKeyPermission
+		).check(
+			_ACCOUNT_ID, ActionKeys.UPDATE, null
+		);
+	}
+
+	@Test
+	public void testPostLicenseKeysWhenJSONIsInvalid() throws Exception {
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> accountsRestController.postLicenseKeys(
+					null, _EXTERNAL_REFERENCE_CODE, "not json"));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verifyNoInteractions(_licenseKeyProvisioner);
+	}
+
+	@Test
 	public void testPostSyncToJSMRejectsNonadministrator() throws Exception {
 		AccountsRestController accountsRestController = _createController();
 
@@ -1884,6 +1947,9 @@ public class AccountsRestControllerTest {
 			accountsRestController, "_licenseKeyPermission",
 			_licenseKeyPermission);
 		ReflectionTestUtils.setField(
+			accountsRestController, "_licenseKeyProvisioner",
+			_licenseKeyProvisioner);
+		ReflectionTestUtils.setField(
 			accountsRestController, "_licenseKeyService", _licenseKeyService);
 		ReflectionTestUtils.setField(
 			accountsRestController, "_oktaService", _oktaService);
@@ -2033,6 +2099,8 @@ public class AccountsRestControllerTest {
 		LicenseKeyCSVExporter.class);
 	private final LicenseKeyPermission _licenseKeyPermission = Mockito.mock(
 		LicenseKeyPermission.class);
+	private final LicenseKeyProvisioner _licenseKeyProvisioner = Mockito.mock(
+		LicenseKeyProvisioner.class);
 	private final LicenseKeyService _licenseKeyService = Mockito.mock(
 		LicenseKeyService.class);
 	private final OktaService _oktaService = Mockito.mock(OktaService.class);
