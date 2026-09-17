@@ -67,6 +67,12 @@ public class LicenseKeyProvisionerTest {
 		ReflectionTestUtils.setField(
 			_licenseKeyProvisioner, "_licenseKeyService", _licenseKeyService);
 
+		_licenseKeyValidator = Mockito.mock(LicenseKeyValidator.class);
+
+		ReflectionTestUtils.setField(
+			_licenseKeyProvisioner, "_licenseKeyValidator",
+			_licenseKeyValidator);
+
 		_setUpLicenseEntry();
 	}
 
@@ -124,6 +130,44 @@ public class LicenseKeyProvisionerTest {
 
 		Assertions.assertEquals(
 			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
+	}
+
+	@Test
+	public void testProvisionCreatesNothingWhenALaterItemIsInvalid()
+		throws Exception {
+
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		_setUpEntitlements(10.0);
+
+		_setUpConsumption(0);
+
+		JSONObject invalidJSONObject = _createJSONObject();
+
+		invalidJSONObject.put("productVersion", "");
+
+		// The second key is rejected, so the first must not have been created
+		// even though it was valid and came first.
+
+		Assertions.assertThrows(
+			Exception.class,
+			() -> _licenseKeyProvisioner.provision(
+				_createAccount(),
+				List.of(_createJSONObject(), invalidJSONObject)));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).addLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+			Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(),
+			Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.anyInt(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any()
+		);
 	}
 
 	@Test
@@ -282,6 +326,35 @@ public class LicenseKeyProvisionerTest {
 
 		Assertions.assertEquals(1, licenseKeys.size());
 		Assertions.assertEquals(1, conflicts.size());
+	}
+
+	@Test
+	public void testProvisionReadsTheEntitlementsOncePerProduct()
+		throws Exception {
+
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		_setUpEntitlements(10.0);
+
+		_setUpConsumption(0);
+
+		_licenseKeyProvisioner.provision(
+			_createAccount(),
+			List.of(
+				_createJSONObject(), _createJSONObject(), _createJSONObject()));
+
+		Mockito.verify(
+			_entitlementService, Mockito.times(1)
+		).getActiveEntitlements(
+			_ACCOUNT_ENTRY_ID
+		);
+
+		Mockito.verify(
+			_entitlementDefinitionService, Mockito.times(1)
+		).fetchEntitlementDefinition(
+			Mockito.any()
+		);
 	}
 
 	@Test
@@ -751,5 +824,6 @@ public class LicenseKeyProvisionerTest {
 	private LicenseEntryService _licenseEntryService;
 	private LicenseKeyProvisioner _licenseKeyProvisioner;
 	private LicenseKeyService _licenseKeyService;
+	private LicenseKeyValidator _licenseKeyValidator;
 
 }

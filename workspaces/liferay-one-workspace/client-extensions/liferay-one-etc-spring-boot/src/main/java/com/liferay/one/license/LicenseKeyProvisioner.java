@@ -93,29 +93,61 @@ public class LicenseKeyProvisioner {
 			Account account, List<JSONObject> jsonObjects)
 		throws Exception {
 
-		// Reading the consumption, checking it and creating the keys have to
-		// happen together, or two requests for the same account both see the
-		// same free licenses and both take them. The account's entitlements
-		// and consumption are read once and the ledger is carried across the
-		// requested keys, so a body asking for more than the account holds is
-		// refused on the key that exhausts it rather than being approved
-		// against a snapshot taken before any of them were created.
-
 		return _keyedLock.withLock(
 			String.valueOf(account.getId()),
 			() -> {
 				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
 					account.getId());
 
-				List<LicenseKey> licenseKeys = new ArrayList<>();
+				Map<String, List<Entitlement>> entitlementsMap =
+					new HashMap<>();
+
+				List<Long> entitlementIds = new ArrayList<>();
 
 				for (JSONObject jsonObject : jsonObjects) {
+					entitlementIds.add(
+						_prepare(
+							account, consumptionCounts, entitlementsMap,
+							jsonObject));
+				}
+
+				List<LicenseKey> licenseKeys = new ArrayList<>();
+
+				for (int i = 0; i < jsonObjects.size(); i++) {
 					licenseKeys.add(
-						_provision(account, consumptionCounts, jsonObject));
+						_addLicenseKey(
+							account, entitlementIds.get(i),
+							jsonObjects.get(i)));
 				}
 
 				return licenseKeys;
 			});
+	}
+
+	private LicenseKey _addLicenseKey(
+			Account account, long entitlementId, JSONObject jsonObject)
+		throws Exception {
+
+		String licenseType = jsonObject.optString("licenseType");
+		String productVersion = jsonObject.optString("productVersion");
+
+		LicenseEntry licenseEntry = _getLicenseEntry(
+			licenseType, jsonObject.optString("productKey"), productVersion);
+
+		return _licenseKeyService.addLicenseKey(
+			account.getId(), account.getName(), true, StringPool.BLANK, false,
+			_getDescription(account, jsonObject), StringPool.BLANK,
+			entitlementId, _toDate(jsonObject, "expirationDate"),
+			jsonObject.optString("hostName"),
+			jsonObject.optString("ipAddresses"), licenseEntry.getName(),
+			licenseType, _LICENSE_VERSION, jsonObject.optString("macAddresses"),
+			jsonObject.optInt("maxClusterNodes"), 0L, 0, 0, 0L,
+			jsonObject.optString("name"), jsonObject.optString("orderId"),
+			_getOwner(account, jsonObject),
+			jsonObject.optString("productExternalId"),
+			jsonObject.optString("productName"), productVersion,
+			StringPool.BLANK, jsonObject.optString("sizing"),
+			_toDate(jsonObject, "startDate"));
 	}
 
 	private int _getConsumptionCount(
@@ -163,6 +195,16 @@ public class LicenseKeyProvisioner {
 		}
 
 		return consumptionCounts;
+	}
+
+	private String _getDescription(Account account, JSONObject jsonObject) {
+		String description = jsonObject.optString("description");
+
+		if (Validator.isNull(description)) {
+			return _getOwner(account, jsonObject);
+		}
+
+		return description;
 	}
 
 	private long _getEntitlementId(
@@ -256,6 +298,16 @@ public class LicenseKeyProvisioner {
 			HttpStatus.BAD_REQUEST, "Invalid license entry type");
 	}
 
+	private String _getOwner(Account account, JSONObject jsonObject) {
+		String owner = jsonObject.optString("owner");
+
+		if (Validator.isNull(owner)) {
+			return account.getName();
+		}
+
+		return owner;
+	}
+
 	private int _getQuantity(Entitlement entitlement) {
 		Double quantity = entitlement.getQuantity();
 
@@ -274,20 +326,17 @@ public class LicenseKeyProvisioner {
 		return 1;
 	}
 
-	private LicenseKey _provision(
+	private long _prepare(
 			Account account, Map<Long, Integer> consumptionCounts,
+			Map<String, List<Entitlement>> entitlementsMap,
 			JSONObject jsonObject)
 		throws Exception {
 
 		String licenseType = jsonObject.optString("licenseType");
 		String productVersion = jsonObject.optString("productVersion");
 
-		LicenseEntry licenseEntry = _getLicenseEntry(
+		_getLicenseEntry(
 			licenseType, jsonObject.optString("productKey"), productVersion);
-
-		List<Entitlement> entitlements = _getEntitlements(
-			account.getId(),
-			jsonObject.optString("productExternalReferenceCode"));
 
 		int maxClusterNodes = jsonObject.optInt("maxClusterNodes");
 
@@ -298,38 +347,39 @@ public class LicenseKeyProvisioner {
 					_MAX_CLUSTER_NODES);
 		}
 
+		_licenseKeyValidator.validateMetadata(
+			_getDescription(account, jsonObject), licenseType, maxClusterNodes,
+			jsonObject.optString("name"), _getOwner(account, jsonObject),
+			productVersion);
+
+		_licenseKeyValidator.validateDates(
+			_toDate(jsonObject, "expirationDate"),
+			jsonObject.optString("hostName"),
+			jsonObject.optString("ipAddresses"), licenseType,
+			jsonObject.optString("macAddresses"),
+			_toDate(jsonObject, "startDate"));
+
+		String productExternalReferenceCode = jsonObject.optString(
+			"productExternalReferenceCode");
+
+		List<Entitlement> entitlements = entitlementsMap.get(
+			productExternalReferenceCode);
+
+		if (entitlements == null) {
+			entitlements = _getEntitlements(
+				account.getId(), productExternalReferenceCode);
+
+			entitlementsMap.put(productExternalReferenceCode, entitlements);
+		}
+
 		int serverCount = _getServerCount(maxClusterNodes);
 
 		long entitlementId = _getEntitlementId(
 			consumptionCounts, entitlements, serverCount);
 
-		String owner = jsonObject.optString("owner");
-
-		if (Validator.isNull(owner)) {
-			owner = account.getName();
-		}
-
-		String description = jsonObject.optString("description");
-
-		if (Validator.isNull(description)) {
-			description = owner;
-		}
-
 		consumptionCounts.merge(entitlementId, serverCount, Integer::sum);
 
-		return _licenseKeyService.addLicenseKey(
-			account.getId(), account.getName(), true, StringPool.BLANK, false,
-			description, StringPool.BLANK, entitlementId,
-			_toDate(jsonObject, "expirationDate"),
-			jsonObject.optString("hostName"),
-			jsonObject.optString("ipAddresses"), licenseEntry.getName(),
-			licenseType, _LICENSE_VERSION, jsonObject.optString("macAddresses"),
-			maxClusterNodes, 0L, 0, 0, 0L, jsonObject.optString("name"),
-			jsonObject.optString("orderId"), owner,
-			jsonObject.optString("productExternalId"),
-			jsonObject.optString("productName"), productVersion,
-			StringPool.BLANK, jsonObject.optString("sizing"),
-			_toDate(jsonObject, "startDate"));
+		return entitlementId;
 	}
 
 	private Date _toDate(JSONObject jsonObject, String key) {
@@ -354,5 +404,8 @@ public class LicenseKeyProvisioner {
 
 	@Autowired
 	private LicenseKeyService _licenseKeyService;
+
+	@Autowired
+	private LicenseKeyValidator _licenseKeyValidator;
 
 }
