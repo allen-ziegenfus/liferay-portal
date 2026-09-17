@@ -40,6 +40,55 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class LicenseKeyProvisioner {
 
+	public void checkEntitlementAvailable(
+			long accountEntryId, long entitlementId, int serverCount)
+		throws Exception {
+
+		// A key that predates entitlement tracking has nothing to charge, so
+		// there is no capacity question to answer for it.
+
+		if (entitlementId == 0) {
+			return;
+		}
+
+		_keyedLock.withLock(
+			String.valueOf(accountEntryId),
+			() -> {
+				Entitlement entitlement = null;
+
+				for (Entitlement curEntitlement :
+						_entitlementService.getActiveEntitlements(
+							accountEntryId)) {
+
+					if (curEntitlement.getEntitlementId() == entitlementId) {
+						entitlement = curEntitlement;
+
+						break;
+					}
+				}
+
+				if (entitlement == null) {
+					throw new ResponseStatusException(
+						HttpStatus.BAD_REQUEST,
+						"The account holds no active entitlement with the " +
+							"requested ID");
+				}
+
+				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
+					accountEntryId);
+
+				int remaining =
+					_getQuantity(entitlement) -
+						_getConsumptionCount(consumptionCounts, entitlement);
+
+				if (remaining < serverCount) {
+					throw new ResponseStatusException(
+						HttpStatus.CONFLICT,
+						"The subscriptions have no more available licenses");
+				}
+			});
+	}
+
 	public List<LicenseKey> provision(
 			Account account, List<JSONObject> jsonObjects)
 		throws Exception {

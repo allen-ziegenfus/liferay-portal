@@ -13,6 +13,7 @@ import com.liferay.one.constants.CommerceOrderConstants;
 import com.liferay.one.exception.NoSuchLicenseKeyException;
 import com.liferay.one.license.LicenseKeyCSVExporter;
 import com.liferay.one.license.LicenseKeyExporter;
+import com.liferay.one.license.LicenseKeyProvisioner;
 import com.liferay.one.model.LicenseKey;
 import com.liferay.one.model.SubscriptionEntry;
 import com.liferay.one.permission.AdminPermission;
@@ -257,7 +258,10 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			_licenseKeyPermission.check(
 				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
 
-			_getLong(jsonObject, "entitlementId");
+			_licenseKeyProvisioner.checkEntitlementAvailable(
+				licenseKey.getAccountEntryId(),
+				_getLong(jsonObject, "entitlementId"),
+				_getServerCount(licenseKey.getMaxClusterNodes()));
 
 			_toDate(jsonObject, "expirationDate");
 			_toDate(jsonObject, "startDate");
@@ -444,6 +448,14 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 	}
 
+	private int _getServerCount(int maxClusterNodes) {
+		if (maxClusterNodes > 1) {
+			return maxClusterNodes;
+		}
+
+		return 1;
+	}
+
 	private Date _toDate(JSONObject jsonObject, String key) {
 		try {
 			return Date.from(Instant.parse(jsonObject.getString(key)));
@@ -486,6 +498,13 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		for (LicenseKey licenseKey : licenseKeys) {
 			_licenseKeyPermission.check(
 				userAccount, licenseKey.getAccountEntryId(), ActionKeys.UPDATE);
+
+			if (active && !licenseKey.isActive()) {
+				_licenseKeyProvisioner.checkEntitlementAvailable(
+					licenseKey.getAccountEntryId(),
+					licenseKey.getEntitlementId(),
+					_getServerCount(licenseKey.getMaxClusterNodes()));
+			}
 		}
 
 		for (LicenseKey licenseKey : licenseKeys) {
@@ -513,6 +532,9 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 	@Autowired
 	private LicenseKeyPermission _licenseKeyPermission;
+
+	@Autowired
+	private LicenseKeyProvisioner _licenseKeyProvisioner;
 
 	@Autowired
 	private LicenseKeyService _licenseKeyService;
