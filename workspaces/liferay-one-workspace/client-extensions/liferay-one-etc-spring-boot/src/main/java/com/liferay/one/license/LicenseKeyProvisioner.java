@@ -20,6 +20,7 @@ import com.liferay.portal.kernel.util.Validator;
 
 import java.time.Instant;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -53,11 +54,7 @@ public class LicenseKeyProvisioner {
 
 		int maxClusterNodes = jsonObject.optInt("maxClusterNodes");
 
-		int serverCount = 1;
-
-		if (maxClusterNodes > 1) {
-			serverCount = maxClusterNodes;
-		}
+		int serverCount = _getServerCount(maxClusterNodes);
 
 		Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
 			account.getId());
@@ -79,7 +76,7 @@ public class LicenseKeyProvisioner {
 		return _licenseKeyService.addLicenseKey(
 			account.getId(), account.getName(), true, StringPool.BLANK, false,
 			description, StringPool.BLANK,
-			_getEntitlementId(consumptionCounts, entitlements),
+			_getEntitlementId(consumptionCounts, entitlements, serverCount),
 			_toDate(jsonObject, "expirationDate"),
 			jsonObject.optString("hostName"),
 			jsonObject.optString("ipAddresses"), licenseEntry.getName(),
@@ -131,29 +128,45 @@ public class LicenseKeyProvisioner {
 
 		Map<Long, Integer> consumptionCounts = new HashMap<>();
 
+		Instant instant = Instant.now();
+
 		for (LicenseKey licenseKey :
 				_licenseKeyService.getLicenseKeysByAccountEntryId(
 					accountEntryId)) {
 
 			long entitlementId = licenseKey.getEntitlementId();
 
-			if (entitlementId == 0) {
+			if ((entitlementId == 0) || !licenseKey.isActive()) {
 				continue;
 			}
 
-			consumptionCounts.merge(entitlementId, 1, Integer::sum);
+			Instant customExpirationDateInstant =
+				licenseKey.getCustomExpirationDateInstant();
+
+			if ((customExpirationDateInstant != null) &&
+				customExpirationDateInstant.isBefore(instant)) {
+
+				continue;
+			}
+
+			consumptionCounts.merge(
+				entitlementId, _getServerCount(licenseKey.getMaxClusterNodes()),
+				Integer::sum);
 		}
 
 		return consumptionCounts;
 	}
 
 	private long _getEntitlementId(
-		Map<Long, Integer> consumptionCounts, List<Entitlement> entitlements) {
+		Map<Long, Integer> consumptionCounts, List<Entitlement> entitlements,
+		int serverCount) {
 
 		for (Entitlement entitlement : entitlements) {
-			if (_getQuantity(entitlement) > _getConsumptionCount(
-					consumptionCounts, entitlement)) {
+			int remaining =
+				_getQuantity(entitlement) -
+					_getConsumptionCount(consumptionCounts, entitlement);
 
+			if (remaining >= serverCount) {
 				return entitlement.getEntitlementId();
 			}
 		}
@@ -185,8 +198,17 @@ public class LicenseKeyProvisioner {
 				"The entitlement definition does not grant license generation");
 		}
 
-		List<Entitlement> entitlements = _entitlementService.getEntitlements(
-			accountEntryId, entitlementDefinition.getEntitlementDefinitionId());
+		List<Entitlement> entitlements = new ArrayList<>();
+
+		for (Entitlement entitlement :
+				_entitlementService.getActiveEntitlements(accountEntryId)) {
+
+			if (entitlement.getEntitlementDefinitionId() ==
+					entitlementDefinition.getEntitlementDefinitionId()) {
+
+				entitlements.add(entitlement);
+			}
+		}
 
 		if (entitlements.isEmpty()) {
 			throw new ResponseStatusException(
@@ -227,6 +249,14 @@ public class LicenseKeyProvisioner {
 		}
 
 		return quantity.intValue();
+	}
+
+	private int _getServerCount(int maxClusterNodes) {
+		if (maxClusterNodes > 1) {
+			return maxClusterNodes;
+		}
+
+		return 1;
 	}
 
 	private Date _toDate(JSONObject jsonObject, String key) {

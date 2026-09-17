@@ -16,6 +16,7 @@ import com.liferay.one.service.LicenseKeyService;
 
 import java.time.Instant;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -89,6 +90,147 @@ public class LicenseKeyProvisionerTest {
 			licenseKey,
 			_licenseKeyProvisioner.provision(
 				_createAccount(), _createJSONObject()));
+	}
+
+	@Test
+	public void testProvisionCountsClusterNodesAlreadyConsumed()
+		throws Exception {
+
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		_setUpEntitlements(3.0);
+
+		// One existing three node key consumes the whole entitlement, even
+		// though it is a single license key row.
+
+		_setUpConsumption(1, 3);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.provision(
+					_createAccount(), _createJSONObject()));
+
+		Assertions.assertEquals(
+			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
+	}
+
+	@Test
+	public void testProvisionIgnoresDeactivatedKeys() throws Exception {
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		_setUpEntitlements(1.0);
+
+		LicenseKey deactivatedLicenseKey = _toLicenseKey(false, 0, null);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByAccountEntryId(_ACCOUNT_ENTRY_ID)
+		).thenReturn(
+			Collections.singletonList(deactivatedLicenseKey)
+		);
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			_licenseKeyService.addLicenseKey(
+				Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+				Mockito.any(), Mockito.anyBoolean(), Mockito.any(),
+				Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(),
+				Mockito.any(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.anyInt(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any())
+		).thenReturn(
+			licenseKey
+		);
+
+		Assertions.assertSame(
+			licenseKey,
+			_licenseKeyProvisioner.provision(
+				_createAccount(), _createJSONObject()));
+	}
+
+	@Test
+	public void testProvisionIgnoresExpiredKeys() throws Exception {
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		_setUpEntitlements(1.0);
+
+		LicenseKey expiredLicenseKey = _toLicenseKey(
+			true, 0, Instant.parse("2020-01-01T00:00:00Z"));
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByAccountEntryId(_ACCOUNT_ENTRY_ID)
+		).thenReturn(
+			Collections.singletonList(expiredLicenseKey)
+		);
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			_licenseKeyService.addLicenseKey(
+				Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+				Mockito.any(), Mockito.anyBoolean(), Mockito.any(),
+				Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(),
+				Mockito.any(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.anyInt(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any())
+		).thenReturn(
+			licenseKey
+		);
+
+		Assertions.assertSame(
+			licenseKey,
+			_licenseKeyProvisioner.provision(
+				_createAccount(), _createJSONObject()));
+	}
+
+	@Test
+	public void testProvisionSkipsAnEntitlementTooSmallForTheRequest()
+		throws Exception {
+
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		// The aggregate has room for three nodes, but only the second
+		// entitlement can cover them on its own.
+
+		_setUpEntitlements(1.0, 5.0);
+
+		_setUpConsumption(0);
+
+		JSONObject jsonObject = _createJSONObject();
+
+		jsonObject.put("maxClusterNodes", 3);
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			_licenseKeyService.addLicenseKey(
+				Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+				Mockito.any(), Mockito.anyBoolean(), Mockito.any(),
+				Mockito.any(), Mockito.eq(_ENTITLEMENT_ID + 1), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.anyInt(), Mockito.any(), Mockito.anyInt(),
+				Mockito.anyLong(), Mockito.anyInt(), Mockito.anyInt(),
+				Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any())
+		).thenReturn(
+			licenseKey
+		);
+
+		Assertions.assertSame(
+			licenseKey,
+			_licenseKeyProvisioner.provision(_createAccount(), jsonObject));
 	}
 
 	@Test
@@ -280,24 +422,22 @@ public class LicenseKeyProvisionerTest {
 	}
 
 	private void _setUpConsumption(int count) throws Exception {
-		LicenseKey[] licenseKeys = new LicenseKey[count];
+		_setUpConsumption(count, 0);
+	}
+
+	private void _setUpConsumption(int count, int maxClusterNodes)
+		throws Exception {
+
+		List<LicenseKey> licenseKeys = new ArrayList<>();
 
 		for (int i = 0; i < count; i++) {
-			LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
-
-			Mockito.when(
-				licenseKey.getEntitlementId()
-			).thenReturn(
-				_ENTITLEMENT_ID
-			);
-
-			licenseKeys[i] = licenseKey;
+			licenseKeys.add(_toLicenseKey(true, maxClusterNodes, null));
 		}
 
 		Mockito.when(
 			_licenseKeyService.getLicenseKeysByAccountEntryId(_ACCOUNT_ENTRY_ID)
 		).thenReturn(
-			List.of(licenseKeys)
+			licenseKeys
 		);
 	}
 
@@ -325,26 +465,37 @@ public class LicenseKeyProvisionerTest {
 		);
 	}
 
-	private void _setUpEntitlements(Double quantity) throws Exception {
-		Entitlement entitlement = Mockito.mock(Entitlement.class);
+	private void _setUpEntitlements(Double... quantities) throws Exception {
+		List<Entitlement> entitlements = new ArrayList<>();
+
+		for (int i = 0; i < quantities.length; i++) {
+			Entitlement entitlement = Mockito.mock(Entitlement.class);
+
+			Mockito.when(
+				entitlement.getEntitlementDefinitionId()
+			).thenReturn(
+				_ENTITLEMENT_DEFINITION_ID
+			);
+
+			Mockito.when(
+				entitlement.getEntitlementId()
+			).thenReturn(
+				_ENTITLEMENT_ID + i
+			);
+
+			Mockito.when(
+				entitlement.getQuantity()
+			).thenReturn(
+				quantities[i]
+			);
+
+			entitlements.add(entitlement);
+		}
 
 		Mockito.when(
-			entitlement.getEntitlementId()
+			_entitlementService.getActiveEntitlements(_ACCOUNT_ENTRY_ID)
 		).thenReturn(
-			_ENTITLEMENT_ID
-		);
-
-		Mockito.when(
-			entitlement.getQuantity()
-		).thenReturn(
-			quantity
-		);
-
-		Mockito.when(
-			_entitlementService.getEntitlements(
-				_ACCOUNT_ENTRY_ID, _ENTITLEMENT_DEFINITION_ID)
-		).thenReturn(
-			Collections.singletonList(entitlement)
+			entitlements
 		);
 	}
 
@@ -359,6 +510,39 @@ public class LicenseKeyProvisionerTest {
 				new LicenseEntry(
 					_PRODUCT_KEY, "Portal Production", "production", "7.0", ""))
 		);
+	}
+
+	private LicenseKey _toLicenseKey(
+		boolean active, int maxClusterNodes,
+		Instant customExpirationDateInstant) {
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getCustomExpirationDateInstant()
+		).thenReturn(
+			customExpirationDateInstant
+		);
+
+		Mockito.when(
+			licenseKey.getEntitlementId()
+		).thenReturn(
+			_ENTITLEMENT_ID
+		);
+
+		Mockito.when(
+			licenseKey.getMaxClusterNodes()
+		).thenReturn(
+			maxClusterNodes
+		);
+
+		Mockito.when(
+			licenseKey.isActive()
+		).thenReturn(
+			active
+		);
+
+		return licenseKey;
 	}
 
 	private static final long _ACCOUNT_ENTRY_ID = 55L;
