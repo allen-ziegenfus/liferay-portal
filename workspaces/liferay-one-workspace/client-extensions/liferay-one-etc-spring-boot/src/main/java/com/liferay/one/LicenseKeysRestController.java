@@ -339,15 +339,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			@RequestParam("licenseKeyIds") long[] licenseKeyIds)
 		throws Exception {
 
-		for (long licenseKeyId : licenseKeyIds) {
-			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
-				jwt, licenseKeyId);
-
-			_licenseKeyPermission.check(
-				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
-
-			_licenseKeyService.updateLicenseKeyActive(true, licenseKeyId);
-		}
+		_updateLicenseKeysActive(true, jwt, licenseKeyIds);
 	}
 
 	@PutMapping("/deactivate")
@@ -356,15 +348,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			@RequestParam("licenseKeyIds") long[] licenseKeyIds)
 		throws Exception {
 
-		for (long licenseKeyId : licenseKeyIds) {
-			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
-				jwt, licenseKeyId);
-
-			_licenseKeyPermission.check(
-				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
-
-			_licenseKeyService.updateLicenseKeyActive(false, licenseKeyId);
-		}
+		_updateLicenseKeysActive(false, jwt, licenseKeyIds);
 	}
 
 	@PutMapping("/subscriptions")
@@ -487,6 +471,27 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 
 		return longs;
+	}
+
+	private void _updateLicenseKeysActive(
+			boolean active, Jwt jwt, long[] licenseKeyIds)
+		throws Exception {
+
+		_checkLicenseKeyIds(licenseKeyIds);
+
+		UserAccount userAccount = getMyUserAccount(jwt);
+
+		List<LicenseKey> licenseKeys = _getLicenseKeys(jwt, licenseKeyIds);
+
+		for (LicenseKey licenseKey : licenseKeys) {
+			_licenseKeyPermission.check(
+				userAccount, licenseKey.getAccountEntryId(), ActionKeys.UPDATE);
+		}
+
+		for (LicenseKey licenseKey : licenseKeys) {
+			_licenseKeyService.updateLicenseKeyActive(
+				active, licenseKey.getLicenseKeyId());
+		}
 	}
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(

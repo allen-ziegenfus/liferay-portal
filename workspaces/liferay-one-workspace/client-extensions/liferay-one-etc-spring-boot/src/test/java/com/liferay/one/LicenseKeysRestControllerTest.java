@@ -26,6 +26,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.time.Instant;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -866,9 +867,16 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			licenseKey.getLicenseKeyId()
 		).thenReturn(
-			licenseKey
+			1L
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
 		);
 
 		licenseKeysRestController.putLicenseKeysActivate(null, new long[] {1L});
@@ -876,13 +884,64 @@ public class LicenseKeysRestControllerTest {
 		Mockito.verify(
 			_licenseKeyPermission
 		).check(
-			_ACCOUNT_ID, ActionKeys.UPDATE, null
+			Mockito.any(), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
 		);
 
 		Mockito.verify(
 			_licenseKeyService
 		).updateLicenseKeyActive(
 			true, 1L
+		);
+	}
+
+	@Test
+	public void testPutLicenseKeysActivateReadsEveryKeyInOneCall()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		List<LicenseKey> licenseKeys = new ArrayList<>();
+
+		for (long licenseKeyId = 1L; licenseKeyId <= 3L; licenseKeyId++) {
+			LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+			Mockito.when(
+				licenseKey.getAccountEntryId()
+			).thenReturn(
+				_ACCOUNT_ID
+			);
+
+			Mockito.when(
+				licenseKey.getLicenseKeyId()
+			).thenReturn(
+				licenseKeyId
+			);
+
+			licenseKeys.add(licenseKey);
+		}
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			licenseKeys
+		);
+
+		licenseKeysRestController.putLicenseKeysActivate(
+			null, new long[] {1L, 2L, 3L});
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.times(1)
+		).getLicenseKeysByIds(
+			Mockito.any(), Mockito.any(long[].class)
+		);
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).getLicenseKey(
+			Mockito.any(), Mockito.anyLong()
 		);
 	}
 
@@ -902,9 +961,10 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Mockito.doThrow(
@@ -912,7 +972,8 @@ public class LicenseKeysRestControllerTest {
 		).when(
 			_licenseKeyPermission
 		).check(
-			_ACCOUNT_ID, ActionKeys.UPDATE, null
+			Mockito.any(), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
 		);
 
 		Assertions.assertThrows(
@@ -941,9 +1002,16 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			licenseKey.getLicenseKeyId()
 		).thenReturn(
-			licenseKey
+			1L
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
 		);
 
 		licenseKeysRestController.putLicenseKeysDeactivate(
@@ -952,7 +1020,8 @@ public class LicenseKeysRestControllerTest {
 		Mockito.verify(
 			_licenseKeyPermission
 		).check(
-			_ACCOUNT_ID, ActionKeys.UPDATE, null
+			Mockito.any(), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
 		);
 
 		Mockito.verify(
@@ -978,9 +1047,10 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Mockito.doThrow(
@@ -988,7 +1058,8 @@ public class LicenseKeysRestControllerTest {
 		).when(
 			_licenseKeyPermission
 		).check(
-			_ACCOUNT_ID, ActionKeys.UPDATE, null
+			Mockito.any(), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
 		);
 
 		Assertions.assertThrows(
