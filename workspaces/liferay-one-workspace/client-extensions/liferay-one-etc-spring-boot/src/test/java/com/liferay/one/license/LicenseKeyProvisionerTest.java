@@ -355,6 +355,47 @@ public class LicenseKeyProvisionerTest {
 	}
 
 	@Test
+	public void testProvisionWhenCapacityIsSpreadAcrossEntitlements()
+		throws Exception {
+
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		// Four licenses in total, but neither entitlement can carry three on
+		// its own.
+
+		_setUpEntitlements(2.0, 2.0);
+
+		_setUpConsumption(0);
+
+		JSONObject jsonObject = _createJSONObject();
+
+		jsonObject.put("maxClusterNodes", 3);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.provision(
+					_createAccount(), Collections.singletonList(jsonObject)));
+
+		Assertions.assertEquals(
+			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).addLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+			Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(),
+			Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.anyInt(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any()
+		);
+	}
+
+	@Test
 	public void testProvisionWhenDefinitionDoesNotGrantLicenseGeneration()
 		throws Exception {
 
@@ -443,6 +484,31 @@ public class LicenseKeyProvisionerTest {
 			Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
 			Mockito.anyString(), Mockito.any()
 		);
+	}
+
+	@Test
+	public void testProvisionWhenMaxClusterNodesIsOutOfRange()
+		throws Exception {
+
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		_setUpEntitlements(5.0);
+
+		_setUpConsumption(0);
+
+		JSONObject jsonObject = _createJSONObject();
+
+		jsonObject.put("maxClusterNodes", Integer.MAX_VALUE);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.provision(
+					_createAccount(), Collections.singletonList(jsonObject)));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
 	}
 
 	@Test

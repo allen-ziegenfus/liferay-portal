@@ -69,27 +69,6 @@ public class LicenseKeyProvisioner {
 			});
 	}
 
-	private void _checkAvailability(
-		Map<Long, Integer> consumptionCounts, List<Entitlement> entitlements,
-		int serverCount) {
-
-		int consumptionCount = 0;
-		int totalQuantity = 0;
-
-		for (Entitlement entitlement : entitlements) {
-			consumptionCount += _getConsumptionCount(
-				consumptionCounts, entitlement);
-
-			totalQuantity += _getQuantity(entitlement);
-		}
-
-		if ((consumptionCount + serverCount) > totalQuantity) {
-			throw new ResponseStatusException(
-				HttpStatus.CONFLICT,
-				"The subscriptions have no more available licenses");
-		}
-	}
-
 	private int _getConsumptionCount(
 		Map<Long, Integer> consumptionCounts, Entitlement entitlement) {
 
@@ -151,7 +130,14 @@ public class LicenseKeyProvisioner {
 			}
 		}
 
-		return 0;
+		// Capacity spread across several entitlements cannot back one key, so
+		// asking whether the total is large enough would approve a request no
+		// single entitlement can carry, and the key would be written against
+		// no entitlement at all and never counted again.
+
+		throw new ResponseStatusException(
+			HttpStatus.CONFLICT,
+			"The subscriptions have no more available licenses");
 	}
 
 	private List<Entitlement> _getEntitlements(
@@ -256,9 +242,14 @@ public class LicenseKeyProvisioner {
 
 		int maxClusterNodes = jsonObject.optInt("maxClusterNodes");
 
-		int serverCount = _getServerCount(maxClusterNodes);
+		if ((maxClusterNodes < 0) || (maxClusterNodes > _MAX_CLUSTER_NODES)) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"The maximum cluster nodes must be between 0 and " +
+					_MAX_CLUSTER_NODES);
+		}
 
-		_checkAvailability(consumptionCounts, entitlements, serverCount);
+		int serverCount = _getServerCount(maxClusterNodes);
 
 		long entitlementId = _getEntitlementId(
 			consumptionCounts, entitlements, serverCount);
@@ -297,6 +288,8 @@ public class LicenseKeyProvisioner {
 	}
 
 	private static final int _LICENSE_VERSION = 3;
+
+	private static final int _MAX_CLUSTER_NODES = 1000;
 
 	@Autowired
 	private EntitlementDefinitionService _entitlementDefinitionService;
