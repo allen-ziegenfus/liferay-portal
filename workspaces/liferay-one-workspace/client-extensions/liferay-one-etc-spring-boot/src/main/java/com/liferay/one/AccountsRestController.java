@@ -428,14 +428,15 @@ public class AccountsRestController extends OneBaseRestController {
 		}
 	}
 
-	@PostMapping("/{accountKey}/license-keys")
+	@PostMapping("/{externalReferenceCode}/license-keys")
 	public List<LicenseKey> postLicenseKeys(
 			@AuthenticationPrincipal Jwt jwt,
-			@PathVariable("accountKey") String accountKey,
+			@PathVariable("externalReferenceCode") String externalReferenceCode,
 			@RequestBody String json)
 		throws Exception {
 
-		Account account = _accountService.getAccount(accountKey, jwt);
+		Account account = _accountService.getAccount(
+			externalReferenceCode, jwt);
 
 		_licenseKeyPermission.check(account.getId(), ActionKeys.UPDATE, jwt);
 
@@ -450,15 +451,20 @@ public class AccountsRestController extends OneBaseRestController {
 				"Request body is not a valid JSON array", jsonException);
 		}
 
-		List<LicenseKey> licenseKeys = new ArrayList<>();
-
-		for (int i = 0; i < jsonArray.length(); i++) {
-			licenseKeys.add(
-				_licenseKeyProvisioner.provision(
-					account, jsonArray.getJSONObject(i)));
+		if (jsonArray.length() > _MAX_LICENSE_KEYS) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"No more than " + _MAX_LICENSE_KEYS +
+					" license keys may be created at once");
 		}
 
-		return licenseKeys;
+		List<JSONObject> jsonObjects = new ArrayList<>();
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			jsonObjects.add(jsonArray.getJSONObject(i));
+		}
+
+		return _licenseKeyProvisioner.provision(account, jsonObjects);
 	}
 
 	@PostMapping("/{externalReferenceCode}/sync-to-jsm")
@@ -1043,6 +1049,8 @@ public class AccountsRestController extends OneBaseRestController {
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
 		"text/csv");
+
+	private static final int _MAX_LICENSE_KEYS = 100;
 
 	private static final Log _log = LogFactory.getLog(
 		AccountsRestController.class);

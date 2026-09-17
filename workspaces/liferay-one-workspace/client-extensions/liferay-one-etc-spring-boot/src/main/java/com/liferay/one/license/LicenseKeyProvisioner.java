@@ -40,16 +40,33 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class LicenseKeyProvisioner {
 
-	public LicenseKey provision(Account account, JSONObject jsonObject)
+	public List<LicenseKey> provision(
+			Account account, List<JSONObject> jsonObjects)
 		throws Exception {
 
-		// Reading the consumption, checking it and creating the key have to
+		// Reading the consumption, checking it and creating the keys have to
 		// happen together, or two requests for the same account both see the
-		// same free licenses and both take them.
+		// same free licenses and both take them. The account's entitlements
+		// and consumption are read once and the ledger is carried across the
+		// requested keys, so a body asking for more than the account holds is
+		// refused on the key that exhausts it rather than being approved
+		// against a snapshot taken before any of them were created.
 
 		return _keyedLock.withLock(
 			String.valueOf(account.getId()),
-			() -> _provision(account, jsonObject));
+			() -> {
+				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
+					account.getId());
+
+				List<LicenseKey> licenseKeys = new ArrayList<>();
+
+				for (JSONObject jsonObject : jsonObjects) {
+					licenseKeys.add(
+						_provision(account, consumptionCounts, jsonObject));
+				}
+
+				return licenseKeys;
+			});
 	}
 
 	private void _checkAvailability(
@@ -222,7 +239,9 @@ public class LicenseKeyProvisioner {
 		return 1;
 	}
 
-	private LicenseKey _provision(Account account, JSONObject jsonObject)
+	private LicenseKey _provision(
+			Account account, Map<Long, Integer> consumptionCounts,
+			JSONObject jsonObject)
 		throws Exception {
 
 		String licenseType = jsonObject.optString("licenseType");
@@ -239,10 +258,10 @@ public class LicenseKeyProvisioner {
 
 		int serverCount = _getServerCount(maxClusterNodes);
 
-		Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
-			account.getId());
-
 		_checkAvailability(consumptionCounts, entitlements, serverCount);
+
+		long entitlementId = _getEntitlementId(
+			consumptionCounts, entitlements, serverCount);
 
 		String owner = jsonObject.optString("owner");
 
@@ -256,10 +275,11 @@ public class LicenseKeyProvisioner {
 			description = owner;
 		}
 
+		consumptionCounts.merge(entitlementId, serverCount, Integer::sum);
+
 		return _licenseKeyService.addLicenseKey(
 			account.getId(), account.getName(), true, StringPool.BLANK, false,
-			description, StringPool.BLANK,
-			_getEntitlementId(consumptionCounts, entitlements, serverCount),
+			description, StringPool.BLANK, entitlementId,
 			_toDate(jsonObject, "expirationDate"),
 			jsonObject.optString("hostName"),
 			jsonObject.optString("ipAddresses"), licenseEntry.getName(),

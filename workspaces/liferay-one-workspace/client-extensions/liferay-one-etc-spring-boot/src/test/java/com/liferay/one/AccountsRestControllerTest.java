@@ -1254,9 +1254,7 @@ public class AccountsRestControllerTest {
 		Mockito.when(
 			_licenseKeyProvisioner.provision(Mockito.eq(account), Mockito.any())
 		).thenReturn(
-			firstLicenseKey
-		).thenReturn(
-			secondLicenseKey
+			List.of(firstLicenseKey, secondLicenseKey)
 		);
 
 		List<LicenseKey> licenseKeys = accountsRestController.postLicenseKeys(

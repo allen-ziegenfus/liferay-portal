@@ -94,10 +94,11 @@ public class LicenseKeyProvisionerTest {
 			licenseKey
 		);
 
-		Assertions.assertSame(
-			licenseKey,
+		Assertions.assertEquals(
+			Collections.singletonList(licenseKey),
 			_licenseKeyProvisioner.provision(
-				_createAccount(), _createJSONObject()));
+				_createAccount(),
+				Collections.singletonList(_createJSONObject())));
 	}
 
 	@Test
@@ -118,7 +119,8 @@ public class LicenseKeyProvisionerTest {
 			Assertions.assertThrows(
 				ResponseStatusException.class,
 				() -> _licenseKeyProvisioner.provision(
-					_createAccount(), _createJSONObject()));
+					_createAccount(),
+					Collections.singletonList(_createJSONObject())));
 
 		Assertions.assertEquals(
 			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
@@ -156,10 +158,11 @@ public class LicenseKeyProvisionerTest {
 			licenseKey
 		);
 
-		Assertions.assertSame(
-			licenseKey,
+		Assertions.assertEquals(
+			Collections.singletonList(licenseKey),
 			_licenseKeyProvisioner.provision(
-				_createAccount(), _createJSONObject()));
+				_createAccount(),
+				Collections.singletonList(_createJSONObject())));
 	}
 
 	@Test
@@ -195,10 +198,11 @@ public class LicenseKeyProvisionerTest {
 			licenseKey
 		);
 
-		Assertions.assertSame(
-			licenseKey,
+		Assertions.assertEquals(
+			Collections.singletonList(licenseKey),
 			_licenseKeyProvisioner.provision(
-				_createAccount(), _createJSONObject()));
+				_createAccount(),
+				Collections.singletonList(_createJSONObject())));
 	}
 
 	@Test
@@ -255,7 +259,8 @@ public class LicenseKeyProvisionerTest {
 					() -> {
 						try {
 							_licenseKeyProvisioner.provision(
-								account, _createJSONObject());
+								account,
+								Collections.singletonList(_createJSONObject()));
 						}
 						catch (ResponseStatusException
 									responseStatusException) {
@@ -314,9 +319,10 @@ public class LicenseKeyProvisionerTest {
 			licenseKey
 		);
 
-		Assertions.assertSame(
-			licenseKey,
-			_licenseKeyProvisioner.provision(_createAccount(), jsonObject));
+		Assertions.assertEquals(
+			Collections.singletonList(licenseKey),
+			_licenseKeyProvisioner.provision(
+				_createAccount(), Collections.singletonList(jsonObject)));
 	}
 
 	@Test
@@ -334,7 +340,18 @@ public class LicenseKeyProvisionerTest {
 		Assertions.assertEquals(
 			HttpStatus.CONFLICT, _assertThrows().getStatusCode());
 
-		Mockito.verifyNoInteractions(_licenseKeyService);
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).addLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+			Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(),
+			Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.anyInt(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any()
+		);
 	}
 
 	@Test
@@ -346,7 +363,18 @@ public class LicenseKeyProvisionerTest {
 		Assertions.assertEquals(
 			HttpStatus.BAD_REQUEST, _assertThrows().getStatusCode());
 
-		Mockito.verifyNoInteractions(_licenseKeyService);
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).addLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+			Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(),
+			Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.anyInt(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any()
+		);
 	}
 
 	@Test
@@ -363,7 +391,18 @@ public class LicenseKeyProvisionerTest {
 		Assertions.assertEquals(
 			HttpStatus.BAD_REQUEST, _assertThrows().getStatusCode());
 
-		Mockito.verifyNoInteractions(_licenseKeyService);
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).addLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+			Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(),
+			Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.anyInt(), Mockito.any(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.anyInt(),
+			Mockito.anyInt(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+			Mockito.any(), Mockito.any(), Mockito.any()
+		);
 	}
 
 	@Test
@@ -385,7 +424,7 @@ public class LicenseKeyProvisionerTest {
 			Assertions.assertThrows(
 				ResponseStatusException.class,
 				() -> _licenseKeyProvisioner.provision(
-					_createAccount(), jsonObject));
+					_createAccount(), Collections.singletonList(jsonObject)));
 
 		Assertions.assertEquals(
 			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
@@ -448,16 +487,18 @@ public class LicenseKeyProvisionerTest {
 		jsonObject.remove("description");
 		jsonObject.remove("owner");
 
-		Assertions.assertSame(
-			licenseKey,
-			_licenseKeyProvisioner.provision(_createAccount(), jsonObject));
+		Assertions.assertEquals(
+			Collections.singletonList(licenseKey),
+			_licenseKeyProvisioner.provision(
+				_createAccount(), Collections.singletonList(jsonObject)));
 	}
 
 	private ResponseStatusException _assertThrows() {
 		return Assertions.assertThrows(
 			ResponseStatusException.class,
 			() -> _licenseKeyProvisioner.provision(
-				_createAccount(), _createJSONObject()));
+				_createAccount(),
+				Collections.singletonList(_createJSONObject())));
 	}
 
 	private Account _createAccount() {
