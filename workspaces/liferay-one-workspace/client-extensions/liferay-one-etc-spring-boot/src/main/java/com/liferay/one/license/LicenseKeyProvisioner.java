@@ -197,6 +197,9 @@ public class LicenseKeyProvisioner {
 		Map<Long, Integer> consumptionCounts, List<Entitlement> entitlements,
 		long entitlementId, long storedEntitlementId, int serverCount) {
 
+		Entitlement storedEntitlement = _fetchEntitlement(
+			entitlements, storedEntitlementId);
+
 		// A key written before entitlements were tracked carries no
 		// entitlement, and may keep it. Naming zero for a key that does have
 		// one would take it off the ledger for good.
@@ -229,6 +232,20 @@ public class LicenseKeyProvisioner {
 					"The entitlement does not grant license generation");
 			}
 
+			// Granting license generation is a property of the grant, not of
+			// the product: the self hosted definitions all carry it. Charging
+			// the key to the product it already holds keeps a key for one
+			// product off another product's capacity.
+
+			if ((storedEntitlement != null) &&
+				(storedEntitlement.getEntitlementDefinitionId() !=
+					entitlement.getEntitlementDefinitionId())) {
+
+				throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"The entitlement is for a different product");
+			}
+
 			int remaining =
 				_getQuantity(entitlement) -
 					_getConsumptionCount(consumptionCounts, entitlement);
@@ -245,6 +262,18 @@ public class LicenseKeyProvisioner {
 		throw new ResponseStatusException(
 			HttpStatus.BAD_REQUEST,
 			"The account holds no active entitlement with the requested ID");
+	}
+
+	private Entitlement _fetchEntitlement(
+		List<Entitlement> entitlements, long entitlementId) {
+
+		for (Entitlement entitlement : entitlements) {
+			if (entitlement.getEntitlementId() == entitlementId) {
+				return entitlement;
+			}
+		}
+
+		return null;
 	}
 
 	private int _getConsumptionCount(
@@ -406,6 +435,13 @@ public class LicenseKeyProvisioner {
 	}
 
 	private int _getQuantity(Entitlement entitlement) {
+		if (StringUtil.equals(
+				entitlement.getGrantType(),
+				EntitlementConstants.GRANT_TYPE_UNLIMITED)) {
+
+			return Integer.MAX_VALUE;
+		}
+
 		Double quantity = entitlement.getQuantity();
 
 		if (quantity == null) {

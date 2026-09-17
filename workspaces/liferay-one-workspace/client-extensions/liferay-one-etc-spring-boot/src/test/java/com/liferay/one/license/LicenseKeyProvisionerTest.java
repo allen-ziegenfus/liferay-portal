@@ -107,9 +107,16 @@ public class LicenseKeyProvisionerTest {
 	public void testExtendChargesTheRequestedEntitlement() throws Exception {
 		_setUpEntitlements(5.0);
 
-		_setUpConsumption(0);
-
 		LicenseKey licenseKey = _toLicenseKey(true, 0, null);
+
+		// The key being renewed is one of the account's keys, so it is part of
+		// the baseline the renewal is checked against.
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByAccountEntryId(_ACCOUNT_ENTRY_ID)
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
 
 		_licenseKeyProvisioner.extend(
 			_ACCOUNT_ENTRY_ID, Collections.singletonList(licenseKey),
@@ -120,6 +127,52 @@ public class LicenseKeyProvisionerTest {
 		).extendLicenseKey(
 			Mockito.eq(_ENTITLEMENT_ID), Mockito.any(), Mockito.anyLong(),
 			Mockito.any()
+		);
+	}
+
+	@Test
+	public void testExtendRejectsAnEntitlementForAnotherProduct()
+		throws Exception {
+
+		_setUpEntitlements(5.0, 5.0);
+
+		LicenseKey licenseKey = _toLicenseKey(true, 0, null);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByAccountEntryId(_ACCOUNT_ENTRY_ID)
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
+
+		// The second entitlement grants license generation too, but for a
+		// different product definition.
+
+		List<Entitlement> entitlements = List.of(
+			_toEntitlement(_ENTITLEMENT_DEFINITION_ID, _ENTITLEMENT_ID, 5.0),
+			_toEntitlement(
+				_ENTITLEMENT_DEFINITION_ID + 1, _ENTITLEMENT_ID + 1, 5.0));
+
+		Mockito.when(
+			_entitlementService.getActiveEntitlements(_ACCOUNT_ENTRY_ID)
+		).thenReturn(
+			entitlements
+		);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.extend(
+					_ACCOUNT_ENTRY_ID, Collections.singletonList(licenseKey),
+					Collections.singletonList(
+						_toExtendJSONObject(_ENTITLEMENT_ID + 1))));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).extendLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any()
 		);
 	}
 
@@ -760,6 +813,54 @@ public class LicenseKeyProvisionerTest {
 				_createAccount(), Collections.singletonList(jsonObject)));
 	}
 
+	@Test
+	public void testProvisionWhenTheEntitlementIsUnlimited() throws Exception {
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		Entitlement entitlement = _toEntitlement(
+			_ENTITLEMENT_DEFINITION_ID, _ENTITLEMENT_ID, null);
+
+		Mockito.when(
+			entitlement.getGrantType()
+		).thenReturn(
+			EntitlementConstants.GRANT_TYPE_UNLIMITED
+		);
+
+		List<Entitlement> entitlements = Collections.singletonList(entitlement);
+
+		Mockito.when(
+			_entitlementService.getActiveEntitlements(_ACCOUNT_ENTRY_ID)
+		).thenReturn(
+			entitlements
+		);
+
+		_setUpConsumption(50);
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			_licenseKeyService.addLicenseKey(
+				Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+				Mockito.any(), Mockito.anyBoolean(), Mockito.any(),
+				Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(),
+				Mockito.any(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.anyInt(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any())
+		).thenReturn(
+			licenseKey
+		);
+
+		Assertions.assertEquals(
+			Collections.singletonList(licenseKey),
+			_licenseKeyProvisioner.provision(
+				_createAccount(),
+				Collections.singletonList(_createJSONObject())));
+	}
+
 	private ResponseStatusException _assertThrows() {
 		return Assertions.assertThrows(
 			ResponseStatusException.class,
@@ -919,6 +1020,47 @@ public class LicenseKeyProvisionerTest {
 				new LicenseEntry(
 					_PRODUCT_KEY, "Portal Production", "production", "7.0", ""))
 		);
+	}
+
+	private Entitlement _toEntitlement(
+		long entitlementDefinitionId, long entitlementId, Double quantity) {
+
+		Entitlement entitlement = Mockito.mock(Entitlement.class);
+
+		EntitlementDefinition entitlementDefinition = Mockito.mock(
+			EntitlementDefinition.class);
+
+		Mockito.when(
+			entitlementDefinition.getName()
+		).thenReturn(
+			EntitlementConstants.NAME_LICENSE_GENERATION
+		);
+
+		Mockito.when(
+			entitlement.getEntitlementDefinition()
+		).thenReturn(
+			entitlementDefinition
+		);
+
+		Mockito.when(
+			entitlement.getEntitlementDefinitionId()
+		).thenReturn(
+			entitlementDefinitionId
+		);
+
+		Mockito.when(
+			entitlement.getEntitlementId()
+		).thenReturn(
+			entitlementId
+		);
+
+		Mockito.when(
+			entitlement.getQuantity()
+		).thenReturn(
+			quantity
+		);
+
+		return entitlement;
 	}
 
 	private JSONObject _toExtendJSONObject(long entitlementId) {
