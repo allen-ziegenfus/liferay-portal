@@ -13,6 +13,7 @@ import com.liferay.one.model.LicenseKey;
 import com.liferay.one.service.EntitlementDefinitionService;
 import com.liferay.one.service.EntitlementService;
 import com.liferay.one.service.LicenseKeyService;
+import com.liferay.one.util.KeyedLock;
 
 import java.time.Instant;
 
@@ -20,6 +21,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.json.JSONObject;
 
@@ -56,6 +61,9 @@ public class LicenseKeyProvisionerTest {
 		ReflectionTestUtils.setField(
 			_licenseKeyProvisioner, "_licenseEntryService",
 			_licenseEntryService);
+		ReflectionTestUtils.setField(
+			_licenseKeyProvisioner, "_keyedLock", new KeyedLock());
+
 		ReflectionTestUtils.setField(
 			_licenseKeyProvisioner, "_licenseKeyService", _licenseKeyService);
 
@@ -191,6 +199,84 @@ public class LicenseKeyProvisionerTest {
 			licenseKey,
 			_licenseKeyProvisioner.provision(
 				_createAccount(), _createJSONObject()));
+	}
+
+	@Test
+	public void testProvisionIssuesNoMoreThanTheQuantityConcurrently()
+		throws Exception {
+
+		_setUpEntitlementDefinition(
+			EntitlementConstants.NAME_LICENSE_GENERATION);
+
+		_setUpEntitlements(1.0);
+
+		List<LicenseKey> licenseKeys = Collections.synchronizedList(
+			new ArrayList<>());
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByAccountEntryId(_ACCOUNT_ENTRY_ID)
+		).thenAnswer(
+			invocation -> new ArrayList<>(licenseKeys)
+		);
+
+		Mockito.when(
+			_licenseKeyService.addLicenseKey(
+				Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+				Mockito.any(), Mockito.anyBoolean(), Mockito.any(),
+				Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyInt(),
+				Mockito.any(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.anyInt(), Mockito.anyInt(), Mockito.anyLong(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+				Mockito.any())
+		).thenAnswer(
+			invocation -> {
+				LicenseKey licenseKey = _toLicenseKey(true, 0, null);
+
+				licenseKeys.add(licenseKey);
+
+				return licenseKey;
+			}
+		);
+
+		Account account = _createAccount();
+
+		List<Integer> conflicts = Collections.synchronizedList(
+			new ArrayList<>());
+
+		ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+		try {
+			List<Callable<Void>> callables = new ArrayList<>();
+
+			for (int i = 0; i < 2; i++) {
+				callables.add(
+					() -> {
+						try {
+							_licenseKeyProvisioner.provision(
+								account, _createJSONObject());
+						}
+						catch (ResponseStatusException
+									responseStatusException) {
+
+							conflicts.add(1);
+						}
+
+						return null;
+					});
+			}
+
+			for (Future<Void> future : executorService.invokeAll(callables)) {
+				future.get();
+			}
+		}
+		finally {
+			executorService.shutdown();
+		}
+
+		Assertions.assertEquals(1, licenseKeys.size());
+		Assertions.assertEquals(1, conflicts.size());
 	}
 
 	@Test

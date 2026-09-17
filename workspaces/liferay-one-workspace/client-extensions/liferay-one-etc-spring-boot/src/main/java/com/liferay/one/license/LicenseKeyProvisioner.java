@@ -13,6 +13,7 @@ import com.liferay.one.model.LicenseKey;
 import com.liferay.one.service.EntitlementDefinitionService;
 import com.liferay.one.service.EntitlementService;
 import com.liferay.one.service.LicenseKeyService;
+import com.liferay.one.util.KeyedLock;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.ee.license.shared.LicenseConstants;
 import com.liferay.portal.kernel.util.StringUtil;
@@ -42,51 +43,13 @@ public class LicenseKeyProvisioner {
 	public LicenseKey provision(Account account, JSONObject jsonObject)
 		throws Exception {
 
-		String licenseType = jsonObject.optString("licenseType");
-		String productVersion = jsonObject.optString("productVersion");
+		// Reading the consumption, checking it and creating the key have to
+		// happen together, or two requests for the same account both see the
+		// same free licenses and both take them.
 
-		LicenseEntry licenseEntry = _getLicenseEntry(
-			licenseType, jsonObject.optString("productKey"), productVersion);
-
-		List<Entitlement> entitlements = _getEntitlements(
-			account.getId(),
-			jsonObject.optString("productExternalReferenceCode"));
-
-		int maxClusterNodes = jsonObject.optInt("maxClusterNodes");
-
-		int serverCount = _getServerCount(maxClusterNodes);
-
-		Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
-			account.getId());
-
-		_checkAvailability(consumptionCounts, entitlements, serverCount);
-
-		String owner = jsonObject.optString("owner");
-
-		if (Validator.isNull(owner)) {
-			owner = account.getName();
-		}
-
-		String description = jsonObject.optString("description");
-
-		if (Validator.isNull(description)) {
-			description = owner;
-		}
-
-		return _licenseKeyService.addLicenseKey(
-			account.getId(), account.getName(), true, StringPool.BLANK, false,
-			description, StringPool.BLANK,
-			_getEntitlementId(consumptionCounts, entitlements, serverCount),
-			_toDate(jsonObject, "expirationDate"),
-			jsonObject.optString("hostName"),
-			jsonObject.optString("ipAddresses"), licenseEntry.getName(),
-			licenseType, _LICENSE_VERSION, jsonObject.optString("macAddresses"),
-			maxClusterNodes, 0L, 0, 0, 0L, jsonObject.optString("name"),
-			jsonObject.optString("orderId"), owner,
-			jsonObject.optString("productExternalId"),
-			jsonObject.optString("productName"), productVersion,
-			StringPool.BLANK, jsonObject.optString("sizing"),
-			_toDate(jsonObject, "startDate"));
+		return _keyedLock.withLock(
+			String.valueOf(account.getId()),
+			() -> _provision(account, jsonObject));
 	}
 
 	private void _checkAvailability(
@@ -259,6 +222,56 @@ public class LicenseKeyProvisioner {
 		return 1;
 	}
 
+	private LicenseKey _provision(Account account, JSONObject jsonObject)
+		throws Exception {
+
+		String licenseType = jsonObject.optString("licenseType");
+		String productVersion = jsonObject.optString("productVersion");
+
+		LicenseEntry licenseEntry = _getLicenseEntry(
+			licenseType, jsonObject.optString("productKey"), productVersion);
+
+		List<Entitlement> entitlements = _getEntitlements(
+			account.getId(),
+			jsonObject.optString("productExternalReferenceCode"));
+
+		int maxClusterNodes = jsonObject.optInt("maxClusterNodes");
+
+		int serverCount = _getServerCount(maxClusterNodes);
+
+		Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
+			account.getId());
+
+		_checkAvailability(consumptionCounts, entitlements, serverCount);
+
+		String owner = jsonObject.optString("owner");
+
+		if (Validator.isNull(owner)) {
+			owner = account.getName();
+		}
+
+		String description = jsonObject.optString("description");
+
+		if (Validator.isNull(description)) {
+			description = owner;
+		}
+
+		return _licenseKeyService.addLicenseKey(
+			account.getId(), account.getName(), true, StringPool.BLANK, false,
+			description, StringPool.BLANK,
+			_getEntitlementId(consumptionCounts, entitlements, serverCount),
+			_toDate(jsonObject, "expirationDate"),
+			jsonObject.optString("hostName"),
+			jsonObject.optString("ipAddresses"), licenseEntry.getName(),
+			licenseType, _LICENSE_VERSION, jsonObject.optString("macAddresses"),
+			maxClusterNodes, 0L, 0, 0, 0L, jsonObject.optString("name"),
+			jsonObject.optString("orderId"), owner,
+			jsonObject.optString("productExternalId"),
+			jsonObject.optString("productName"), productVersion,
+			StringPool.BLANK, jsonObject.optString("sizing"),
+			_toDate(jsonObject, "startDate"));
+	}
+
 	private Date _toDate(JSONObject jsonObject, String key) {
 		return Date.from(Instant.parse(jsonObject.getString(key)));
 	}
@@ -270,6 +283,9 @@ public class LicenseKeyProvisioner {
 
 	@Autowired
 	private EntitlementService _entitlementService;
+
+	@Autowired
+	private KeyedLock _keyedLock;
 
 	@Autowired
 	private LicenseEntryService _licenseEntryService;
