@@ -77,6 +77,134 @@ public class LicenseKeyProvisionerTest {
 	}
 
 	@Test
+	public void testActivateSpendsTheLicensesTheBatchAlreadyTook()
+		throws Exception {
+
+		_setUpEntitlements(1.0);
+
+		_setUpConsumption(0);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.activate(
+					_ACCOUNT_ENTRY_ID,
+					List.of(
+						_toLicenseKey(false, 0, null),
+						_toLicenseKey(false, 0, null))));
+
+		Assertions.assertEquals(
+			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).updateLicenseKeyActive(
+			Mockito.anyBoolean(), Mockito.anyLong()
+		);
+	}
+
+	@Test
+	public void testExtendChargesTheRequestedEntitlement() throws Exception {
+		_setUpEntitlements(5.0);
+
+		_setUpConsumption(0);
+
+		LicenseKey licenseKey = _toLicenseKey(true, 0, null);
+
+		_licenseKeyProvisioner.extend(
+			_ACCOUNT_ENTRY_ID, Collections.singletonList(licenseKey),
+			Collections.singletonList(_toExtendJSONObject(_ENTITLEMENT_ID)));
+
+		Mockito.verify(
+			_licenseKeyService
+		).extendLicenseKey(
+			Mockito.eq(_ENTITLEMENT_ID), Mockito.any(), Mockito.anyLong(),
+			Mockito.any()
+		);
+	}
+
+	@Test
+	public void testExtendRejectsAnEntitlementTheAccountDoesNotHold()
+		throws Exception {
+
+		_setUpEntitlements(5.0);
+
+		_setUpConsumption(0);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.extend(
+					_ACCOUNT_ENTRY_ID,
+					Collections.singletonList(_toLicenseKey(true, 0, null)),
+					Collections.singletonList(_toExtendJSONObject(999L))));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).extendLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any()
+		);
+	}
+
+	@Test
+	public void testExtendRejectsZeroForATrackedLicenseKey() throws Exception {
+		_setUpEntitlements(5.0);
+
+		_setUpConsumption(0);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.extend(
+					_ACCOUNT_ENTRY_ID,
+					Collections.singletonList(_toLicenseKey(true, 0, null)),
+					Collections.singletonList(_toExtendJSONObject(0))));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).extendLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any()
+		);
+	}
+
+	@Test
+	public void testExtendSpendsTheLicensesTheBatchAlreadyTook()
+		throws Exception {
+
+		_setUpEntitlements(1.0);
+
+		_setUpConsumption(0);
+
+		LicenseKey licenseKey = _toLicenseKey(true, 0, null);
+
+		// One license, two extensions: the second has nothing left to take.
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> _licenseKeyProvisioner.extend(
+					_ACCOUNT_ENTRY_ID, List.of(licenseKey, licenseKey),
+					List.of(
+						_toExtendJSONObject(_ENTITLEMENT_ID),
+						_toExtendJSONObject(_ENTITLEMENT_ID))));
+
+		Assertions.assertEquals(
+			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).extendLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any()
+		);
+	}
+
+	@Test
 	public void testProvision() throws Exception {
 		_setUpEntitlementDefinition(
 			EntitlementConstants.NAME_LICENSE_GENERATION);
@@ -737,6 +865,21 @@ public class LicenseKeyProvisionerTest {
 		for (int i = 0; i < quantities.length; i++) {
 			Entitlement entitlement = Mockito.mock(Entitlement.class);
 
+			EntitlementDefinition entitlementDefinition = Mockito.mock(
+				EntitlementDefinition.class);
+
+			Mockito.when(
+				entitlementDefinition.getName()
+			).thenReturn(
+				EntitlementConstants.NAME_LICENSE_GENERATION
+			);
+
+			Mockito.when(
+				entitlement.getEntitlementDefinition()
+			).thenReturn(
+				entitlementDefinition
+			);
+
 			Mockito.when(
 				entitlement.getEntitlementDefinitionId()
 			).thenReturn(
@@ -775,6 +918,17 @@ public class LicenseKeyProvisionerTest {
 					_PRODUCT_KEY, "Portal Free", "free", "7.0", ""),
 				new LicenseEntry(
 					_PRODUCT_KEY, "Portal Production", "production", "7.0", ""))
+		);
+	}
+
+	private JSONObject _toExtendJSONObject(long entitlementId) {
+		return new JSONObject(
+		).put(
+			"entitlementId", entitlementId
+		).put(
+			"expirationDate", "2028-01-01T00:00:00Z"
+		).put(
+			"startDate", "2027-01-01T00:00:00Z"
 		);
 	}
 

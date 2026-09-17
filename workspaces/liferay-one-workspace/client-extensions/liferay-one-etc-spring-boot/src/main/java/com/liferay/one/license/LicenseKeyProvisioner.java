@@ -40,52 +40,95 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class LicenseKeyProvisioner {
 
-	public void checkEntitlementAvailable(
-			long accountEntryId, long entitlementId, int serverCount)
+	public void activate(long accountEntryId, List<LicenseKey> licenseKeys)
 		throws Exception {
-
-		// A key that predates entitlement tracking has nothing to charge, so
-		// there is no capacity question to answer for it.
-
-		if (entitlementId == 0) {
-			return;
-		}
 
 		_keyedLock.withLock(
 			String.valueOf(accountEntryId),
 			() -> {
-				Entitlement entitlement = null;
-
-				for (Entitlement curEntitlement :
-						_entitlementService.getActiveEntitlements(
-							accountEntryId)) {
-
-					if (curEntitlement.getEntitlementId() == entitlementId) {
-						entitlement = curEntitlement;
-
-						break;
-					}
-				}
-
-				if (entitlement == null) {
-					throw new ResponseStatusException(
-						HttpStatus.BAD_REQUEST,
-						"The account holds no active entitlement with the " +
-							"requested ID");
-				}
-
 				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
 					accountEntryId);
 
-				int remaining =
-					_getQuantity(entitlement) -
-						_getConsumptionCount(consumptionCounts, entitlement);
+				List<Entitlement> entitlements =
+					_entitlementService.getActiveEntitlements(accountEntryId);
 
-				if (remaining < serverCount) {
-					throw new ResponseStatusException(
-						HttpStatus.CONFLICT,
-						"The subscriptions have no more available licenses");
+				for (LicenseKey licenseKey : licenseKeys) {
+					if (licenseKey.isActive()) {
+						continue;
+					}
+
+					int serverCount = _getServerCount(
+						licenseKey.getMaxClusterNodes());
+
+					_checkEntitlement(
+						consumptionCounts, entitlements,
+						licenseKey.getEntitlementId(),
+						licenseKey.getEntitlementId(), serverCount);
+
+					consumptionCounts.merge(
+						licenseKey.getEntitlementId(), serverCount,
+						Integer::sum);
 				}
+
+				for (LicenseKey licenseKey : licenseKeys) {
+					_licenseKeyService.updateLicenseKeyActive(
+						true, licenseKey.getLicenseKeyId());
+				}
+			});
+	}
+
+	public List<LicenseKey> extend(
+			long accountEntryId, List<LicenseKey> licenseKeys,
+			List<JSONObject> jsonObjects)
+		throws Exception {
+
+		// The two lists run in step: jsonObjects.get(i) is the request for
+		// licenseKeys.get(i), which the caller has already resolved and
+		// authorized.
+
+		return _keyedLock.withLock(
+			String.valueOf(accountEntryId),
+			() -> {
+				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
+					accountEntryId);
+
+				List<Entitlement> entitlements =
+					_entitlementService.getActiveEntitlements(accountEntryId);
+
+				for (int i = 0; i < licenseKeys.size(); i++) {
+					LicenseKey licenseKey = licenseKeys.get(i);
+
+					JSONObject jsonObject = jsonObjects.get(i);
+
+					long entitlementId = jsonObject.getLong("entitlementId");
+
+					int serverCount = _getServerCount(
+						licenseKey.getMaxClusterNodes());
+
+					_checkEntitlement(
+						consumptionCounts, entitlements, entitlementId,
+						licenseKey.getEntitlementId(), serverCount);
+
+					consumptionCounts.merge(
+						entitlementId, serverCount, Integer::sum);
+				}
+
+				List<LicenseKey> newLicenseKeys = new ArrayList<>();
+
+				for (int i = 0; i < licenseKeys.size(); i++) {
+					JSONObject jsonObject = jsonObjects.get(i);
+
+					newLicenseKeys.add(
+						_licenseKeyService.extendLicenseKey(
+							jsonObject.getLong("entitlementId"),
+							_toDate(jsonObject, "expirationDate"),
+							licenseKeys.get(
+								i
+							).getLicenseKeyId(),
+							_toDate(jsonObject, "startDate")));
+				}
+
+				return newLicenseKeys;
 			});
 	}
 
@@ -148,6 +191,60 @@ public class LicenseKeyProvisioner {
 			jsonObject.optString("productName"), productVersion,
 			StringPool.BLANK, jsonObject.optString("sizing"),
 			_toDate(jsonObject, "startDate"));
+	}
+
+	private void _checkEntitlement(
+		Map<Long, Integer> consumptionCounts, List<Entitlement> entitlements,
+		long entitlementId, long storedEntitlementId, int serverCount) {
+
+		// A key written before entitlements were tracked carries no
+		// entitlement, and may keep it. Naming zero for a key that does have
+		// one would take it off the ledger for good.
+
+		if (entitlementId == 0) {
+			if (storedEntitlementId == 0) {
+				return;
+			}
+
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"An entitlement is required for this license key");
+		}
+
+		for (Entitlement entitlement : entitlements) {
+			if (entitlement.getEntitlementId() != entitlementId) {
+				continue;
+			}
+
+			EntitlementDefinition entitlementDefinition =
+				entitlement.getEntitlementDefinition();
+
+			if ((entitlementDefinition == null) ||
+				!StringUtil.equals(
+					entitlementDefinition.getName(),
+					EntitlementConstants.NAME_LICENSE_GENERATION)) {
+
+				throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"The entitlement does not grant license generation");
+			}
+
+			int remaining =
+				_getQuantity(entitlement) -
+					_getConsumptionCount(consumptionCounts, entitlement);
+
+			if (remaining < serverCount) {
+				throw new ResponseStatusException(
+					HttpStatus.CONFLICT,
+					"The subscriptions have no more available licenses");
+			}
+
+			return;
+		}
+
+		throw new ResponseStatusException(
+			HttpStatus.BAD_REQUEST,
+			"The account holds no active entitlement with the requested ID");
 	}
 
 	private int _getConsumptionCount(

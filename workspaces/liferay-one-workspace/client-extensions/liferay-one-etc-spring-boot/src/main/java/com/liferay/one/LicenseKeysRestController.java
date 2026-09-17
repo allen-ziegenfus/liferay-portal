@@ -246,41 +246,54 @@ public class LicenseKeysRestController extends OneBaseRestController {
 					" license keys may be extended at once");
 		}
 
-		// Every requested key is resolved and checked before any of them is
-		// extended, so a rejected item leaves the batch untouched.
+		// Every requested key is resolved and authorized here, then the
+		// provisioner settles the licenses and writes under one lock.
+
+		List<JSONObject> jsonObjects = new ArrayList<>();
+		List<LicenseKey> licenseKeys = new ArrayList<>();
+
+		long accountEntryId = 0;
+
+		Set<Long> licenseKeyIds = new LinkedHashSet<>();
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
 
+			long licenseKeyId = _getLong(jsonObject, "licenseKeyId");
+
+			if (!licenseKeyIds.add(licenseKeyId)) {
+				throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"A license key may only be extended once per request");
+			}
+
 			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
-				jwt, _getLong(jsonObject, "licenseKeyId"));
+				jwt, licenseKeyId);
 
 			_licenseKeyPermission.check(
 				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
 
-			_licenseKeyProvisioner.checkEntitlementAvailable(
-				licenseKey.getAccountEntryId(),
-				_getLong(jsonObject, "entitlementId"),
-				_getServerCount(licenseKey.getMaxClusterNodes()));
+			if ((accountEntryId != 0) &&
+				(accountEntryId != licenseKey.getAccountEntryId())) {
+
+				throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Every license key must belong to the same account");
+			}
+
+			accountEntryId = licenseKey.getAccountEntryId();
+
+			_getLong(jsonObject, "entitlementId");
 
 			_toDate(jsonObject, "expirationDate");
 			_toDate(jsonObject, "startDate");
+
+			jsonObjects.add(jsonObject);
+			licenseKeys.add(licenseKey);
 		}
 
-		List<LicenseKey> licenseKeys = new ArrayList<>();
-
-		for (int i = 0; i < jsonArray.length(); i++) {
-			JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-			licenseKeys.add(
-				_licenseKeyService.extendLicenseKey(
-					_getLong(jsonObject, "entitlementId"),
-					_toDate(jsonObject, "expirationDate"),
-					_getLong(jsonObject, "licenseKeyId"),
-					_toDate(jsonObject, "startDate")));
-		}
-
-		return licenseKeys;
+		return _licenseKeyProvisioner.extend(
+			accountEntryId, licenseKeys, jsonObjects);
 	}
 
 	@PostMapping("/type-free")
@@ -448,14 +461,6 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 	}
 
-	private int _getServerCount(int maxClusterNodes) {
-		if (maxClusterNodes > 1) {
-			return maxClusterNodes;
-		}
-
-		return 1;
-	}
-
 	private Date _toDate(JSONObject jsonObject, String key) {
 		try {
 			return Date.from(Instant.parse(jsonObject.getString(key)));
@@ -495,22 +500,33 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		List<LicenseKey> licenseKeys = _getLicenseKeys(jwt, licenseKeyIds);
 
+		long accountEntryId = 0;
+
 		for (LicenseKey licenseKey : licenseKeys) {
 			_licenseKeyPermission.check(
 				userAccount, licenseKey.getAccountEntryId(), ActionKeys.UPDATE);
 
-			if (active && !licenseKey.isActive()) {
-				_licenseKeyProvisioner.checkEntitlementAvailable(
-					licenseKey.getAccountEntryId(),
-					licenseKey.getEntitlementId(),
-					_getServerCount(licenseKey.getMaxClusterNodes()));
+			if ((accountEntryId != 0) &&
+				(accountEntryId != licenseKey.getAccountEntryId())) {
+
+				throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Every license key must belong to the same account");
 			}
+
+			accountEntryId = licenseKey.getAccountEntryId();
 		}
 
-		for (LicenseKey licenseKey : licenseKeys) {
-			_licenseKeyService.updateLicenseKeyActive(
-				active, licenseKey.getLicenseKeyId());
+		if (!active) {
+			for (LicenseKey licenseKey : licenseKeys) {
+				_licenseKeyService.updateLicenseKeyActive(
+					false, licenseKey.getLicenseKeyId());
+			}
+
+			return;
 		}
+
+		_licenseKeyProvisioner.activate(accountEntryId, licenseKeys);
 	}
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(

@@ -25,12 +25,9 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
-import java.time.Instant;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -594,15 +591,14 @@ public class LicenseKeysRestControllerTest {
 		LicenseKey extendedLicenseKey = Mockito.mock(LicenseKey.class);
 
 		Mockito.when(
-			_licenseKeyService.extendLicenseKey(
-				42L, Date.from(Instant.parse("2028-01-01T00:00:00Z")), 1L,
-				Date.from(Instant.parse("2027-01-01T00:00:00Z")))
+			_licenseKeyProvisioner.extend(
+				Mockito.eq(_ACCOUNT_ID), Mockito.anyList(), Mockito.anyList())
 		).thenReturn(
-			extendedLicenseKey
+			Collections.singletonList(extendedLicenseKey)
 		);
 
 		Assertions.assertEquals(
-			List.of(extendedLicenseKey),
+			Collections.singletonList(extendedLicenseKey),
 			licenseKeysRestController.postLicenseKeysExtend(
 				null,
 				"[{\"entitlementId\": 42, \"expirationDate\": " +
@@ -613,46 +609,6 @@ public class LicenseKeysRestControllerTest {
 			_licenseKeyPermission
 		).check(
 			_ACCOUNT_ID, ActionKeys.UPDATE, null
-		);
-	}
-
-	@Test
-	public void testPostLicenseKeysExtendChargesTheRequestedEntitlement()
-		throws Exception {
-
-		LicenseKeysRestController licenseKeysRestController =
-			_createController();
-
-		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
-
-		Mockito.when(
-			licenseKey.getAccountEntryId()
-		).thenReturn(
-			_ACCOUNT_ID
-		);
-
-		Mockito.when(
-			licenseKey.getEntitlementId()
-		).thenReturn(
-			7L
-		);
-
-		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
-		).thenReturn(
-			licenseKey
-		);
-
-		licenseKeysRestController.postLicenseKeysExtend(
-			null,
-			"[{\"entitlementId\": 42, \"expirationDate\": " +
-				"\"2028-01-01T00:00:00Z\", \"licenseKeyId\": 1, " +
-					"\"startDate\": \"2027-01-01T00:00:00Z\"}]");
-
-		Mockito.verify(
-			_licenseKeyService
-		).extendLicenseKey(
-			Mockito.eq(42L), Mockito.any(), Mockito.anyLong(), Mockito.any()
 		);
 	}
 
@@ -681,8 +637,8 @@ public class LicenseKeysRestControllerTest {
 			new ResponseStatusException(HttpStatus.BAD_REQUEST)
 		).when(
 			_licenseKeyProvisioner
-		).checkEntitlementAvailable(
-			Mockito.eq(_ACCOUNT_ID), Mockito.eq(42L), Mockito.anyInt()
+		).extend(
+			Mockito.eq(_ACCOUNT_ID), Mockito.anyList(), Mockito.anyList()
 		);
 
 		Assertions.assertThrows(
@@ -695,9 +651,9 @@ public class LicenseKeysRestControllerTest {
 					"\"startDate\": \"2027-01-01T00:00:00Z\"}]")));
 
 		Mockito.verify(
-			_licenseKeyService, Mockito.never()
-		).extendLicenseKey(
-			Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any()
+			_licenseKeyProvisioner
+		).extend(
+			Mockito.eq(_ACCOUNT_ID), Mockito.anyList(), Mockito.anyList()
 		);
 	}
 
@@ -913,12 +869,6 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			licenseKey.getLicenseKeyId()
-		).thenReturn(
-			1L
-		);
-
-		Mockito.when(
 			_licenseKeyService.getLicenseKeysByIds(
 				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
@@ -935,9 +885,15 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.verify(
-			_licenseKeyService
+			_licenseKeyProvisioner
+		).activate(
+			Mockito.eq(_ACCOUNT_ID), Mockito.anyList()
+		);
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
 		).updateLicenseKeyActive(
-			true, 1L
+			Mockito.anyBoolean(), Mockito.anyLong()
 		);
 	}
 
@@ -979,8 +935,8 @@ public class LicenseKeysRestControllerTest {
 			new ResponseStatusException(HttpStatus.CONFLICT)
 		).when(
 			_licenseKeyProvisioner
-		).checkEntitlementAvailable(
-			Mockito.eq(_ACCOUNT_ID), Mockito.eq(42L), Mockito.anyInt()
+		).activate(
+			Mockito.eq(_ACCOUNT_ID), Mockito.anyList()
 		);
 
 		Assertions.assertThrows(
