@@ -13,6 +13,7 @@ import com.liferay.one.constants.CommerceOrderConstants;
 import com.liferay.one.exception.NoSuchLicenseKeyException;
 import com.liferay.one.license.LicenseKeyCSVExporter;
 import com.liferay.one.license.LicenseKeyExporter;
+import com.liferay.one.license.LicenseKeyExtension;
 import com.liferay.one.license.LicenseKeyProvisioner;
 import com.liferay.one.model.LicenseKey;
 import com.liferay.one.model.SubscriptionEntry;
@@ -28,9 +29,12 @@ import java.time.format.DateTimeParseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.JSONArray;
@@ -228,72 +232,53 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			@AuthenticationPrincipal Jwt jwt, @RequestBody String json)
 		throws Exception {
 
-		JSONArray jsonArray = null;
+		JSONArray jsonArray = _toJSONArray(json);
 
-		try {
-			jsonArray = new JSONArray(json);
-		}
-		catch (JSONException jsonException) {
-			throw new ResponseStatusException(
-				HttpStatus.BAD_REQUEST,
-				"Request body is not a valid JSON array", jsonException);
-		}
-
-		if (jsonArray.length() > _MAX_LICENSE_KEY_IDS) {
-			throw new ResponseStatusException(
-				HttpStatus.BAD_REQUEST,
-				"No more than " + _MAX_LICENSE_KEY_IDS +
-					" license keys may be extended at once");
-		}
-
-		// Every requested key is resolved and authorized here, then the
-		// provisioner settles the licenses and writes under one lock.
-
-		List<JSONObject> jsonObjects = new ArrayList<>();
-		List<LicenseKey> licenseKeys = new ArrayList<>();
-
-		long accountEntryId = 0;
-
-		Set<Long> licenseKeyIds = new LinkedHashSet<>();
+		long[] licenseKeyIds = new long[jsonArray.length()];
 
 		for (int i = 0; i < jsonArray.length(); i++) {
-			JSONObject jsonObject = jsonArray.getJSONObject(i);
+			licenseKeyIds[i] = _getLong(
+				_getJSONObject(jsonArray, i), "licenseKeyId");
+		}
 
-			long licenseKeyId = _getLong(jsonObject, "licenseKeyId");
+		_checkLicenseKeyIds(licenseKeyIds);
 
-			if (!licenseKeyIds.add(licenseKeyId)) {
-				throw new ResponseStatusException(
-					HttpStatus.BAD_REQUEST,
-					"A license key may only be extended once per request");
-			}
+		if (licenseKeyIds.length != _toDistinctLicenseKeyIds(
+				licenseKeyIds).length) {
 
-			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
-				jwt, licenseKeyId);
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"A license key may only be extended once per request");
+		}
+
+		Map<Long, LicenseKey> licenseKeysMap = new HashMap<>();
+
+		for (LicenseKey licenseKey : _getLicenseKeys(jwt, licenseKeyIds)) {
+			licenseKeysMap.put(licenseKey.getLicenseKeyId(), licenseKey);
+		}
+
+		UserAccount userAccount = getMyUserAccount(jwt);
+
+		List<LicenseKeyExtension> licenseKeyExtensions = new ArrayList<>();
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = _getJSONObject(jsonArray, i);
+
+			LicenseKey licenseKey = licenseKeysMap.get(
+				_getLong(jsonObject, "licenseKeyId"));
 
 			_licenseKeyPermission.check(
-				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
+				userAccount, licenseKey.getAccountEntryId(), ActionKeys.UPDATE);
 
-			if ((accountEntryId != 0) &&
-				(accountEntryId != licenseKey.getAccountEntryId())) {
-
-				throw new ResponseStatusException(
-					HttpStatus.BAD_REQUEST,
-					"Every license key must belong to the same account");
-			}
-
-			accountEntryId = licenseKey.getAccountEntryId();
-
-			_getLong(jsonObject, "entitlementId");
-
-			_toDate(jsonObject, "expirationDate");
-			_toDate(jsonObject, "startDate");
-
-			jsonObjects.add(jsonObject);
-			licenseKeys.add(licenseKey);
+			licenseKeyExtensions.add(
+				new LicenseKeyExtension(
+					_getLong(jsonObject, "entitlementId"),
+					_toDate(jsonObject, "expirationDate"), licenseKey,
+					_toDate(jsonObject, "startDate")));
 		}
 
 		return _licenseKeyProvisioner.extend(
-			accountEntryId, licenseKeys, jsonObjects);
+			_getAccountEntryId(licenseKeysMap.values()), licenseKeyExtensions);
 	}
 
 	@PostMapping("/type-free")
@@ -415,6 +400,24 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 	}
 
+	private long _getAccountEntryId(Collection<LicenseKey> licenseKeys) {
+		Long accountEntryId = null;
+
+		for (LicenseKey licenseKey : licenseKeys) {
+			if ((accountEntryId != null) &&
+				(accountEntryId != licenseKey.getAccountEntryId())) {
+
+				throw new ResponseStatusException(
+					HttpStatus.BAD_REQUEST,
+					"Every license key must belong to the same account");
+			}
+
+			accountEntryId = licenseKey.getAccountEntryId();
+		}
+
+		return accountEntryId;
+	}
+
 	private List<LicenseKey> _getActiveLicenseKeys(
 			Jwt jwt, long[] licenseKeyIds)
 		throws Exception {
@@ -435,6 +438,18 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 
 		return licenseKeys;
+	}
+
+	private JSONObject _getJSONObject(JSONArray jsonArray, int index) {
+		try {
+			return jsonArray.getJSONObject(index);
+		}
+		catch (JSONException jsonException) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Request body item " + index + " is not a JSON object",
+				jsonException);
+		}
 	}
 
 	private List<LicenseKey> _getLicenseKeys(Jwt jwt, long[] licenseKeyIds)
@@ -490,43 +505,41 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		return longs;
 	}
 
+	private JSONArray _toJSONArray(String json) {
+		try {
+			return new JSONArray(json);
+		}
+		catch (JSONException jsonException) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Request body is not a valid JSON array", jsonException);
+		}
+	}
+
 	private void _updateLicenseKeysActive(
 			boolean active, Jwt jwt, long[] licenseKeyIds)
 		throws Exception {
 
 		_checkLicenseKeyIds(licenseKeyIds);
 
-		UserAccount userAccount = getMyUserAccount(jwt);
-
 		List<LicenseKey> licenseKeys = _getLicenseKeys(jwt, licenseKeyIds);
 
-		long accountEntryId = 0;
+		UserAccount userAccount = getMyUserAccount(jwt);
 
 		for (LicenseKey licenseKey : licenseKeys) {
 			_licenseKeyPermission.check(
 				userAccount, licenseKey.getAccountEntryId(), ActionKeys.UPDATE);
-
-			if ((accountEntryId != 0) &&
-				(accountEntryId != licenseKey.getAccountEntryId())) {
-
-				throw new ResponseStatusException(
-					HttpStatus.BAD_REQUEST,
-					"Every license key must belong to the same account");
-			}
-
-			accountEntryId = licenseKey.getAccountEntryId();
 		}
 
-		if (!active) {
-			for (LicenseKey licenseKey : licenseKeys) {
-				_licenseKeyService.updateLicenseKeyActive(
-					false, licenseKey.getLicenseKeyId());
-			}
+		long accountEntryId = _getAccountEntryId(licenseKeys);
+
+		if (active) {
+			_licenseKeyProvisioner.activate(accountEntryId, licenseKeyIds);
 
 			return;
 		}
 
-		_licenseKeyProvisioner.activate(accountEntryId, licenseKeys);
+		_licenseKeyProvisioner.deactivate(accountEntryId, licenseKeyIds);
 	}
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(

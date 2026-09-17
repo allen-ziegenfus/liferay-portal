@@ -583,16 +583,23 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			licenseKey.getLicenseKeyId()
 		).thenReturn(
-			licenseKey
+			1L
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
 		);
 
 		LicenseKey extendedLicenseKey = Mockito.mock(LicenseKey.class);
 
 		Mockito.when(
 			_licenseKeyProvisioner.extend(
-				Mockito.eq(_ACCOUNT_ID), Mockito.anyList(), Mockito.anyList())
+				Mockito.eq(_ACCOUNT_ID), Mockito.anyList())
 		).thenReturn(
 			Collections.singletonList(extendedLicenseKey)
 		);
@@ -608,7 +615,8 @@ public class LicenseKeysRestControllerTest {
 		Mockito.verify(
 			_licenseKeyPermission
 		).check(
-			_ACCOUNT_ID, ActionKeys.UPDATE, null
+			Mockito.any(), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
 		);
 	}
 
@@ -628,9 +636,16 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			licenseKey.getLicenseKeyId()
 		).thenReturn(
-			licenseKey
+			1L
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
 		);
 
 		Mockito.doThrow(
@@ -638,7 +653,7 @@ public class LicenseKeysRestControllerTest {
 		).when(
 			_licenseKeyProvisioner
 		).extend(
-			Mockito.eq(_ACCOUNT_ID), Mockito.anyList(), Mockito.anyList()
+			Mockito.eq(_ACCOUNT_ID), Mockito.anyList()
 		);
 
 		Assertions.assertThrows(
@@ -653,7 +668,7 @@ public class LicenseKeysRestControllerTest {
 		Mockito.verify(
 			_licenseKeyProvisioner
 		).extend(
-			Mockito.eq(_ACCOUNT_ID), Mockito.anyList(), Mockito.anyList()
+			Mockito.eq(_ACCOUNT_ID), Mockito.anyList()
 		);
 	}
 
@@ -673,24 +688,30 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			licenseKey.getLicenseKeyId()
 		).thenReturn(
-			licenseKey
+			1L
 		);
 
-		ResponseStatusException responseStatusException =
-			Assertions.assertThrows(
-				ResponseStatusException.class,
-				() -> licenseKeysRestController.postLicenseKeysExtend(
-					null,
-					StringBundler.concat(
-						"[{\"entitlementId\": 42, \"expirationDate\": ",
-						"\"2028-01-01T00:00:00Z\", \"licenseKeyId\": 1, ",
-						"\"startDate\": \"2027-01-01T00:00:00Z\"}, ",
-						"{\"licenseKeyId\": 2}]")));
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
 
-		Assertions.assertEquals(
-			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+		// The second item names a key the batch read does not return, so the
+		// first must not have been extended either.
+
+		Assertions.assertThrows(
+			Exception.class,
+			() -> licenseKeysRestController.postLicenseKeysExtend(
+				null,
+				StringBundler.concat(
+					"[{\"entitlementId\": 42, \"expirationDate\": ",
+					"\"2028-01-01T00:00:00Z\", \"licenseKeyId\": 1, ",
+					"\"startDate\": \"2027-01-01T00:00:00Z\"}, ",
+					"{\"licenseKeyId\": 2}]")));
 
 		Mockito.verify(
 			_licenseKeyService, Mockito.never()
@@ -715,9 +736,16 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+			licenseKey.getLicenseKeyId()
 		).thenReturn(
-			licenseKey
+			1L
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
 		);
 
 		Mockito.doThrow(
@@ -725,7 +753,8 @@ public class LicenseKeysRestControllerTest {
 		).when(
 			_licenseKeyPermission
 		).check(
-			_ACCOUNT_ID, ActionKeys.UPDATE, null
+			Mockito.any(), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
 		);
 
 		Assertions.assertThrows(
@@ -887,7 +916,7 @@ public class LicenseKeysRestControllerTest {
 		Mockito.verify(
 			_licenseKeyProvisioner
 		).activate(
-			Mockito.eq(_ACCOUNT_ID), Mockito.anyList()
+			Mockito.eq(_ACCOUNT_ID), Mockito.any(long[].class)
 		);
 
 		Mockito.verify(
@@ -936,7 +965,7 @@ public class LicenseKeysRestControllerTest {
 		).when(
 			_licenseKeyProvisioner
 		).activate(
-			Mockito.eq(_ACCOUNT_ID), Mockito.anyList()
+			Mockito.eq(_ACCOUNT_ID), Mockito.any(long[].class)
 		);
 
 		Assertions.assertThrows(
@@ -1081,9 +1110,9 @@ public class LicenseKeysRestControllerTest {
 		);
 
 		Mockito.verify(
-			_licenseKeyService
-		).updateLicenseKeyActive(
-			false, 1L
+			_licenseKeyProvisioner
+		).deactivate(
+			Mockito.eq(_ACCOUNT_ID), Mockito.any(long[].class)
 		);
 	}
 
@@ -1118,7 +1147,11 @@ public class LicenseKeysRestControllerTest {
 		licenseKeysRestController.putLicenseKeysDeactivate(
 			null, new long[] {1L});
 
-		Mockito.verifyNoInteractions(_licenseKeyProvisioner);
+		Mockito.verify(
+			_licenseKeyProvisioner
+		).deactivate(
+			Mockito.eq(_ACCOUNT_ID), Mockito.any(long[].class)
+		);
 	}
 
 	@Test

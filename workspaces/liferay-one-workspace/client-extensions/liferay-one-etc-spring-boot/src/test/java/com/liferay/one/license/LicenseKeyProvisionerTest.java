@@ -82,16 +82,35 @@ public class LicenseKeyProvisionerTest {
 
 		_setUpEntitlements(1.0);
 
-		_setUpConsumption(0);
+		LicenseKey firstLicenseKey = _toLicenseKey(false, 0, null);
+		LicenseKey secondLicenseKey = _toLicenseKey(false, 0, null);
+
+		Mockito.when(
+			firstLicenseKey.getLicenseKeyId()
+		).thenReturn(
+			1L
+		);
+
+		Mockito.when(
+			secondLicenseKey.getLicenseKeyId()
+		).thenReturn(
+			2L
+		);
+
+		List<LicenseKey> licenseKeys = List.of(
+			firstLicenseKey, secondLicenseKey);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByAccountEntryId(_ACCOUNT_ENTRY_ID)
+		).thenReturn(
+			licenseKeys
+		);
 
 		ResponseStatusException responseStatusException =
 			Assertions.assertThrows(
 				ResponseStatusException.class,
 				() -> _licenseKeyProvisioner.activate(
-					_ACCOUNT_ENTRY_ID,
-					List.of(
-						_toLicenseKey(false, 0, null),
-						_toLicenseKey(false, 0, null))));
+					_ACCOUNT_ENTRY_ID, new long[] {1L, 2L}));
 
 		Assertions.assertEquals(
 			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
@@ -119,8 +138,9 @@ public class LicenseKeyProvisionerTest {
 		);
 
 		_licenseKeyProvisioner.extend(
-			_ACCOUNT_ENTRY_ID, Collections.singletonList(licenseKey),
-			Collections.singletonList(_toExtendJSONObject(_ENTITLEMENT_ID)));
+			_ACCOUNT_ENTRY_ID,
+			Collections.singletonList(
+				_toExtension(_ENTITLEMENT_ID, licenseKey)));
 
 		Mockito.verify(
 			_licenseKeyService
@@ -162,9 +182,9 @@ public class LicenseKeyProvisionerTest {
 			Assertions.assertThrows(
 				ResponseStatusException.class,
 				() -> _licenseKeyProvisioner.extend(
-					_ACCOUNT_ENTRY_ID, Collections.singletonList(licenseKey),
+					_ACCOUNT_ENTRY_ID,
 					Collections.singletonList(
-						_toExtendJSONObject(_ENTITLEMENT_ID + 1))));
+						_toExtension(_ENTITLEMENT_ID + 1, licenseKey))));
 
 		Assertions.assertEquals(
 			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
@@ -189,8 +209,8 @@ public class LicenseKeyProvisionerTest {
 				ResponseStatusException.class,
 				() -> _licenseKeyProvisioner.extend(
 					_ACCOUNT_ENTRY_ID,
-					Collections.singletonList(_toLicenseKey(true, 0, null)),
-					Collections.singletonList(_toExtendJSONObject(999L))));
+					Collections.singletonList(
+						_toExtension(999L, _toLicenseKey(true, 0, null)))));
 
 		Assertions.assertEquals(
 			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
@@ -213,8 +233,8 @@ public class LicenseKeyProvisionerTest {
 				ResponseStatusException.class,
 				() -> _licenseKeyProvisioner.extend(
 					_ACCOUNT_ENTRY_ID,
-					Collections.singletonList(_toLicenseKey(true, 0, null)),
-					Collections.singletonList(_toExtendJSONObject(0))));
+					Collections.singletonList(
+						_toExtension(0, _toLicenseKey(true, 0, null)))));
 
 		Assertions.assertEquals(
 			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
@@ -242,10 +262,10 @@ public class LicenseKeyProvisionerTest {
 			Assertions.assertThrows(
 				ResponseStatusException.class,
 				() -> _licenseKeyProvisioner.extend(
-					_ACCOUNT_ENTRY_ID, List.of(licenseKey, licenseKey),
+					_ACCOUNT_ENTRY_ID,
 					List.of(
-						_toExtendJSONObject(_ENTITLEMENT_ID),
-						_toExtendJSONObject(_ENTITLEMENT_ID))));
+						_toExtension(_ENTITLEMENT_ID, licenseKey),
+						_toExtension(_ENTITLEMENT_ID, licenseKey))));
 
 		Assertions.assertEquals(
 			HttpStatus.CONFLICT, responseStatusException.getStatusCode());
@@ -1063,15 +1083,12 @@ public class LicenseKeyProvisionerTest {
 		return entitlement;
 	}
 
-	private JSONObject _toExtendJSONObject(long entitlementId) {
-		return new JSONObject(
-		).put(
-			"entitlementId", entitlementId
-		).put(
-			"expirationDate", "2028-01-01T00:00:00Z"
-		).put(
-			"startDate", "2027-01-01T00:00:00Z"
-		);
+	private LicenseKeyExtension _toExtension(
+		long entitlementId, LicenseKey licenseKey) {
+
+		return new LicenseKeyExtension(
+			entitlementId, Date.from(Instant.parse("2028-01-01T00:00:00Z")),
+			licenseKey, Date.from(Instant.parse("2027-01-01T00:00:00Z")));
 	}
 
 	private LicenseKey _toLicenseKey(

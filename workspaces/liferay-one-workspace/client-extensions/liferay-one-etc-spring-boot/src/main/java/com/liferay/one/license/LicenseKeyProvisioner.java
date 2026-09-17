@@ -40,19 +40,33 @@ import org.springframework.web.server.ResponseStatusException;
 @Component
 public class LicenseKeyProvisioner {
 
-	public void activate(long accountEntryId, List<LicenseKey> licenseKeys)
+	public void activate(long accountEntryId, long[] licenseKeyIds)
 		throws Exception {
 
 		_keyedLock.withLock(
 			String.valueOf(accountEntryId),
 			() -> {
+
+				// The account's keys are read inside the lock, so whether a
+				// key is already active is decided on the same rows the ledger
+				// is built from rather than on a snapshot taken before it.
+
+				List<LicenseKey> licenseKeys =
+					_licenseKeyService.getLicenseKeysByAccountEntryId(
+						accountEntryId);
+
 				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
-					accountEntryId);
+					licenseKeys);
 
 				List<Entitlement> entitlements =
 					_entitlementService.getActiveEntitlements(accountEntryId);
 
-				for (LicenseKey licenseKey : licenseKeys) {
+				List<LicenseKey> inactiveLicenseKeys = new ArrayList<>();
+
+				for (long licenseKeyId : licenseKeyIds) {
+					LicenseKey licenseKey = _getLicenseKey(
+						licenseKeys, licenseKeyId);
+
 					if (licenseKey.isActive()) {
 						continue;
 					}
@@ -68,64 +82,78 @@ public class LicenseKeyProvisioner {
 					consumptionCounts.merge(
 						licenseKey.getEntitlementId(), serverCount,
 						Integer::sum);
+
+					inactiveLicenseKeys.add(licenseKey);
 				}
 
-				for (LicenseKey licenseKey : licenseKeys) {
+				for (LicenseKey licenseKey : inactiveLicenseKeys) {
 					_licenseKeyService.updateLicenseKeyActive(
 						true, licenseKey.getLicenseKeyId());
 				}
 			});
 	}
 
-	public List<LicenseKey> extend(
-			long accountEntryId, List<LicenseKey> licenseKeys,
-			List<JSONObject> jsonObjects)
+	public void deactivate(long accountEntryId, long[] licenseKeyIds)
 		throws Exception {
 
-		// The two lists run in step: jsonObjects.get(i) is the request for
-		// licenseKeys.get(i), which the caller has already resolved and
-		// authorized.
+		// Releasing licenses cannot exhaust anything, but it moves the ledger,
+		// so it is serialized with the operations that read it.
+
+		_keyedLock.withLock(
+			String.valueOf(accountEntryId),
+			() -> {
+				for (long licenseKeyId : licenseKeyIds) {
+					_licenseKeyService.updateLicenseKeyActive(
+						false, licenseKeyId);
+				}
+			});
+	}
+
+	public List<LicenseKey> extend(
+			long accountEntryId, List<LicenseKeyExtension> licenseKeyExtensions)
+		throws Exception {
 
 		return _keyedLock.withLock(
 			String.valueOf(accountEntryId),
 			() -> {
 				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
-					accountEntryId);
+					_licenseKeyService.getLicenseKeysByAccountEntryId(
+						accountEntryId));
 
 				List<Entitlement> entitlements =
 					_entitlementService.getActiveEntitlements(accountEntryId);
 
-				for (int i = 0; i < licenseKeys.size(); i++) {
-					LicenseKey licenseKey = licenseKeys.get(i);
+				for (LicenseKeyExtension licenseKeyExtension :
+						licenseKeyExtensions) {
 
-					JSONObject jsonObject = jsonObjects.get(i);
-
-					long entitlementId = jsonObject.getLong("entitlementId");
+					LicenseKey licenseKey = licenseKeyExtension.getLicenseKey();
 
 					int serverCount = _getServerCount(
 						licenseKey.getMaxClusterNodes());
 
 					_checkEntitlement(
-						consumptionCounts, entitlements, entitlementId,
+						consumptionCounts, entitlements,
+						licenseKeyExtension.getEntitlementId(),
 						licenseKey.getEntitlementId(), serverCount);
 
 					consumptionCounts.merge(
-						entitlementId, serverCount, Integer::sum);
+						licenseKeyExtension.getEntitlementId(), serverCount,
+						Integer::sum);
 				}
 
 				List<LicenseKey> newLicenseKeys = new ArrayList<>();
 
-				for (int i = 0; i < licenseKeys.size(); i++) {
-					JSONObject jsonObject = jsonObjects.get(i);
+				for (LicenseKeyExtension licenseKeyExtension :
+						licenseKeyExtensions) {
+
+					LicenseKey licenseKey = licenseKeyExtension.getLicenseKey();
 
 					newLicenseKeys.add(
 						_licenseKeyService.extendLicenseKey(
-							jsonObject.getLong("entitlementId"),
-							_toDate(jsonObject, "expirationDate"),
-							licenseKeys.get(
-								i
-							).getLicenseKeyId(),
-							_toDate(jsonObject, "startDate")));
+							licenseKeyExtension.getEntitlementId(),
+							licenseKeyExtension.getExpirationDate(),
+							licenseKey.getLicenseKeyId(),
+							licenseKeyExtension.getStartDate()));
 				}
 
 				return newLicenseKeys;
@@ -140,7 +168,8 @@ public class LicenseKeyProvisioner {
 			String.valueOf(account.getId()),
 			() -> {
 				Map<Long, Integer> consumptionCounts = _getConsumptionCounts(
-					account.getId());
+					_licenseKeyService.getLicenseKeysByAccountEntryId(
+						account.getId()));
 
 				Map<String, List<Entitlement>> entitlementsMap =
 					new HashMap<>();
@@ -289,17 +318,14 @@ public class LicenseKeyProvisioner {
 		return consumptionCount;
 	}
 
-	private Map<Long, Integer> _getConsumptionCounts(long accountEntryId)
-		throws Exception {
+	private Map<Long, Integer> _getConsumptionCounts(
+		List<LicenseKey> accountLicenseKeys) {
 
 		Map<Long, Integer> consumptionCounts = new HashMap<>();
 
 		Instant instant = Instant.now();
 
-		for (LicenseKey licenseKey :
-				_licenseKeyService.getLicenseKeysByAccountEntryId(
-					accountEntryId)) {
-
+		for (LicenseKey licenseKey : accountLicenseKeys) {
 			long entitlementId = licenseKey.getEntitlementId();
 
 			if ((entitlementId == 0) || !licenseKey.isActive()) {
@@ -424,6 +450,19 @@ public class LicenseKeyProvisioner {
 			HttpStatus.BAD_REQUEST, "Invalid license entry type");
 	}
 
+	private LicenseKey _getLicenseKey(
+		List<LicenseKey> licenseKeys, long licenseKeyId) {
+
+		for (LicenseKey licenseKey : licenseKeys) {
+			if (licenseKey.getLicenseKeyId() == licenseKeyId) {
+				return licenseKey;
+			}
+		}
+
+		throw new ResponseStatusException(
+			HttpStatus.NOT_FOUND, "The license key was not found");
+	}
+
 	private String _getOwner(Account account, JSONObject jsonObject) {
 		String owner = jsonObject.optString("owner");
 
@@ -516,7 +555,14 @@ public class LicenseKeyProvisioner {
 	}
 
 	private Date _toDate(JSONObject jsonObject, String key) {
-		return Date.from(Instant.parse(jsonObject.getString(key)));
+		try {
+			return Date.from(Instant.parse(jsonObject.getString(key)));
+		}
+		catch (Exception exception) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Request body has no valid \"" + key + "\"", exception);
+		}
 	}
 
 	private static final int _LICENSE_VERSION = 3;
