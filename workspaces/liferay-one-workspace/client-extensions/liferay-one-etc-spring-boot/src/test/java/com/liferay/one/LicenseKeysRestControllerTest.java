@@ -20,6 +20,7 @@ import com.liferay.one.service.CommerceOrderService;
 import com.liferay.one.service.LicenseKeyService;
 import com.liferay.one.service.SubscriptionEntryService;
 import com.liferay.one.service.UserAccountService;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
@@ -592,7 +593,7 @@ public class LicenseKeysRestControllerTest {
 
 		Mockito.when(
 			_licenseKeyService.extendLicenseKey(
-				Date.from(Instant.parse("2028-01-01T00:00:00Z")), 1L,
+				42L, Date.from(Instant.parse("2028-01-01T00:00:00Z")), 1L,
 				Date.from(Instant.parse("2027-01-01T00:00:00Z")))
 		).thenReturn(
 			extendedLicenseKey
@@ -602,14 +603,96 @@ public class LicenseKeysRestControllerTest {
 			List.of(extendedLicenseKey),
 			licenseKeysRestController.postLicenseKeysExtend(
 				null,
-				"[{\"expirationDate\": \"2028-01-01T00:00:00Z\", " +
-					"\"licenseKeyId\": 1, \"startDate\": " +
-						"\"2027-01-01T00:00:00Z\"}]"));
+				"[{\"entitlementId\": 42, \"expirationDate\": " +
+					"\"2028-01-01T00:00:00Z\", \"licenseKeyId\": 1, " +
+						"\"startDate\": \"2027-01-01T00:00:00Z\"}]"));
 
 		Mockito.verify(
 			_licenseKeyPermission
 		).check(
 			_ACCOUNT_ID, ActionKeys.UPDATE, null
+		);
+	}
+
+	@Test
+	public void testPostLicenseKeysExtendChargesTheRequestedEntitlement()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			licenseKey.getEntitlementId()
+		).thenReturn(
+			7L
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+		).thenReturn(
+			licenseKey
+		);
+
+		licenseKeysRestController.postLicenseKeysExtend(
+			null,
+			"[{\"entitlementId\": 42, \"expirationDate\": " +
+				"\"2028-01-01T00:00:00Z\", \"licenseKeyId\": 1, " +
+					"\"startDate\": \"2027-01-01T00:00:00Z\"}]");
+
+		Mockito.verify(
+			_licenseKeyService
+		).extendLicenseKey(
+			Mockito.eq(42L), Mockito.any(), Mockito.anyLong(), Mockito.any()
+		);
+	}
+
+	@Test
+	public void testPostLicenseKeysExtendExtendsNothingWhenAnItemIsRejected()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKey(Mockito.any(), Mockito.anyLong())
+		).thenReturn(
+			licenseKey
+		);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> licenseKeysRestController.postLicenseKeysExtend(
+					null,
+					StringBundler.concat(
+						"[{\"entitlementId\": 42, \"expirationDate\": ",
+						"\"2028-01-01T00:00:00Z\", \"licenseKeyId\": 1, ",
+						"\"startDate\": \"2027-01-01T00:00:00Z\"}, ",
+						"{\"licenseKeyId\": 2}]")));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).extendLicenseKey(
+			Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any()
 		);
 	}
 
@@ -646,15 +729,32 @@ public class LicenseKeysRestControllerTest {
 			PrincipalException.class,
 			() -> licenseKeysRestController.postLicenseKeysExtend(
 				null,
-				"[{\"expirationDate\": \"2028-01-01T00:00:00Z\", " +
-					"\"licenseKeyId\": 1, \"startDate\": " +
-						"\"2027-01-01T00:00:00Z\"}]"));
+				"[{\"entitlementId\": 42, \"expirationDate\": " +
+					"\"2028-01-01T00:00:00Z\", \"licenseKeyId\": 1, " +
+						"\"startDate\": \"2027-01-01T00:00:00Z\"}]"));
 
 		Mockito.verify(
 			_licenseKeyService, Mockito.never()
 		).extendLicenseKey(
-			Mockito.any(), Mockito.anyLong(), Mockito.any()
+			Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any()
 		);
+	}
+
+	@Test
+	public void testPostLicenseKeysExtendWhenJSONIsInvalid() throws Exception {
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> licenseKeysRestController.postLicenseKeysExtend(
+					null, "not json"));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verifyNoInteractions(_licenseKeyService);
 	}
 
 	@Test

@@ -23,6 +23,7 @@ import com.liferay.one.service.SubscriptionEntryService;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -225,28 +227,53 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			@AuthenticationPrincipal Jwt jwt, @RequestBody String json)
 		throws Exception {
 
-		JSONArray jsonArray = new JSONArray(json);
+		JSONArray jsonArray = null;
+
+		try {
+			jsonArray = new JSONArray(json);
+		}
+		catch (JSONException jsonException) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Request body is not a valid JSON array", jsonException);
+		}
+
+		if (jsonArray.length() > _MAX_LICENSE_KEY_IDS) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"No more than " + _MAX_LICENSE_KEY_IDS +
+					" license keys may be extended at once");
+		}
+
+		// Every requested key is resolved and checked before any of them is
+		// extended, so a rejected item leaves the batch untouched.
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
+				jwt, _getLong(jsonObject, "licenseKeyId"));
+
+			_licenseKeyPermission.check(
+				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
+
+			_getLong(jsonObject, "entitlementId");
+
+			_toDate(jsonObject, "expirationDate");
+			_toDate(jsonObject, "startDate");
+		}
 
 		List<LicenseKey> licenseKeys = new ArrayList<>();
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
 
-			long licenseKeyId = jsonObject.getLong("licenseKeyId");
-
-			LicenseKey licenseKey = _licenseKeyService.getLicenseKey(
-				jwt, licenseKeyId);
-
-			_licenseKeyPermission.check(
-				licenseKey.getAccountEntryId(), ActionKeys.UPDATE, jwt);
-
 			licenseKeys.add(
 				_licenseKeyService.extendLicenseKey(
-					Date.from(
-						Instant.parse(jsonObject.getString("expirationDate"))),
-					licenseKeyId,
-					Date.from(
-						Instant.parse(jsonObject.getString("startDate")))));
+					_getLong(jsonObject, "entitlementId"),
+					_toDate(jsonObject, "expirationDate"),
+					_getLong(jsonObject, "licenseKeyId"),
+					_toDate(jsonObject, "startDate")));
 		}
 
 		return licenseKeys;
@@ -420,6 +447,28 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		_checkAllFound(licenseKeys, distinctLicenseKeyIds);
 
 		return licenseKeys;
+	}
+
+	private long _getLong(JSONObject jsonObject, String key) {
+		try {
+			return jsonObject.getLong(key);
+		}
+		catch (JSONException jsonException) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Request body has no valid \"" + key + "\"", jsonException);
+		}
+	}
+
+	private Date _toDate(JSONObject jsonObject, String key) {
+		try {
+			return Date.from(Instant.parse(jsonObject.getString(key)));
+		}
+		catch (DateTimeParseException | JSONException exception) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Request body has no valid \"" + key + "\"", exception);
+		}
 	}
 
 	private long[] _toDistinctLicenseKeyIds(long[] licenseKeyIds) {

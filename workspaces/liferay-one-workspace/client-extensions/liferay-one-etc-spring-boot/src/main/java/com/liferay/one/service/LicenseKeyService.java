@@ -224,11 +224,13 @@ public class LicenseKeyService extends OneBaseService {
 	}
 
 	public LicenseKey extendLicenseKey(
-			Date expirationDate, long licenseKeyId, Date startDate)
+			long entitlementId, Date expirationDate, long licenseKeyId,
+			Date startDate)
 		throws Exception {
 
 		LicenseKey newLicenseKey = _copyLicenseKey(
-			expirationDate, getLicenseKey(licenseKeyId), startDate);
+			entitlementId, expirationDate, getLicenseKey(licenseKeyId),
+			startDate);
 
 		List<SubscriptionEntry> subscriptionEntries =
 			_subscriptionEntryService.getSubscriptionEntries(
@@ -457,7 +459,8 @@ public class LicenseKeyService extends OneBaseService {
 		}
 
 		LicenseKey newLicenseKey = _copyLicenseKey(
-			expirationDate, licenseKey, startDate);
+			licenseKey.getEntitlementId(), expirationDate, licenseKey,
+			startDate);
 
 		updateLicenseKey(false, licenseKey.isComplimentary(), licenseKeyId);
 
@@ -595,24 +598,24 @@ public class LicenseKeyService extends OneBaseService {
 	}
 
 	private LicenseKey _copyLicenseKey(
-			Date expirationDate, LicenseKey licenseKey, Date startDate)
+			long entitlementId, Date expirationDate, LicenseKey licenseKey,
+			Date startDate)
 		throws Exception {
 
 		return addLicenseKey(
 			licenseKey.getAccountEntryId(), licenseKey.getAccountName(), true,
 			licenseKey.getAdditionalInfo(), licenseKey.isComplimentary(),
-			licenseKey.getDescription(), licenseKey.getDomains(),
-			licenseKey.getEntitlementId(), expirationDate,
-			licenseKey.getHostName(), licenseKey.getIpAddresses(),
-			licenseKey.getLicenseName(), licenseKey.getLicenseType(),
-			licenseKey.getLicenseVersion(), licenseKey.getMacAddresses(),
-			licenseKey.getMaxClusterNodes(), licenseKey.getMaxConcurrentUsers(),
-			licenseKey.getMaxHttpSessions(), licenseKey.getMaxServers(),
-			licenseKey.getMaxUsers(), licenseKey.getName(),
-			licenseKey.getOrderId(), licenseKey.getOwner(),
-			licenseKey.getProductExternalId(), licenseKey.getProductName(),
-			licenseKey.getProductVersion(), licenseKey.getServerId(),
-			licenseKey.getSizing(), startDate);
+			licenseKey.getDescription(), licenseKey.getDomains(), entitlementId,
+			expirationDate, licenseKey.getHostName(),
+			licenseKey.getIpAddresses(), licenseKey.getLicenseName(),
+			licenseKey.getLicenseType(), licenseKey.getLicenseVersion(),
+			licenseKey.getMacAddresses(), licenseKey.getMaxClusterNodes(),
+			licenseKey.getMaxConcurrentUsers(), licenseKey.getMaxHttpSessions(),
+			licenseKey.getMaxServers(), licenseKey.getMaxUsers(),
+			licenseKey.getName(), licenseKey.getOrderId(),
+			licenseKey.getOwner(), licenseKey.getProductExternalId(),
+			licenseKey.getProductName(), licenseKey.getProductVersion(),
+			licenseKey.getServerId(), licenseKey.getSizing(), startDate);
 	}
 
 	private int _getCount(String filterString) throws Exception {
