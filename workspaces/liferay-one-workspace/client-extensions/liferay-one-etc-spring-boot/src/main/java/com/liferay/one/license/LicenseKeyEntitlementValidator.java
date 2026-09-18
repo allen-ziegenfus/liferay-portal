@@ -7,6 +7,8 @@ package com.liferay.one.license;
 
 import com.liferay.one.constants.EntitlementConstants;
 import com.liferay.one.exception.LicenseKeyDateException;
+import com.liferay.one.exception.LicenseKeyMaxClusterNodesException;
+import com.liferay.one.exception.LicenseKeyValidationException;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
 import com.liferay.one.model.LicenseKey;
@@ -47,10 +49,22 @@ public class LicenseKeyEntitlementValidator {
 		}
 	}
 
+	public void validateMaxClusterNodes(int maxClusterNodes)
+		throws LicenseKeyValidationException {
+
+		if (maxClusterNodes > _MAX_CLUSTER_NODES) {
+			throw new LicenseKeyMaxClusterNodesException(
+				"No more than " + _MAX_CLUSTER_NODES +
+					" cluster nodes may be requested");
+		}
+	}
+
 	public void validateQuota(
 			Entitlement entitlement, int maxClusterNodes,
-			Map<Long, Integer> pendingServerCounts)
+			Map<Long, Long> pendingServerCounts)
 		throws Exception {
+
+		validateMaxClusterNodes(maxClusterNodes);
 
 		if (EntitlementConstants.GRANT_TYPE_UNLIMITED.equals(
 				entitlement.getGrantType())) {
@@ -60,16 +74,16 @@ public class LicenseKeyEntitlementValidator {
 
 		long entitlementId = entitlement.getEntitlementId();
 
-		int pendingServerCount = getServerCount(maxClusterNodes);
+		long pendingServerCount = getServerCount(maxClusterNodes);
 
-		Integer previousPendingServerCount = pendingServerCounts.get(
+		Long previousPendingServerCount = pendingServerCounts.get(
 			entitlementId);
 
 		if (previousPendingServerCount != null) {
 			pendingServerCount += previousPendingServerCount;
 		}
 
-		int serverCount = pendingServerCount;
+		long serverCount = pendingServerCount;
 
 		for (LicenseKey licenseKey :
 				_licenseKeyService.getLicenseKeys(true, false, entitlementId)) {
@@ -79,10 +93,10 @@ public class LicenseKeyEntitlementValidator {
 
 		Double quantity = entitlement.getQuantity();
 
-		int maxServerCount = 0;
+		long maxServerCount = 0;
 
 		if (quantity != null) {
-			maxServerCount = quantity.intValue();
+			maxServerCount = quantity.longValue();
 		}
 
 		if (serverCount > maxServerCount) {
@@ -131,7 +145,7 @@ public class LicenseKeyEntitlementValidator {
 		}
 	}
 
-	protected int getServerCount(int maxClusterNodes) {
+	protected long getServerCount(int maxClusterNodes) {
 		if (maxClusterNodes > 1) {
 			return maxClusterNodes;
 		}
@@ -140,6 +154,8 @@ public class LicenseKeyEntitlementValidator {
 	}
 
 	private static final int _ENTITLEMENT_END_DATE_TOLERANCE_DAYS = 1;
+
+	private static final int _MAX_CLUSTER_NODES = 1024;
 
 	@Autowired
 	private LicenseKeyService _licenseKeyService;

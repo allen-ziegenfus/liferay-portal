@@ -466,7 +466,7 @@ public class AccountsRestController extends OneBaseRestController {
 			account, "allowPermanentLicenses", true);
 		boolean complimentary = false;
 		List<Entitlement> entitlements = new ArrayList<>();
-		Map<Long, Integer> pendingServerCounts = new HashMap<>();
+		Map<Long, Long> pendingServerCounts = new HashMap<>();
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
@@ -1148,7 +1148,7 @@ public class AccountsRestController extends OneBaseRestController {
 
 	private void _validateLicenseKey(
 			boolean allowPermanentLicenses, Entitlement entitlement,
-			JSONObject jsonObject, Map<Long, Integer> pendingServerCounts)
+			JSONObject jsonObject, Map<Long, Long> pendingServerCounts)
 		throws Exception {
 
 		_licenseKeyEntitlementValidator.validateTerm(

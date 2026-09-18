@@ -257,7 +257,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
-		Map<Long, Integer> pendingServerCounts = new HashMap<>();
+		Map<Long, Long> pendingServerCounts = new HashMap<>();
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			_validateExtension(
@@ -500,7 +500,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 	private void _validateExtension(
 			JSONObject jsonObject, LicenseKey licenseKey,
-			Map<Long, Integer> pendingServerCounts)
+			Map<Long, Long> pendingServerCounts)
 		throws Exception {
 
 		long entitlementId = licenseKey.getEntitlementId();

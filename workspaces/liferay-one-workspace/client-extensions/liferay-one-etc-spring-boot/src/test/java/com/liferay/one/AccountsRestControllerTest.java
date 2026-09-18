@@ -1664,6 +1664,49 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysRejectsOversizedMaxClusterNodes()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getMaxClusterNodes()
+		).thenReturn(
+			1
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeys(true, false, _ENTITLEMENT_ID)
+		).thenReturn(
+			List.of(licenseKey)
+		);
+
+		Assertions.assertThrows(
+			LicenseKeyValidationException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeyBodyJSON(
+					Integer.MAX_VALUE, "jane@example.com")));
+	}
+
+	@Test
 	public void testPostLicenseKeysRejectsPerpetualEntitlement()
 		throws Exception {
 
