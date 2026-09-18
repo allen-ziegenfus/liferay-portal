@@ -259,7 +259,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 					jwt, jsonObject.getLong("licenseKeyId")));
 		}
 
-		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
+		_checkManageLicenseKeys(true, licenseKeys, getMyUserAccount(jwt));
 
 		return _keyedLock.withLock(
 			LicenseKeyLockUtil.toAccountLockKey(_toAccountEntryId(licenseKeys)),
@@ -410,7 +410,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 	}
 
 	private void _checkManageLicenseKeys(
-			List<LicenseKey> licenseKeys, UserAccount userAccount)
+			boolean selfProvisioning, List<LicenseKey> licenseKeys,
+			UserAccount userAccount)
 		throws Exception {
 
 		Set<Long> accountEntryIds = new LinkedHashSet<>();
@@ -423,7 +424,10 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			_licenseKeyPermission.check(
 				userAccount, accountEntryId, ActionKeys.UPDATE);
 
-			_licenseKeyPermission.checkSelfProvisioning(accountEntryId);
+			if (selfProvisioning) {
+				_licenseKeyPermission.checkSelfProvisioning(
+					accountEntryId, userAccount);
+			}
 		}
 	}
 
@@ -516,7 +520,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		List<LicenseKey> licenseKeys = _getLicenseKeys(jwt, licenseKeyIds);
 
-		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
+		_checkManageLicenseKeys(active, licenseKeys, getMyUserAccount(jwt));
 
 		_keyedLock.withLock(
 			LicenseKeyLockUtil.toAccountLockKey(_toAccountEntryId(licenseKeys)),

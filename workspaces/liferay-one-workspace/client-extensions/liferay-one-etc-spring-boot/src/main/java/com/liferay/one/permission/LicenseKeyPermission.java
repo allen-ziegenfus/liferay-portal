@@ -66,6 +66,17 @@ public class LicenseKeyPermission {
 		checkSelfProvisioning(account);
 	}
 
+	public void checkSelfProvisioning(
+			long accountEntryId, UserAccount userAccount)
+		throws Exception {
+
+		if (_hasGlobalRole(userAccount, ActionKeys.UPDATE)) {
+			return;
+		}
+
+		checkSelfProvisioning(accountEntryId);
+	}
+
 	private boolean _contains(
 			UserAccount userAccount, long accountEntryId, String actionId)
 		throws Exception {

@@ -2005,7 +2005,7 @@ public class AccountsRestControllerTest {
 		).when(
 			_licenseKeyPermission
 		).checkSelfProvisioning(
-			account
+			Mockito.eq(_ACCOUNT_ID), Mockito.any()
 		);
 
 		Assertions.assertThrows(

@@ -462,9 +462,11 @@ public class AccountsRestController extends OneBaseRestController {
 					" license keys may be created at once");
 		}
 
+		UserAccount userAccount = getMyUserAccount(jwt);
+
 		return _keyedLock.withLock(
 			LicenseKeyLockUtil.toAccountLockKey(account.getId()),
-			() -> _addLicenseKeys(account.getId(), jsonArray));
+			() -> _addLicenseKeys(account.getId(), jsonArray, userAccount));
 	}
 
 	@PostMapping("/{externalReferenceCode}/sync-to-jsm")
@@ -656,7 +658,7 @@ public class AccountsRestController extends OneBaseRestController {
 	}
 
 	private List<LicenseKey> _addLicenseKeys(
-			long accountEntryId, JSONArray jsonArray)
+			long accountEntryId, JSONArray jsonArray, UserAccount userAccount)
 		throws Exception {
 
 		Account account = _accountService.fetchAccount(accountEntryId);
@@ -666,7 +668,8 @@ public class AccountsRestController extends OneBaseRestController {
 				"No account exists with ID " + accountEntryId);
 		}
 
-		_licenseKeyPermission.checkSelfProvisioning(account);
+		_licenseKeyPermission.checkSelfProvisioning(
+			accountEntryId, userAccount);
 
 		boolean allowPermanentLicenses = AccountUtil.getCustomFieldBoolean(
 			account, "allowPermanentLicenses", true);
