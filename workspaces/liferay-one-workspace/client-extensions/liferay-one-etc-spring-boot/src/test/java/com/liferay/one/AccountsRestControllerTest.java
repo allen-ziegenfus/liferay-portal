@@ -5,12 +5,15 @@
 
 package com.liferay.one;
 
+import com.liferay.headless.admin.user.client.custom.field.CustomField;
+import com.liferay.headless.admin.user.client.custom.field.CustomValue;
 import com.liferay.headless.admin.user.client.dto.v1_0.Account;
 import com.liferay.headless.admin.user.client.dto.v1_0.AccountBrief;
 import com.liferay.headless.admin.user.client.dto.v1_0.AccountRole;
 import com.liferay.headless.admin.user.client.dto.v1_0.RoleBrief;
 import com.liferay.headless.admin.user.client.dto.v1_0.UserAccount;
 import com.liferay.one.constants.EntitlementConstants;
+import com.liferay.one.exception.LicenseKeyDateException;
 import com.liferay.one.jira.service.AccountAssetService;
 import com.liferay.one.jira.synchronizer.AccountSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
@@ -41,14 +44,17 @@ import com.liferay.one.service.ProvisioningEmailService;
 import com.liferay.one.service.UserAccountService;
 import com.liferay.one.util.TermCountUtil;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.ee.license.shared.LicenseConstants;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.lang.reflect.Field;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -1236,6 +1242,423 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysAddsLicenseKey() throws Exception {
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		List<LicenseKey> licenseKeys = accountsRestController.postLicenseKeys(
+			null, _EXTERNAL_REFERENCE_CODE,
+			_createLicenseKeyBodyJSON(0, "jane@example.com"));
+
+		Assertions.assertEquals(1, licenseKeys.size());
+
+		Mockito.verify(
+			_licenseKeyPermission
+		).check(
+			_ACCOUNT_ID, ActionKeys.UPDATE, null
+		);
+
+		Mockito.verify(
+			_licenseKeyService
+		).addLicenseKey(
+			_ACCOUNT_ID, _ACCOUNT_NAME, true, StringPool.BLANK, false,
+			"jane@example.com", StringPool.BLANK, _ENTITLEMENT_ID,
+			Date.from(Instant.parse(_EXPIRATION_DATE)), "acme.example.com",
+			StringPool.BLANK, StringPool.BLANK,
+			LicenseConstants.TYPE_PRODUCTION, 6, StringPool.BLANK, 0, 0L, 0, 0,
+			0L, _LICENSE_KEY_NAME, StringPool.BLANK, "jane@example.com",
+			LicenseConstants.PRODUCT_ID_PORTAL, _PRODUCT_NAME, _PRODUCT_VERSION,
+			StringPool.BLANK, StringPool.BLANK,
+			Date.from(Instant.parse(_START_DATE))
+		);
+	}
+
+	@Test
+	public void testPostLicenseKeysDefaultsOwnerToAccountName()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		accountsRestController.postLicenseKeys(
+			null, _EXTERNAL_REFERENCE_CODE,
+			_createLicenseKeyBodyJSON(0, StringPool.BLANK));
+
+		Mockito.verify(
+			_licenseKeyService
+		).addLicenseKey(
+			_ACCOUNT_ID, _ACCOUNT_NAME, true, StringPool.BLANK, false,
+			_ACCOUNT_NAME, StringPool.BLANK, _ENTITLEMENT_ID,
+			Date.from(Instant.parse(_EXPIRATION_DATE)), "acme.example.com",
+			StringPool.BLANK, StringPool.BLANK,
+			LicenseConstants.TYPE_PRODUCTION, 6, StringPool.BLANK, 0, 0L, 0, 0,
+			0L, _LICENSE_KEY_NAME, StringPool.BLANK, _ACCOUNT_NAME,
+			LicenseConstants.PRODUCT_ID_PORTAL, _PRODUCT_NAME, _PRODUCT_VERSION,
+			StringPool.BLANK, StringPool.BLANK,
+			Date.from(Instant.parse(_START_DATE))
+		);
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsComplimentaryWhenNotAllowed()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createComplimentaryLicenseKeyBodyJSON(30)));
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsComplimentaryWithInvalidTerm()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		account.setCustomFields(
+			() -> new CustomField[] {
+				_createCustomField("allowComplimentary", true)
+			});
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			LicenseKeyDateException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createComplimentaryLicenseKeyBodyJSON(60)));
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsEmptyBody() throws Exception {
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Assertions.assertThrows(
+			ResponseStatusException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE, "[]"));
+
+		Mockito.verifyNoInteractions(_entitlementService);
+
+		Mockito.verifyNoInteractions(_licenseKeyService);
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsEntitlementFromAnotherAccount()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			entitlement.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID + 1
+		);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeyBodyJSON(0, "jane@example.com")));
+
+		Mockito.verifyNoInteractions(_licenseKeyService);
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsExhaustedEntitlement()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 2.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getMaxClusterNodes()
+		).thenReturn(
+			2
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeys(true, false, _ENTITLEMENT_ID)
+		).thenReturn(
+			List.of(licenseKey)
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeyBodyJSON(0, "jane@example.com")));
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsExpirationDateBeyondEntitlement()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			entitlement.getEndDateInstant()
+		).thenReturn(
+			Instant.parse(_START_DATE)
+		);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			LicenseKeyDateException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeyBodyJSON(0, "jane@example.com")));
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsPerpetualEntitlement()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		account.setCustomFields(
+			() -> new CustomField[] {
+				_createCustomField("allowPermanentLicenses", false)
+			});
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			entitlement.getEndDateInstant()
+		).thenReturn(
+			null
+		);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeyBodyJSON(0, "jane@example.com")));
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsSelfHostedEntitlementMismatch()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			_createAccount()
+		);
+
+		Entitlement entitlement = _createEntitlement("C_ENT_DEF_SAAS", 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeyBodyJSON(0, "jane@example.com")));
+	}
+
+	@Test
+	public void testPostLicenseKeysRejectsSelfProvisioningDisabledAccount()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.doThrow(
+			PrincipalException.class
+		).when(
+			_licenseKeyPermission
+		).checkSelfProvisioning(
+			account
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeyBodyJSON(0, "jane@example.com")));
+
+		Mockito.verifyNoInteractions(_entitlementService);
+	}
+
+	@Test
+	public void testPostLicenseKeysResetsAllowComplimentary() throws Exception {
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		account.setCustomFields(
+			() -> new CustomField[] {
+				_createCustomField("allowComplimentary", true)
+			});
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		accountsRestController.postLicenseKeys(
+			null, _EXTERNAL_REFERENCE_CODE,
+			_createComplimentaryLicenseKeyBodyJSON(30));
+
+		Mockito.verify(
+			_accountService
+		).updateAllowComplimentary(
+			_ACCOUNT_ID, false
+		);
+	}
+
+	@Test
 	public void testPostSyncToJSMRejectsNonadministrator() throws Exception {
 		AccountsRestController accountsRestController = _createController();
 
@@ -1752,6 +2175,7 @@ public class AccountsRestControllerTest {
 
 		account.setExternalReferenceCode(_EXTERNAL_REFERENCE_CODE);
 		account.setId(_ACCOUNT_ID);
+		account.setName(_ACCOUNT_NAME);
 
 		return account;
 	}
@@ -1832,6 +2256,24 @@ public class AccountsRestControllerTest {
 		return jsonObject.toString();
 	}
 
+	private String _createComplimentaryLicenseKeyBodyJSON(int durationDays) {
+		Instant startInstant = Instant.now();
+
+		return new JSONArray(
+		).put(
+			_toLicenseKeyJSONObject(
+				0, "jane@example.com"
+			).put(
+				"complimentary", true
+			).put(
+				"expirationDate",
+				String.valueOf(startInstant.plus(durationDays, ChronoUnit.DAYS))
+			).put(
+				"startDate", String.valueOf(startInstant)
+			)
+		).toString();
+	}
+
 	private AccountsRestController _createController() throws Exception {
 		AccountsRestController accountsRestController =
 			new AccountsRestController();
@@ -1904,6 +2346,73 @@ public class AccountsRestControllerTest {
 		return accountsRestController;
 	}
 
+	private CustomField _createCustomField(String name, Object data) {
+		CustomField customField = new CustomField();
+
+		customField.setName(() -> name);
+
+		CustomValue customValue = new CustomValue();
+
+		customValue.setData(() -> data);
+
+		customField.setCustomValue(() -> customValue);
+
+		return customField;
+	}
+
+	private Entitlement _createEntitlement(
+		String externalReferenceCode, double quantity) {
+
+		EntitlementDefinition entitlementDefinition = Mockito.mock(
+			EntitlementDefinition.class);
+
+		Mockito.when(
+			entitlementDefinition.getDisplayName()
+		).thenReturn(
+			_PRODUCT_NAME
+		);
+
+		Mockito.when(
+			entitlementDefinition.getExternalReferenceCode()
+		).thenReturn(
+			externalReferenceCode
+		);
+
+		Entitlement entitlement = Mockito.mock(Entitlement.class);
+
+		Mockito.when(
+			entitlement.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			entitlement.getEndDateInstant()
+		).thenReturn(
+			Instant.parse(_ENTITLEMENT_END_DATE)
+		);
+
+		Mockito.when(
+			entitlement.getEntitlementDefinition()
+		).thenReturn(
+			entitlementDefinition
+		);
+
+		Mockito.when(
+			entitlement.getEntitlementId()
+		).thenReturn(
+			_ENTITLEMENT_ID
+		);
+
+		Mockito.when(
+			entitlement.getQuantity()
+		).thenReturn(
+			quantity
+		);
+
+		return entitlement;
+	}
+
 	private String _createInvitationBodyJSON(
 		String... roleExternalReferenceCodes) {
 
@@ -1926,6 +2435,15 @@ public class AccountsRestControllerTest {
 		userAccount.setName("Inviter Name");
 
 		return userAccount;
+	}
+
+	private String _createLicenseKeyBodyJSON(
+		int maxClusterNodes, String owner) {
+
+		return new JSONArray(
+		).put(
+			_toLicenseKeyJSONObject(maxClusterNodes, owner)
+		).toString();
 	}
 
 	private Project _createProject(String accountExternalReferenceCode) {
@@ -1985,19 +2503,60 @@ public class AccountsRestControllerTest {
 		return userAccount;
 	}
 
+	private JSONObject _toLicenseKeyJSONObject(
+		int maxClusterNodes, String owner) {
+
+		return new JSONObject(
+		).put(
+			"entitlementId", _ENTITLEMENT_ID
+		).put(
+			"expirationDate", _EXPIRATION_DATE
+		).put(
+			"hostName", "acme.example.com"
+		).put(
+			"licenseType", LicenseConstants.TYPE_PRODUCTION
+		).put(
+			"maxClusterNodes", maxClusterNodes
+		).put(
+			"name", _LICENSE_KEY_NAME
+		).put(
+			"owner", owner
+		).put(
+			"productVersion", _PRODUCT_VERSION
+		).put(
+			"startDate", _START_DATE
+		);
+	}
+
 	private static final long _ACCOUNT_ID = 11111;
 
 	private static final long _ACCOUNT_INVITATION_ID = 44444;
+
+	private static final String _ACCOUNT_NAME = "Acme";
 
 	private static final long _ACCOUNT_ROLE_ID = 33333;
 
 	private static final String _EMAIL_ADDRESS = "jane@example.com";
 
+	private static final String _ENTITLEMENT_END_DATE = "2027-06-01T00:00:00Z";
+
+	private static final long _ENTITLEMENT_ID = 7777;
+
+	private static final String _EXPIRATION_DATE = "2027-01-01T00:00:00Z";
+
 	private static final String _EXTERNAL_REFERENCE_CODE = "ACC-1";
+
+	private static final String _LICENSE_KEY_NAME = "Acme production";
+
+	private static final String _PRODUCT_NAME = "Liferay DXP";
+
+	private static final String _PRODUCT_VERSION = "7.4";
 
 	private static final String _PROJECT_EXTERNAL_REFERENCE_CODE = "PRJCT-1";
 
 	private static final String _PROJECT_ROLE_ERC = "C_PROJECT_ADMIN";
+
+	private static final String _START_DATE = "2026-01-01T00:00:00Z";
 
 	private static final long _USER_ID = 22222;
 
