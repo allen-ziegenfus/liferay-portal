@@ -451,17 +451,6 @@ public class AccountsRestController extends OneBaseRestController {
 
 		_licenseKeyPermission.check(account.getId(), ActionKeys.UPDATE, jwt);
 
-		Account licensingAccount = _accountService.fetchAccount(
-			account.getId());
-
-		if (licensingAccount == null) {
-			throw new PrincipalException(
-				"No account exists with external reference code " +
-					externalReferenceCode);
-		}
-
-		_licenseKeyPermission.checkSelfProvisioning(licensingAccount);
-
 		JSONArray jsonArray = new JSONArray(json);
 
 		if ((jsonArray.length() == 0) ||
@@ -474,8 +463,8 @@ public class AccountsRestController extends OneBaseRestController {
 		}
 
 		return _keyedLock.withLock(
-			LicenseKeyLockUtil.toAccountLockKey(licensingAccount.getId()),
-			() -> _addLicenseKeys(licensingAccount, jsonArray));
+			LicenseKeyLockUtil.toAccountLockKey(account.getId()),
+			() -> _addLicenseKeys(account.getId(), jsonArray));
 	}
 
 	@PostMapping("/{externalReferenceCode}/sync-to-jsm")
@@ -667,8 +656,17 @@ public class AccountsRestController extends OneBaseRestController {
 	}
 
 	private List<LicenseKey> _addLicenseKeys(
-			Account account, JSONArray jsonArray)
+			long accountEntryId, JSONArray jsonArray)
 		throws Exception {
+
+		Account account = _accountService.fetchAccount(accountEntryId);
+
+		if (account == null) {
+			throw new PrincipalException(
+				"No account exists with ID " + accountEntryId);
+		}
+
+		_licenseKeyPermission.checkSelfProvisioning(account);
 
 		boolean allowPermanentLicenses = AccountUtil.getCustomFieldBoolean(
 			account, "allowPermanentLicenses", true);
