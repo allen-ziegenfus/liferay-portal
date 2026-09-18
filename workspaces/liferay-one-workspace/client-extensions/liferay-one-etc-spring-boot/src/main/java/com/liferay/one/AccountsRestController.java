@@ -482,6 +482,13 @@ public class AccountsRestController extends OneBaseRestController {
 			_validateEntitlementDefinition(entitlement);
 
 			if (jsonObject.optBoolean("complimentary")) {
+				if (complimentary) {
+					throw new ResponseStatusException(
+						HttpStatus.BAD_REQUEST,
+						"Only one complimentary license key may be created " +
+							"at once");
+				}
+
 				_validateComplimentary(account, jsonObject);
 
 				complimentary = true;
@@ -495,16 +502,16 @@ public class AccountsRestController extends OneBaseRestController {
 			entitlements.add(entitlement);
 		}
 
+		if (complimentary) {
+			_accountService.updateAllowComplimentary(account.getId(), false);
+		}
+
 		List<LicenseKey> licenseKeys = new ArrayList<>();
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			licenseKeys.add(
 				_addLicenseKey(
 					account, entitlements.get(i), jsonArray.getJSONObject(i)));
-		}
-
-		if (complimentary) {
-			_accountService.updateAllowComplimentary(account.getId(), false);
 		}
 
 		return licenseKeys;

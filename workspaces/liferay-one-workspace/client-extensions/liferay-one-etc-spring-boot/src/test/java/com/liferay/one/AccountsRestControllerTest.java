@@ -1563,6 +1563,47 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysRejectsMultipleComplimentary()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		account.setCustomFields(
+			() -> new CustomField[] {
+				_createCustomField("allowComplimentary", true)
+			});
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> accountsRestController.postLicenseKeys(
+					null, _EXTERNAL_REFERENCE_CODE,
+					_createComplimentaryLicenseKeysBodyJSON(2, 30)));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verifyNoInteractions(_licenseKeyService);
+	}
+
+	@Test
 	public void testPostLicenseKeysRejectsPerpetualEntitlement()
 		throws Exception {
 
@@ -2297,21 +2338,32 @@ public class AccountsRestControllerTest {
 	}
 
 	private String _createComplimentaryLicenseKeyBodyJSON(int durationDays) {
+		return _createComplimentaryLicenseKeysBodyJSON(1, durationDays);
+	}
+
+	private String _createComplimentaryLicenseKeysBodyJSON(
+		int count, int durationDays) {
+
 		Instant startInstant = Instant.now();
 
-		return new JSONArray(
-		).put(
-			_toLicenseKeyJSONObject(
-				0, "jane@example.com"
-			).put(
-				"complimentary", true
-			).put(
-				"expirationDate",
-				String.valueOf(startInstant.plus(durationDays, ChronoUnit.DAYS))
-			).put(
-				"startDate", String.valueOf(startInstant)
-			)
-		).toString();
+		JSONArray jsonArray = new JSONArray();
+
+		for (int i = 0; i < count; i++) {
+			jsonArray.put(
+				_toLicenseKeyJSONObject(
+					0, "jane@example.com"
+				).put(
+					"complimentary", true
+				).put(
+					"expirationDate",
+					String.valueOf(
+						startInstant.plus(durationDays, ChronoUnit.DAYS))
+				).put(
+					"startDate", String.valueOf(startInstant)
+				));
+		}
+
+		return jsonArray.toString();
 	}
 
 	private AccountsRestController _createController() throws Exception {
