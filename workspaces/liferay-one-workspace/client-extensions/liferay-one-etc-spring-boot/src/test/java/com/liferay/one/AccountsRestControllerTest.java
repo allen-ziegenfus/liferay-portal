@@ -1328,6 +1328,46 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysRejectsComplimentaryFromMismatchedEntitlement()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		account.setCustomFields(
+			() -> new CustomField[] {
+				_createCustomField("allowComplimentary", true)
+			});
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement("C_ENT_DEF_SAAS", 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createComplimentaryLicenseKeyBodyJSON(30)));
+
+		Mockito.verify(
+			_accountService, Mockito.never()
+		).updateAllowComplimentary(
+			Mockito.anyLong(), Mockito.anyBoolean()
+		);
+	}
+
+	@Test
 	public void testPostLicenseKeysRejectsComplimentaryWhenNotAllowed()
 		throws Exception {
 

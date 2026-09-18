@@ -479,6 +479,8 @@ public class AccountsRestController extends OneBaseRestController {
 						" does not belong to account ", externalReferenceCode));
 			}
 
+			_validateEntitlementDefinition(entitlement);
+
 			if (jsonObject.optBoolean("complimentary")) {
 				_validateComplimentary(account, jsonObject);
 
@@ -1105,6 +1107,23 @@ public class AccountsRestController extends OneBaseRestController {
 		}
 	}
 
+	private void _validateEntitlementDefinition(Entitlement entitlement)
+		throws Exception {
+
+		EntitlementDefinition entitlementDefinition =
+			entitlement.getEntitlementDefinition();
+
+		if ((entitlementDefinition == null) ||
+			!ArrayUtil.contains(
+				EntitlementConstants.EXTERNAL_REFERENCE_CODES_SELF_HOSTED,
+				entitlementDefinition.getExternalReferenceCode())) {
+
+			throw new PrincipalException(
+				"Entitlement " + entitlement.getEntitlementId() +
+					" does not grant self hosted license keys");
+		}
+	}
+
 	private void _validateInvitation(
 		String emailAddress, String familyName, String givenName) {
 
@@ -1133,19 +1152,6 @@ public class AccountsRestController extends OneBaseRestController {
 			boolean allowPermanentLicenses, Entitlement entitlement,
 			JSONObject jsonObject, Map<Long, Integer> pendingServerCounts)
 		throws Exception {
-
-		EntitlementDefinition entitlementDefinition =
-			entitlement.getEntitlementDefinition();
-
-		if ((entitlementDefinition == null) ||
-			!ArrayUtil.contains(
-				EntitlementConstants.EXTERNAL_REFERENCE_CODES_SELF_HOSTED,
-				entitlementDefinition.getExternalReferenceCode())) {
-
-			throw new PrincipalException(
-				"Entitlement " + entitlement.getEntitlementId() +
-					" does not grant self hosted license keys");
-		}
 
 		Instant endDateInstant = entitlement.getEndDateInstant();
 
