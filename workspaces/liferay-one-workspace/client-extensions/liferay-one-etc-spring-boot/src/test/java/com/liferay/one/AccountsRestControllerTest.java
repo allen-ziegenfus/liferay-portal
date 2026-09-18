@@ -2018,6 +2018,49 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysRejectsUnboundLicenseType()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Assertions.assertThrows(
+			LicenseKeyValidationException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				new JSONArray(
+				).put(
+					_toLicenseKeyJSONObject(
+						0, "jane@example.com"
+					).put(
+						"licenseType", LicenseConstants.TYPE_ENTERPRISE
+					)
+				).toString()));
+	}
+
+	@Test
 	public void testPostLicenseKeysResetsAllowComplimentary() throws Exception {
 		AccountsRestController accountsRestController = _createController();
 

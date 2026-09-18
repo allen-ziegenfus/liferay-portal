@@ -1188,6 +1188,8 @@ public class AccountsRestController extends OneBaseRestController {
 
 		String licenseType = jsonObject.optString("licenseType");
 
+		_licenseKeyEntitlementValidator.validateLicenseType(licenseType);
+
 		_licenseKeyEntitlementValidator.validateMaxClusterNodes(
 			jsonObject.optInt("maxClusterNodes"));
 

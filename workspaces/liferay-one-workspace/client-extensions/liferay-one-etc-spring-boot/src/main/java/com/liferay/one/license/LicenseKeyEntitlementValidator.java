@@ -8,11 +8,13 @@ package com.liferay.one.license;
 import com.liferay.one.constants.EntitlementConstants;
 import com.liferay.one.exception.LicenseKeyDateException;
 import com.liferay.one.exception.LicenseKeyMaxClusterNodesException;
+import com.liferay.one.exception.LicenseKeyTypeException;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
 import com.liferay.one.model.LicenseKey;
 import com.liferay.one.service.LicenseKeyService;
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.ee.license.shared.LicenseConstants;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.util.ArrayUtil;
 
@@ -45,6 +47,13 @@ public class LicenseKeyEntitlementValidator {
 				StringBundler.concat(
 					"Entitlement ", entitlement.getEntitlementId(),
 					" does not grant self-hosted license keys"));
+		}
+	}
+
+	public void validateLicenseType(String licenseType) throws Exception {
+		if (!ArrayUtil.contains(_LICENSE_TYPES_SELF_SERVICE, licenseType)) {
+			throw new LicenseKeyTypeException(
+				"Invalid license type " + licenseType);
 		}
 	}
 
@@ -152,7 +161,14 @@ public class LicenseKeyEntitlementValidator {
 
 	private static final int _ENTITLEMENT_END_DATE_TOLERANCE_DAYS = 1;
 
+	private static final String[] _LICENSE_TYPES_SELF_SERVICE = {
+		_TYPE_BACKUP, LicenseConstants.TYPE_LIMITED,
+		LicenseConstants.TYPE_PER_USER, LicenseConstants.TYPE_PRODUCTION
+	};
+
 	private static final int _MAX_CLUSTER_NODES = 1024;
+
+	private static final String _TYPE_BACKUP = "backup";
 
 	@Autowired
 	private LicenseKeyService _licenseKeyService;
