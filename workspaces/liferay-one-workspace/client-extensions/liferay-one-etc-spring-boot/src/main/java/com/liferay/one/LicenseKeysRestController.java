@@ -34,8 +34,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.JSONArray;
@@ -255,8 +257,12 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
+		Map<Long, Integer> pendingServerCounts = new HashMap<>();
+
 		for (int i = 0; i < jsonArray.length(); i++) {
-			_validateExtension(jsonArray.getJSONObject(i), licenseKeys.get(i));
+			_validateExtension(
+				jsonArray.getJSONObject(i), licenseKeys.get(i),
+				pendingServerCounts);
 		}
 
 		List<LicenseKey> extendedLicenseKeys = new ArrayList<>();
@@ -493,7 +499,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 	}
 
 	private void _validateExtension(
-			JSONObject jsonObject, LicenseKey licenseKey)
+			JSONObject jsonObject, LicenseKey licenseKey,
+			Map<Long, Integer> pendingServerCounts)
 		throws Exception {
 
 		long entitlementId = licenseKey.getEntitlementId();
@@ -532,6 +539,9 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		_licenseKeyEntitlementValidator.validateTerm(
 			allowPermanentLicenses, entitlement, expirationDateInstant,
 			startDateInstant);
+
+		_licenseKeyEntitlementValidator.validateQuota(
+			entitlement, licenseKey.getMaxClusterNodes(), pendingServerCounts);
 	}
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(

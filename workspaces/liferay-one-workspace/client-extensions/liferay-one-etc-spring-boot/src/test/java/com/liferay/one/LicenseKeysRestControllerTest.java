@@ -686,6 +686,59 @@ public class LicenseKeysRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysExtendWhenEntitlementIsExhausted()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKey(null, 1L)
+		).thenReturn(
+			licenseKey
+		);
+
+		Entitlement entitlement = _createEntitlement();
+
+		Mockito.when(
+			entitlement.getGrantType()
+		).thenReturn(
+			"metered"
+		);
+
+		Mockito.when(
+			entitlement.getQuantity()
+		).thenReturn(
+			1.0
+		);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeys(true, false, _ENTITLEMENT_ID)
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> licenseKeysRestController.postLicenseKeysExtend(
+				null, _createExtensionBodyJSON(1L)));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).extendLicenseKey(
+			Mockito.any(), Mockito.anyLong(), Mockito.any()
+		);
+	}
+
+	@Test
 	public void testPostLicenseKeysExtendWhenEntitlementIsMissing()
 		throws Exception {
 
