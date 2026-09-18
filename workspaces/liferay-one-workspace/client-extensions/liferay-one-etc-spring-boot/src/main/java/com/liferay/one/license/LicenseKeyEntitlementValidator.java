@@ -48,12 +48,20 @@ public class LicenseKeyEntitlementValidator {
 		}
 	}
 
+	public void validateMaxClusterNodes(int maxClusterNodes) throws Exception {
+		if (maxClusterNodes > _MAX_CLUSTER_NODES) {
+			throw new LicenseKeyMaxClusterNodesException(
+				"No more than " + _MAX_CLUSTER_NODES +
+					" cluster nodes may be requested");
+		}
+	}
+
 	public void validateQuota(
 			Entitlement entitlement, int maxClusterNodes,
 			Map<Long, Long> pendingServerCounts)
 		throws Exception {
 
-		_validateMaxClusterNodes(maxClusterNodes);
+		validateMaxClusterNodes(maxClusterNodes);
 
 		if (EntitlementConstants.GRANT_TYPE_UNLIMITED.equals(
 				entitlement.getGrantType())) {
@@ -140,16 +148,6 @@ public class LicenseKeyEntitlementValidator {
 		}
 
 		return 1;
-	}
-
-	private void _validateMaxClusterNodes(int maxClusterNodes)
-		throws Exception {
-
-		if (maxClusterNodes > _MAX_CLUSTER_NODES) {
-			throw new LicenseKeyMaxClusterNodesException(
-				"No more than " + _MAX_CLUSTER_NODES +
-					" cluster nodes may be requested");
-		}
 	}
 
 	private static final int _ENTITLEMENT_END_DATE_TOLERANCE_DAYS = 1;

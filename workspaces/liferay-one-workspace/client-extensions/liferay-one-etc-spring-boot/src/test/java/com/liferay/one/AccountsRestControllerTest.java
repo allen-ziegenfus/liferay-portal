@@ -1787,6 +1787,67 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysRejectsOversizedComplimentaryClusterNodes()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		account.setCustomFields(
+			() -> new CustomField[] {
+				_createCustomField("allowComplimentary", true)
+			});
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Instant startInstant = Instant.now();
+
+		Assertions.assertThrows(
+			LicenseKeyValidationException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				new JSONArray(
+				).put(
+					_toLicenseKeyJSONObject(
+						1000000, "jane@example.com"
+					).put(
+						"complimentary", true
+					).put(
+						"expirationDate",
+						String.valueOf(startInstant.plus(30, ChronoUnit.DAYS))
+					).put(
+						"startDate", String.valueOf(startInstant)
+					)
+				).toString()));
+
+		Mockito.verify(
+			_accountService, Mockito.never()
+		).updateAllowComplimentary(
+			Mockito.anyLong(), Mockito.anyBoolean()
+		);
+	}
+
+	@Test
 	public void testPostLicenseKeysRejectsOversizedMaxClusterNodes()
 		throws Exception {
 
