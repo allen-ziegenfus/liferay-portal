@@ -1010,6 +1010,39 @@ public class LicenseKeysRestControllerTest {
 	}
 
 	@Test
+	public void testPutLicenseKeysActivateSkipsQuotaForComplimentary()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
+
+		Mockito.when(
+			licenseKey.isComplimentary()
+		).thenReturn(
+			true
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
+
+		licenseKeysRestController.putLicenseKeysActivate(null, new long[] {1L});
+
+		Mockito.verify(
+			_licenseKeyService
+		).updateLicenseKeyActive(
+			true, 1L
+		);
+
+		Mockito.verifyNoInteractions(_entitlementService);
+	}
+
+	@Test
 	public void testPutLicenseKeysActivateThrowsForbiddenWhenAccountNotManageable()
 		throws Exception {
 

@@ -527,7 +527,10 @@ public class LicenseKeysRestController extends OneBaseRestController {
 					for (LicenseKey licenseKey : licenseKeys) {
 						long entitlementId = licenseKey.getEntitlementId();
 
-						if (licenseKey.isActive() || (entitlementId == 0)) {
+						if (licenseKey.isActive() ||
+							licenseKey.isComplimentary() ||
+							(entitlementId == 0)) {
+
 							continue;
 						}
 
@@ -587,8 +590,11 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			allowPermanentLicenses, entitlement, expirationDateInstant,
 			startDateInstant);
 
-		_licenseKeyEntitlementValidator.validateQuota(
-			entitlement, licenseKey.getMaxClusterNodes(), pendingServerCounts);
+		if (!licenseKey.isComplimentary()) {
+			_licenseKeyEntitlementValidator.validateQuota(
+				entitlement, licenseKey.getMaxClusterNodes(),
+				pendingServerCounts);
+		}
 	}
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
