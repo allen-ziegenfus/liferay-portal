@@ -28,6 +28,9 @@ import com.liferay.one.service.LicenseKeyService;
 import com.liferay.one.service.SubscriptionEntryService;
 import com.liferay.one.util.AccountUtil;
 import com.liferay.one.util.KeyedLock;
+import com.liferay.one.util.LicenseKeyLockUtil;
+import com.liferay.petra.function.UnsafeRunnable;
+import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.time.Instant;
@@ -36,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -259,8 +263,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
-		return _keyedLock.withLock(
-			_toLockKey(licenseKeys),
+		return _withAccountLocks(
+			_toAccountEntryIds(licenseKeys),
 			() -> {
 				Map<Long, Long> pendingServerCounts = new HashMap<>();
 
@@ -460,6 +464,16 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		return licenseKeys;
 	}
 
+	private Set<Long> _toAccountEntryIds(List<LicenseKey> licenseKeys) {
+		Set<Long> accountEntryIds = new TreeSet<>();
+
+		for (LicenseKey licenseKey : licenseKeys) {
+			accountEntryIds.add(licenseKey.getAccountEntryId());
+		}
+
+		return accountEntryIds;
+	}
+
 	private long[] _toDistinctLicenseKeyIds(long[] licenseKeyIds) {
 		Set<Long> distinctLicenseKeyIds = new LinkedHashSet<>();
 
@@ -488,16 +502,6 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 	}
 
-	private String _toLockKey(List<LicenseKey> licenseKeys) {
-		Set<Long> accountEntryIds = new TreeSet<>();
-
-		for (LicenseKey licenseKey : licenseKeys) {
-			accountEntryIds.add(licenseKey.getAccountEntryId());
-		}
-
-		return _LOCK_KEY_PREFIX_ACCOUNT + accountEntryIds;
-	}
-
 	private void _updateLicenseKeysActive(
 			boolean active, Jwt jwt, long[] licenseKeyIds)
 		throws Exception {
@@ -508,8 +512,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
-		_keyedLock.withLock(
-			_toLockKey(licenseKeys),
+		_withAccountLocks(
+			_toAccountEntryIds(licenseKeys),
 			() -> {
 				if (active) {
 					Map<Long, Long> pendingServerCounts = new HashMap<>();
@@ -581,10 +585,43 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			entitlement, licenseKey.getMaxClusterNodes(), pendingServerCounts);
 	}
 
+	private <T> T _withAccountLocks(
+			Iterator<Long> iterator,
+			UnsafeSupplier<T, Exception> unsafeSupplier)
+		throws Exception {
+
+		if (!iterator.hasNext()) {
+			return unsafeSupplier.get();
+		}
+
+		return _keyedLock.withLock(
+			LicenseKeyLockUtil.toAccountLockKey(iterator.next()),
+			() -> _withAccountLocks(iterator, unsafeSupplier));
+	}
+
+	private void _withAccountLocks(
+			Set<Long> accountEntryIds, UnsafeRunnable<Exception> unsafeRunnable)
+		throws Exception {
+
+		_withAccountLocks(
+			accountEntryIds,
+			() -> {
+				unsafeRunnable.run();
+
+				return null;
+			});
+	}
+
+	private <T> T _withAccountLocks(
+			Set<Long> accountEntryIds,
+			UnsafeSupplier<T, Exception> unsafeSupplier)
+		throws Exception {
+
+		return _withAccountLocks(accountEntryIds.iterator(), unsafeSupplier);
+	}
+
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
 		"text/csv");
-
-	private static final String _LOCK_KEY_PREFIX_ACCOUNT = "account-";
 
 	private static final int _MAX_LICENSE_KEY_IDS = 100;
 

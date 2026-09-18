@@ -8,7 +8,6 @@ package com.liferay.one.license;
 import com.liferay.one.constants.EntitlementConstants;
 import com.liferay.one.exception.LicenseKeyDateException;
 import com.liferay.one.exception.LicenseKeyMaxClusterNodesException;
-import com.liferay.one.exception.LicenseKeyValidationException;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
 import com.liferay.one.model.LicenseKey;
@@ -49,22 +48,12 @@ public class LicenseKeyEntitlementValidator {
 		}
 	}
 
-	public void validateMaxClusterNodes(int maxClusterNodes)
-		throws LicenseKeyValidationException {
-
-		if (maxClusterNodes > _MAX_CLUSTER_NODES) {
-			throw new LicenseKeyMaxClusterNodesException(
-				"No more than " + _MAX_CLUSTER_NODES +
-					" cluster nodes may be requested");
-		}
-	}
-
 	public void validateQuota(
 			Entitlement entitlement, int maxClusterNodes,
 			Map<Long, Long> pendingServerCounts)
 		throws Exception {
 
-		validateMaxClusterNodes(maxClusterNodes);
+		_validateMaxClusterNodes(maxClusterNodes);
 
 		if (EntitlementConstants.GRANT_TYPE_UNLIMITED.equals(
 				entitlement.getGrantType())) {
@@ -74,7 +63,7 @@ public class LicenseKeyEntitlementValidator {
 
 		long entitlementId = entitlement.getEntitlementId();
 
-		long pendingServerCount = getServerCount(maxClusterNodes);
+		long pendingServerCount = _getServerCount(maxClusterNodes);
 
 		Long previousPendingServerCount = pendingServerCounts.get(
 			entitlementId);
@@ -88,7 +77,7 @@ public class LicenseKeyEntitlementValidator {
 		for (LicenseKey licenseKey :
 				_licenseKeyService.getLicenseKeys(true, false, entitlementId)) {
 
-			serverCount += getServerCount(licenseKey.getMaxClusterNodes());
+			serverCount += _getServerCount(licenseKey.getMaxClusterNodes());
 		}
 
 		Double quantity = entitlement.getQuantity();
@@ -145,12 +134,22 @@ public class LicenseKeyEntitlementValidator {
 		}
 	}
 
-	protected long getServerCount(int maxClusterNodes) {
+	private long _getServerCount(int maxClusterNodes) {
 		if (maxClusterNodes > 1) {
 			return maxClusterNodes;
 		}
 
 		return 1;
+	}
+
+	private void _validateMaxClusterNodes(int maxClusterNodes)
+		throws Exception {
+
+		if (maxClusterNodes > _MAX_CLUSTER_NODES) {
+			throw new LicenseKeyMaxClusterNodesException(
+				"No more than " + _MAX_CLUSTER_NODES +
+					" cluster nodes may be requested");
+		}
 	}
 
 	private static final int _ENTITLEMENT_END_DATE_TOLERANCE_DAYS = 1;

@@ -48,6 +48,7 @@ import com.liferay.one.service.UserAccountService;
 import com.liferay.one.util.AccountUtil;
 import com.liferay.one.util.FindUtil;
 import com.liferay.one.util.KeyedLock;
+import com.liferay.one.util.LicenseKeyLockUtil;
 import com.liferay.one.util.TermCountUtil;
 import com.liferay.one.util.UserAccountUtil;
 import com.liferay.petra.string.StringBundler;
@@ -473,7 +474,7 @@ public class AccountsRestController extends OneBaseRestController {
 		}
 
 		return _keyedLock.withLock(
-			_LOCK_KEY_PREFIX_ACCOUNT + licensingAccount.getId(),
+			LicenseKeyLockUtil.toAccountLockKey(licensingAccount.getId()),
 			() -> _addLicenseKeys(licensingAccount, jsonArray));
 	}
 
@@ -1247,8 +1248,6 @@ public class AccountsRestController extends OneBaseRestController {
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
 		"text/csv");
-
-	private static final String _LOCK_KEY_PREFIX_ACCOUNT = "account-";
 
 	private static final int _MAX_LICENSE_KEYS = 100;
 
