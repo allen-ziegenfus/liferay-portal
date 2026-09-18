@@ -279,6 +279,15 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		_updateLicenseKeysActive(true, jwt, licenseKeyIds);
 	}
 
+	@PutMapping("/deactivate")
+	public void putLicenseKeysDeactivate(
+			@AuthenticationPrincipal Jwt jwt,
+			@RequestParam("licenseKeyIds") long[] licenseKeyIds)
+		throws Exception {
+
+		_updateLicenseKeysActive(false, jwt, licenseKeyIds);
+	}
+
 	@PutMapping("/subscriptions")
 	public void putSubscriptions(
 			@AuthenticationPrincipal Jwt jwt,

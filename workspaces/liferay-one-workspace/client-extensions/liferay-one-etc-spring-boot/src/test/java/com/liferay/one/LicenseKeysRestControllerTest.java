@@ -25,6 +25,7 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -740,6 +741,44 @@ public class LicenseKeysRestControllerTest {
 				null, new long[0]));
 
 		Mockito.verifyNoInteractions(_licenseKeyService);
+	}
+
+	@Test
+	public void testPutLicenseKeysDeactivate() throws Exception {
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey1 = _createLicenseKey(1L, 7L);
+		LicenseKey licenseKey2 = _createLicenseKey(2L, 7L);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			List.of(licenseKey1, licenseKey2)
+		);
+
+		licenseKeysRestController.putLicenseKeysDeactivate(
+			null, new long[] {1L, 2L});
+
+		Mockito.verify(
+			_licenseKeyPermission
+		).check(
+			Mockito.any(UserAccount.class), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
+		);
+
+		Mockito.verify(
+			_licenseKeyService
+		).updateLicenseKeyActive(
+			false, 1L
+		);
+
+		Mockito.verify(
+			_licenseKeyService
+		).updateLicenseKeyActive(
+			false, 2L
+		);
 	}
 
 	@Test
