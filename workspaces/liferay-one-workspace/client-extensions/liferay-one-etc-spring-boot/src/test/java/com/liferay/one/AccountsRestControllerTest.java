@@ -14,12 +14,14 @@ import com.liferay.headless.admin.user.client.dto.v1_0.RoleBrief;
 import com.liferay.headless.admin.user.client.dto.v1_0.UserAccount;
 import com.liferay.one.constants.EntitlementConstants;
 import com.liferay.one.exception.LicenseKeyDateException;
+import com.liferay.one.exception.LicenseKeyValidationException;
 import com.liferay.one.jira.service.AccountAssetService;
 import com.liferay.one.jira.synchronizer.AccountSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountSynchronizer;
 import com.liferay.one.license.LicenseKeyCSVExporter;
 import com.liferay.one.license.LicenseKeyEntitlementValidator;
+import com.liferay.one.license.LicenseKeyValidator;
 import com.liferay.one.model.AccountInvitation;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
@@ -1329,6 +1331,63 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysKeepsComplimentaryGrantWhenMetadataIsInvalid()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		account.setCustomFields(
+			() -> new CustomField[] {
+				_createCustomField("allowComplimentary", true)
+			});
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		Instant startInstant = Instant.now();
+
+		Assertions.assertThrows(
+			LicenseKeyValidationException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				new JSONArray(
+				).put(
+					_toLicenseKeyJSONObject(
+						0, "jane@example.com"
+					).put(
+						"complimentary", true
+					).put(
+						"expirationDate",
+						String.valueOf(startInstant.plus(30, ChronoUnit.DAYS))
+					).put(
+						"productVersion", StringPool.BLANK
+					).put(
+						"startDate", String.valueOf(startInstant)
+					)
+				).toString()));
+
+		Mockito.verify(
+			_accountService, Mockito.never()
+		).updateAllowComplimentary(
+			Mockito.anyLong(), Mockito.anyBoolean()
+		);
+	}
+
+	@Test
 	public void testPostLicenseKeysRejectsComplimentaryFromMismatchedEntitlement()
 		throws Exception {
 
@@ -2415,6 +2474,10 @@ public class AccountsRestControllerTest {
 		ReflectionTestUtils.setField(
 			accountsRestController, "_licenseKeyCSVExporter",
 			_licenseKeyCSVExporter);
+
+		ReflectionTestUtils.setField(
+			accountsRestController, "_licenseKeyValidator",
+			new LicenseKeyValidator());
 
 		LicenseKeyEntitlementValidator licenseKeyEntitlementValidator =
 			new LicenseKeyEntitlementValidator();

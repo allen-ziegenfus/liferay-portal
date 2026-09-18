@@ -20,6 +20,7 @@ import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountSynchronizer;
 import com.liferay.one.license.LicenseKeyCSVExporter;
 import com.liferay.one.license.LicenseKeyEntitlementValidator;
+import com.liferay.one.license.LicenseKeyValidator;
 import com.liferay.one.model.AccountInvitation;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
@@ -483,6 +484,8 @@ public class AccountsRestController extends OneBaseRestController {
 			_licenseKeyEntitlementValidator.validateEntitlementDefinition(
 				entitlement);
 
+			_validateMetadata(account, jsonObject);
+
 			if (jsonObject.optBoolean("complimentary")) {
 				if (complimentary) {
 					throw new ResponseStatusException(
@@ -687,17 +690,8 @@ public class AccountsRestController extends OneBaseRestController {
 
 		String productVersion = jsonObject.optString("productVersion");
 
-		String owner = jsonObject.optString("owner");
-
-		if (Validator.isNull(owner)) {
-			owner = account.getName();
-		}
-
-		String description = jsonObject.optString("description");
-
-		if (Validator.isNull(description)) {
-			description = owner;
-		}
+		String description = _getDescription(account, jsonObject);
+		String owner = _getOwner(account, jsonObject);
 
 		return _licenseKeyService.addLicenseKey(
 			account.getId(), account.getName(), true, StringPool.BLANK,
@@ -793,6 +787,26 @@ public class AccountsRestController extends OneBaseRestController {
 		}
 
 		return accountRoleNames;
+	}
+
+	private String _getDescription(Account account, JSONObject jsonObject) {
+		String description = jsonObject.optString("description");
+
+		if (Validator.isNull(description)) {
+			return _getOwner(account, jsonObject);
+		}
+
+		return description;
+	}
+
+	private String _getOwner(Account account, JSONObject jsonObject) {
+		String owner = jsonObject.optString("owner");
+
+		if (Validator.isNull(owner)) {
+			return account.getName();
+		}
+
+		return owner;
 	}
 
 	private AccountInvitation _getPendingAccountInvitation(
@@ -1147,6 +1161,25 @@ public class AccountsRestController extends OneBaseRestController {
 			pendingServerCounts);
 	}
 
+	private void _validateMetadata(Account account, JSONObject jsonObject)
+		throws Exception {
+
+		String licenseType = jsonObject.optString("licenseType");
+
+		_licenseKeyValidator.validateMetadata(
+			_getDescription(account, jsonObject), licenseType,
+			jsonObject.optInt("maxClusterNodes"), jsonObject.optString("name"),
+			_getOwner(account, jsonObject),
+			jsonObject.optString("productVersion"));
+
+		_licenseKeyValidator.validateDates(
+			Date.from(_toInstant(jsonObject, "expirationDate")),
+			jsonObject.optString("hostName"),
+			jsonObject.optString("ipAddresses"), licenseType,
+			jsonObject.optString("macAddresses"),
+			Date.from(_toInstant(jsonObject, "startDate")));
+	}
+
 	private void _validateProjectInvitation(
 			String externalReferenceCode, Project project,
 			String projectExternalReferenceCode,
@@ -1251,6 +1284,9 @@ public class AccountsRestController extends OneBaseRestController {
 
 	@Autowired
 	private LicenseKeyService _licenseKeyService;
+
+	@Autowired
+	private LicenseKeyValidator _licenseKeyValidator;
 
 	@Autowired
 	private OktaService _oktaService;
