@@ -944,6 +944,14 @@ public class LicenseKeysRestControllerTest {
 			Collections.singletonList(licenseKey)
 		);
 
+		Entitlement entitlement = _createEntitlement();
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
 		licenseKeysRestController.putLicenseKeysActivate(null, new long[] {1L});
 
 		Mockito.verify(
@@ -983,6 +991,68 @@ public class LicenseKeysRestControllerTest {
 		).check(
 			Mockito.any(UserAccount.class), Mockito.eq(_ACCOUNT_ID),
 			Mockito.eq(ActionKeys.UPDATE)
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> licenseKeysRestController.putLicenseKeysActivate(
+				null, new long[] {1L}));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).updateLicenseKeyActive(
+			Mockito.anyBoolean(), Mockito.anyLong()
+		);
+	}
+
+	@Test
+	public void testPutLicenseKeysActivateWhenEntitlementIsExhausted()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
+
+		Entitlement entitlement = _createEntitlement();
+
+		Mockito.when(
+			entitlement.getGrantType()
+		).thenReturn(
+			"metered"
+		);
+
+		Mockito.when(
+			entitlement.getQuantity()
+		).thenReturn(
+			1.0
+		);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		LicenseKey activeLicenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			activeLicenseKey.getMaxClusterNodes()
+		).thenReturn(
+			1
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeys(true, false, _ENTITLEMENT_ID)
+		).thenReturn(
+			Collections.singletonList(activeLicenseKey)
 		);
 
 		Assertions.assertThrows(

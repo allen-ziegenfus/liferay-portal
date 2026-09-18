@@ -492,6 +492,22 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
+		if (active) {
+			Map<Long, Long> pendingServerCounts = new HashMap<>();
+
+			for (LicenseKey licenseKey : licenseKeys) {
+				long entitlementId = licenseKey.getEntitlementId();
+
+				if (licenseKey.isActive() || (entitlementId == 0)) {
+					continue;
+				}
+
+				_licenseKeyEntitlementValidator.validateQuota(
+					_entitlementService.getEntitlement(entitlementId),
+					licenseKey.getMaxClusterNodes(), pendingServerCounts);
+			}
+		}
+
 		for (LicenseKey licenseKey : licenseKeys) {
 			_licenseKeyService.updateLicenseKeyActive(
 				active, licenseKey.getLicenseKeyId());
