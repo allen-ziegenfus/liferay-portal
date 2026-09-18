@@ -19,6 +19,7 @@ import com.liferay.one.jira.synchronizer.AccountSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountSynchronizer;
 import com.liferay.one.license.LicenseKeyCSVExporter;
+import com.liferay.one.license.LicenseKeyEntitlementValidator;
 import com.liferay.one.model.AccountInvitation;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
@@ -2414,6 +2415,18 @@ public class AccountsRestControllerTest {
 		ReflectionTestUtils.setField(
 			accountsRestController, "_licenseKeyCSVExporter",
 			_licenseKeyCSVExporter);
+
+		LicenseKeyEntitlementValidator licenseKeyEntitlementValidator =
+			new LicenseKeyEntitlementValidator();
+
+		ReflectionTestUtils.setField(
+			licenseKeyEntitlementValidator, "_licenseKeyService",
+			_licenseKeyService);
+
+		ReflectionTestUtils.setField(
+			accountsRestController, "_licenseKeyEntitlementValidator",
+			licenseKeyEntitlementValidator);
+
 		ReflectionTestUtils.setField(
 			accountsRestController, "_licenseKeyPermission",
 			_licenseKeyPermission);

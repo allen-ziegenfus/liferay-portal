@@ -19,6 +19,7 @@ import com.liferay.one.jira.synchronizer.AccountSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountSynchronizer;
 import com.liferay.one.license.LicenseKeyCSVExporter;
+import com.liferay.one.license.LicenseKeyEntitlementValidator;
 import com.liferay.one.model.AccountInvitation;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.EntitlementDefinition;
@@ -479,7 +480,8 @@ public class AccountsRestController extends OneBaseRestController {
 						" does not belong to account ", externalReferenceCode));
 			}
 
-			_validateEntitlementDefinition(entitlement);
+			_licenseKeyEntitlementValidator.validateEntitlementDefinition(
+				entitlement);
 
 			if (jsonObject.optBoolean("complimentary")) {
 				if (complimentary) {
@@ -935,14 +937,6 @@ public class AccountsRestController extends OneBaseRestController {
 		return roleExternalReferenceCodes;
 	}
 
-	private int _getServerCount(int maxClusterNodes) {
-		if (maxClusterNodes > 1) {
-			return maxClusterNodes;
-		}
-
-		return 1;
-	}
-
 	private void _syncMembership(Account account, long userId) {
 		try {
 			_accountUserAccountSynchronizer.syncAccountUserAccountMembership(
@@ -1114,23 +1108,6 @@ public class AccountsRestController extends OneBaseRestController {
 		}
 	}
 
-	private void _validateEntitlementDefinition(Entitlement entitlement)
-		throws Exception {
-
-		EntitlementDefinition entitlementDefinition =
-			entitlement.getEntitlementDefinition();
-
-		if ((entitlementDefinition == null) ||
-			!ArrayUtil.contains(
-				EntitlementConstants.EXTERNAL_REFERENCE_CODES_SELF_HOSTED,
-				entitlementDefinition.getExternalReferenceCode())) {
-
-			throw new PrincipalException(
-				"Entitlement " + entitlement.getEntitlementId() +
-					" does not grant self hosted license keys");
-		}
-	}
-
 	private void _validateInvitation(
 		String emailAddress, String familyName, String givenName) {
 
@@ -1160,81 +1137,14 @@ public class AccountsRestController extends OneBaseRestController {
 			JSONObject jsonObject, Map<Long, Integer> pendingServerCounts)
 		throws Exception {
 
-		Instant endDateInstant = entitlement.getEndDateInstant();
+		_licenseKeyEntitlementValidator.validateTerm(
+			allowPermanentLicenses, entitlement,
+			_toInstant(jsonObject, "expirationDate"),
+			_toInstant(jsonObject, "startDate"));
 
-		if (endDateInstant == null) {
-			if (!allowPermanentLicenses) {
-				throw new PrincipalException(
-					StringBundler.concat(
-						"Entitlement ", entitlement.getEntitlementId(),
-						" is perpetual and the account does not allow ",
-						"permanent licenses"));
-			}
-		}
-		else {
-			Instant expirationDateInstant = _toInstant(
-				jsonObject, "expirationDate");
-
-			if (expirationDateInstant.isAfter(
-					endDateInstant.plus(1, ChronoUnit.DAYS))) {
-
-				throw new LicenseKeyDateException(
-					"The expiration date is after the end of entitlement " +
-						entitlement.getEntitlementId());
-			}
-		}
-
-		Instant startDateInstant = entitlement.getStartDateInstant();
-
-		if ((startDateInstant != null) &&
-			startDateInstant.isAfter(_toInstant(jsonObject, "startDate"))) {
-
-			throw new LicenseKeyDateException(
-				"The start date is before the start of entitlement " +
-					entitlement.getEntitlementId());
-		}
-
-		if (EntitlementConstants.GRANT_TYPE_UNLIMITED.equals(
-				entitlement.getGrantType())) {
-
-			return;
-		}
-
-		long entitlementId = entitlement.getEntitlementId();
-
-		int pendingServerCount = _getServerCount(
-			jsonObject.optInt("maxClusterNodes"));
-
-		Integer previousPendingServerCount = pendingServerCounts.get(
-			entitlementId);
-
-		if (previousPendingServerCount != null) {
-			pendingServerCount += previousPendingServerCount;
-		}
-
-		int serverCount = pendingServerCount;
-
-		for (LicenseKey licenseKey :
-				_licenseKeyService.getLicenseKeys(true, false, entitlementId)) {
-
-			serverCount += _getServerCount(licenseKey.getMaxClusterNodes());
-		}
-
-		Double quantity = entitlement.getQuantity();
-
-		int maxServerCount = 0;
-
-		if (quantity != null) {
-			maxServerCount = quantity.intValue();
-		}
-
-		if (serverCount > maxServerCount) {
-			throw new PrincipalException(
-				"Entitlement " + entitlementId +
-					" has no more available licenses");
-		}
-
-		pendingServerCounts.put(entitlementId, pendingServerCount);
+		_licenseKeyEntitlementValidator.validateQuota(
+			entitlement, jsonObject.optInt("maxClusterNodes"),
+			pendingServerCounts);
 	}
 
 	private void _validateProjectInvitation(
@@ -1332,6 +1242,9 @@ public class AccountsRestController extends OneBaseRestController {
 
 	@Autowired
 	private LicenseKeyCSVExporter _licenseKeyCSVExporter;
+
+	@Autowired
+	private LicenseKeyEntitlementValidator _licenseKeyEntitlementValidator;
 
 	@Autowired
 	private LicenseKeyPermission _licenseKeyPermission;

@@ -14,14 +14,19 @@ import com.liferay.one.exception.LicenseKeyDateException;
 import com.liferay.one.exception.LicenseKeyProductPurchaseKeyException;
 import com.liferay.one.exception.NoSuchLicenseKeyException;
 import com.liferay.one.license.LicenseKeyCSVExporter;
+import com.liferay.one.license.LicenseKeyEntitlementValidator;
 import com.liferay.one.license.LicenseKeyExporter;
+import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.LicenseKey;
 import com.liferay.one.model.SubscriptionEntry;
 import com.liferay.one.permission.AdminPermission;
 import com.liferay.one.permission.LicenseKeyPermission;
+import com.liferay.one.service.AccountService;
 import com.liferay.one.service.CommerceOrderService;
+import com.liferay.one.service.EntitlementService;
 import com.liferay.one.service.LicenseKeyService;
 import com.liferay.one.service.SubscriptionEntryService;
+import com.liferay.one.util.AccountUtil;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.time.Instant;
@@ -251,7 +256,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
 		for (int i = 0; i < jsonArray.length(); i++) {
-			_validateExtension(licenseKeys.get(i), jsonArray.getJSONObject(i));
+			_validateExtension(jsonArray.getJSONObject(i), licenseKeys.get(i));
 		}
 
 		List<LicenseKey> extendedLicenseKeys = new ArrayList<>();
@@ -488,10 +493,12 @@ public class LicenseKeysRestController extends OneBaseRestController {
 	}
 
 	private void _validateExtension(
-			LicenseKey licenseKey, JSONObject jsonObject)
+			JSONObject jsonObject, LicenseKey licenseKey)
 		throws Exception {
 
-		if (licenseKey.getEntitlementId() == 0) {
+		long entitlementId = licenseKey.getEntitlementId();
+
+		if (entitlementId == 0) {
 			throw new LicenseKeyProductPurchaseKeyException(
 				"License key " + licenseKey.getLicenseKeyId() +
 					" is not backed by an entitlement");
@@ -505,6 +512,26 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			throw new LicenseKeyDateException(
 				"Invalid start date or expiration date");
 		}
+
+		Entitlement entitlement = _entitlementService.getEntitlement(
+			entitlementId);
+
+		_licenseKeyEntitlementValidator.validateEntitlementDefinition(
+			entitlement);
+
+		com.liferay.headless.admin.user.client.dto.v1_0.Account account =
+			_accountService.fetchAccount(licenseKey.getAccountEntryId());
+
+		boolean allowPermanentLicenses = true;
+
+		if (account != null) {
+			allowPermanentLicenses = AccountUtil.getCustomFieldBoolean(
+				account, "allowPermanentLicenses", true);
+		}
+
+		_licenseKeyEntitlementValidator.validateTerm(
+			allowPermanentLicenses, entitlement, expirationDateInstant,
+			startDateInstant);
 	}
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
@@ -513,13 +540,22 @@ public class LicenseKeysRestController extends OneBaseRestController {
 	private static final int _MAX_LICENSE_KEY_IDS = 100;
 
 	@Autowired
+	private AccountService _accountService;
+
+	@Autowired
 	private AdminPermission _adminPermission;
 
 	@Autowired
 	private CommerceOrderService _commerceOrderService;
 
 	@Autowired
+	private EntitlementService _entitlementService;
+
+	@Autowired
 	private LicenseKeyCSVExporter _licenseKeyCSVExporter;
+
+	@Autowired
+	private LicenseKeyEntitlementValidator _licenseKeyEntitlementValidator;
 
 	@Autowired
 	private LicenseKeyExporter _licenseKeyExporter;
