@@ -45,6 +45,7 @@ import com.liferay.one.service.ProjectService;
 import com.liferay.one.service.ProvisioningAssignmentService;
 import com.liferay.one.service.ProvisioningEmailService;
 import com.liferay.one.service.UserAccountService;
+import com.liferay.one.util.KeyedLock;
 import com.liferay.one.util.TermCountUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.ee.license.shared.LicenseConstants;
@@ -2712,6 +2713,9 @@ public class AccountsRestControllerTest {
 			_entitlementDefinitionService);
 		ReflectionTestUtils.setField(
 			accountsRestController, "_entitlementService", _entitlementService);
+		ReflectionTestUtils.setField(
+			accountsRestController, "_keyedLock", new KeyedLock());
+
 		ReflectionTestUtils.setField(
 			accountsRestController, "_licenseKeyCSVExporter",
 			_licenseKeyCSVExporter);

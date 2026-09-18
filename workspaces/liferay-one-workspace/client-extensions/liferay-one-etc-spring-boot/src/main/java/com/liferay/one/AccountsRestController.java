@@ -47,6 +47,7 @@ import com.liferay.one.service.ProvisioningEmailService;
 import com.liferay.one.service.UserAccountService;
 import com.liferay.one.util.AccountUtil;
 import com.liferay.one.util.FindUtil;
+import com.liferay.one.util.KeyedLock;
 import com.liferay.one.util.TermCountUtil;
 import com.liferay.one.util.UserAccountUtil;
 import com.liferay.petra.string.StringBundler;
@@ -471,64 +472,9 @@ public class AccountsRestController extends OneBaseRestController {
 					" license keys may be created at once");
 		}
 
-		boolean allowPermanentLicenses = AccountUtil.getCustomFieldBoolean(
-			licensingAccount, "allowPermanentLicenses", true);
-		boolean complimentary = false;
-		List<Entitlement> entitlements = new ArrayList<>();
-		Map<Long, Long> pendingServerCounts = new HashMap<>();
-
-		for (int i = 0; i < jsonArray.length(); i++) {
-			JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-			Entitlement entitlement = _entitlementService.getEntitlement(
-				jsonObject.getLong("entitlementId"));
-
-			if (entitlement.getAccountEntryId() != account.getId()) {
-				throw new PrincipalException(
-					StringBundler.concat(
-						"Entitlement ", entitlement.getEntitlementId(),
-						" does not belong to account ", externalReferenceCode));
-			}
-
-			_licenseKeyEntitlementValidator.validateEntitlementDefinition(
-				entitlement);
-
-			_validateMetadata(account, jsonObject);
-
-			if (jsonObject.optBoolean("complimentary")) {
-				if (complimentary) {
-					throw new ResponseStatusException(
-						HttpStatus.BAD_REQUEST,
-						"Only one complimentary license key may be created " +
-							"at once");
-				}
-
-				_validateComplimentary(licensingAccount, jsonObject);
-
-				complimentary = true;
-			}
-			else {
-				_validateLicenseKey(
-					allowPermanentLicenses, entitlement, jsonObject,
-					pendingServerCounts);
-			}
-
-			entitlements.add(entitlement);
-		}
-
-		if (complimentary) {
-			_accountService.updateAllowComplimentary(account.getId(), false);
-		}
-
-		List<LicenseKey> licenseKeys = new ArrayList<>();
-
-		for (int i = 0; i < jsonArray.length(); i++) {
-			licenseKeys.add(
-				_addLicenseKey(
-					account, entitlements.get(i), jsonArray.getJSONObject(i)));
-		}
-
-		return licenseKeys;
+		return _keyedLock.withLock(
+			_LOCK_KEY_PREFIX_ACCOUNT + licensingAccount.getId(),
+			() -> _addLicenseKeys(licensingAccount, jsonArray));
 	}
 
 	@PostMapping("/{externalReferenceCode}/sync-to-jsm")
@@ -717,6 +663,71 @@ public class AccountsRestController extends OneBaseRestController {
 			LicenseConstants.PRODUCT_ID_PORTAL, productName, productVersion,
 			StringPool.BLANK, jsonObject.optString("sizing"),
 			Date.from(_toInstant(jsonObject, "startDate")));
+	}
+
+	private List<LicenseKey> _addLicenseKeys(
+			Account account, JSONArray jsonArray)
+		throws Exception {
+
+		boolean allowPermanentLicenses = AccountUtil.getCustomFieldBoolean(
+			account, "allowPermanentLicenses", true);
+		boolean complimentary = false;
+		List<Entitlement> entitlements = new ArrayList<>();
+		Map<Long, Long> pendingServerCounts = new HashMap<>();
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			JSONObject jsonObject = jsonArray.getJSONObject(i);
+
+			Entitlement entitlement = _entitlementService.getEntitlement(
+				jsonObject.getLong("entitlementId"));
+
+			if (entitlement.getAccountEntryId() != account.getId()) {
+				throw new PrincipalException(
+					StringBundler.concat(
+						"Entitlement ", entitlement.getEntitlementId(),
+						" does not belong to account ",
+						account.getExternalReferenceCode()));
+			}
+
+			_licenseKeyEntitlementValidator.validateEntitlementDefinition(
+				entitlement);
+
+			_validateMetadata(account, jsonObject);
+
+			if (jsonObject.optBoolean("complimentary")) {
+				if (complimentary) {
+					throw new ResponseStatusException(
+						HttpStatus.BAD_REQUEST,
+						"Only one complimentary license key may be created " +
+							"at once");
+				}
+
+				_validateComplimentary(account, jsonObject);
+
+				complimentary = true;
+			}
+			else {
+				_validateLicenseKey(
+					allowPermanentLicenses, entitlement, jsonObject,
+					pendingServerCounts);
+			}
+
+			entitlements.add(entitlement);
+		}
+
+		if (complimentary) {
+			_accountService.updateAllowComplimentary(account.getId(), false);
+		}
+
+		List<LicenseKey> licenseKeys = new ArrayList<>();
+
+		for (int i = 0; i < jsonArray.length(); i++) {
+			licenseKeys.add(
+				_addLicenseKey(
+					account, entitlements.get(i), jsonArray.getJSONObject(i)));
+		}
+
+		return licenseKeys;
 	}
 
 	private void _createOktaContact(
@@ -1237,6 +1248,8 @@ public class AccountsRestController extends OneBaseRestController {
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
 		"text/csv");
 
+	private static final String _LOCK_KEY_PREFIX_ACCOUNT = "account-";
+
 	private static final int _MAX_LICENSE_KEYS = 100;
 
 	private static final Log _log = LogFactory.getLog(
@@ -1281,6 +1294,9 @@ public class AccountsRestController extends OneBaseRestController {
 
 	@Autowired
 	private EntitlementService _entitlementService;
+
+	@Autowired
+	private KeyedLock _keyedLock;
 
 	@Autowired
 	private LicenseKeyCSVExporter _licenseKeyCSVExporter;

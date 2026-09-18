@@ -28,6 +28,7 @@ import com.liferay.one.service.EntitlementService;
 import com.liferay.one.service.LicenseKeyService;
 import com.liferay.one.service.SubscriptionEntryService;
 import com.liferay.one.service.UserAccountService;
+import com.liferay.one.util.KeyedLock;
 import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
@@ -1250,6 +1251,9 @@ public class LicenseKeysRestControllerTest {
 		ReflectionTestUtils.setField(
 			licenseKeysRestController, "_entitlementService",
 			_entitlementService);
+
+		ReflectionTestUtils.setField(
+			licenseKeysRestController, "_keyedLock", new KeyedLock());
 
 		ReflectionTestUtils.setField(
 			licenseKeysRestController, "_licenseKeyCSVExporter",

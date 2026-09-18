@@ -27,6 +27,7 @@ import com.liferay.one.service.EntitlementService;
 import com.liferay.one.service.LicenseKeyService;
 import com.liferay.one.service.SubscriptionEntryService;
 import com.liferay.one.util.AccountUtil;
+import com.liferay.one.util.KeyedLock;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.time.Instant;
@@ -39,6 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -257,29 +259,33 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
-		Map<Long, Long> pendingServerCounts = new HashMap<>();
+		return _keyedLock.withLock(
+			_toLockKey(licenseKeys),
+			() -> {
+				Map<Long, Long> pendingServerCounts = new HashMap<>();
 
-		for (int i = 0; i < jsonArray.length(); i++) {
-			_validateExtension(
-				jsonArray.getJSONObject(i), licenseKeys.get(i),
-				pendingServerCounts);
-		}
+				for (int i = 0; i < jsonArray.length(); i++) {
+					_validateExtension(
+						jsonArray.getJSONObject(i), licenseKeys.get(i),
+						pendingServerCounts);
+				}
 
-		List<LicenseKey> extendedLicenseKeys = new ArrayList<>();
+				List<LicenseKey> extendedLicenseKeys = new ArrayList<>();
 
-		for (int i = 0; i < jsonArray.length(); i++) {
-			JSONObject jsonObject = jsonArray.getJSONObject(i);
+				for (int i = 0; i < jsonArray.length(); i++) {
+					JSONObject jsonObject = jsonArray.getJSONObject(i);
 
-			LicenseKey licenseKey = licenseKeys.get(i);
+					LicenseKey licenseKey = licenseKeys.get(i);
 
-			extendedLicenseKeys.add(
-				_licenseKeyService.extendLicenseKey(
-					Date.from(_toInstant(jsonObject, "expirationDate")),
-					licenseKey.getLicenseKeyId(),
-					Date.from(_toInstant(jsonObject, "startDate"))));
-		}
+					extendedLicenseKeys.add(
+						_licenseKeyService.extendLicenseKey(
+							Date.from(_toInstant(jsonObject, "expirationDate")),
+							licenseKey.getLicenseKeyId(),
+							Date.from(_toInstant(jsonObject, "startDate"))));
+				}
 
-		return extendedLicenseKeys;
+				return extendedLicenseKeys;
+			});
 	}
 
 	@PostMapping("/type-free")
@@ -482,6 +488,16 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		}
 	}
 
+	private String _toLockKey(List<LicenseKey> licenseKeys) {
+		Set<Long> accountEntryIds = new TreeSet<>();
+
+		for (LicenseKey licenseKey : licenseKeys) {
+			accountEntryIds.add(licenseKey.getAccountEntryId());
+		}
+
+		return _LOCK_KEY_PREFIX_ACCOUNT + accountEntryIds;
+	}
+
 	private void _updateLicenseKeysActive(
 			boolean active, Jwt jwt, long[] licenseKeyIds)
 		throws Exception {
@@ -492,26 +508,31 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
-		if (active) {
-			Map<Long, Long> pendingServerCounts = new HashMap<>();
+		_keyedLock.withLock(
+			_toLockKey(licenseKeys),
+			() -> {
+				if (active) {
+					Map<Long, Long> pendingServerCounts = new HashMap<>();
 
-			for (LicenseKey licenseKey : licenseKeys) {
-				long entitlementId = licenseKey.getEntitlementId();
+					for (LicenseKey licenseKey : licenseKeys) {
+						long entitlementId = licenseKey.getEntitlementId();
 
-				if (licenseKey.isActive() || (entitlementId == 0)) {
-					continue;
+						if (licenseKey.isActive() || (entitlementId == 0)) {
+							continue;
+						}
+
+						_licenseKeyEntitlementValidator.validateQuota(
+							_entitlementService.getEntitlement(entitlementId),
+							licenseKey.getMaxClusterNodes(),
+							pendingServerCounts);
+					}
 				}
 
-				_licenseKeyEntitlementValidator.validateQuota(
-					_entitlementService.getEntitlement(entitlementId),
-					licenseKey.getMaxClusterNodes(), pendingServerCounts);
-			}
-		}
-
-		for (LicenseKey licenseKey : licenseKeys) {
-			_licenseKeyService.updateLicenseKeyActive(
-				active, licenseKey.getLicenseKeyId());
-		}
+				for (LicenseKey licenseKey : licenseKeys) {
+					_licenseKeyService.updateLicenseKeyActive(
+						active, licenseKey.getLicenseKeyId());
+				}
+			});
 	}
 
 	private void _validateExtension(
@@ -563,6 +584,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
 		"text/csv");
 
+	private static final String _LOCK_KEY_PREFIX_ACCOUNT = "account-";
+
 	private static final int _MAX_LICENSE_KEY_IDS = 100;
 
 	@Autowired
@@ -576,6 +599,9 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 	@Autowired
 	private EntitlementService _entitlementService;
+
+	@Autowired
+	private KeyedLock _keyedLock;
 
 	@Autowired
 	private LicenseKeyCSVExporter _licenseKeyCSVExporter;
