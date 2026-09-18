@@ -20,6 +20,7 @@ import com.liferay.one.jira.synchronizer.AccountUserAccountRoleSynchronizer;
 import com.liferay.one.jira.synchronizer.AccountUserAccountSynchronizer;
 import com.liferay.one.license.LicenseKeyCSVExporter;
 import com.liferay.one.license.LicenseKeyEntitlementValidator;
+import com.liferay.one.license.LicenseKeyQuotaContext;
 import com.liferay.one.license.LicenseKeyValidator;
 import com.liferay.one.model.AccountInvitation;
 import com.liferay.one.model.Entitlement;
@@ -66,7 +67,6 @@ import java.time.temporal.ChronoUnit;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -675,7 +675,8 @@ public class AccountsRestController extends OneBaseRestController {
 			account, "allowPermanentLicenses", true);
 		boolean complimentary = false;
 		List<Entitlement> entitlements = new ArrayList<>();
-		Map<Long, Long> pendingServerCounts = new HashMap<>();
+		LicenseKeyQuotaContext licenseKeyQuotaContext =
+			new LicenseKeyQuotaContext();
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
@@ -711,7 +712,7 @@ public class AccountsRestController extends OneBaseRestController {
 			else {
 				_validateLicenseKey(
 					allowPermanentLicenses, entitlement, jsonObject,
-					pendingServerCounts);
+					licenseKeyQuotaContext);
 			}
 
 			entitlements.add(entitlement);
@@ -1170,7 +1171,8 @@ public class AccountsRestController extends OneBaseRestController {
 
 	private void _validateLicenseKey(
 			boolean allowPermanentLicenses, Entitlement entitlement,
-			JSONObject jsonObject, Map<Long, Long> pendingServerCounts)
+			JSONObject jsonObject,
+			LicenseKeyQuotaContext licenseKeyQuotaContext)
 		throws Exception {
 
 		_licenseKeyEntitlementValidator.validateTerm(
@@ -1179,8 +1181,8 @@ public class AccountsRestController extends OneBaseRestController {
 			_toInstant(jsonObject, "startDate"));
 
 		_licenseKeyEntitlementValidator.validateQuota(
-			entitlement, jsonObject.optInt("maxClusterNodes"),
-			pendingServerCounts);
+			entitlement, licenseKeyQuotaContext,
+			jsonObject.optInt("maxClusterNodes"));
 	}
 
 	private void _validateMetadata(Account account, JSONObject jsonObject)

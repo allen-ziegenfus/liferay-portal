@@ -16,6 +16,7 @@ import com.liferay.one.exception.NoSuchLicenseKeyException;
 import com.liferay.one.license.LicenseKeyCSVExporter;
 import com.liferay.one.license.LicenseKeyEntitlementValidator;
 import com.liferay.one.license.LicenseKeyExporter;
+import com.liferay.one.license.LicenseKeyQuotaContext;
 import com.liferay.one.model.Entitlement;
 import com.liferay.one.model.LicenseKey;
 import com.liferay.one.model.SubscriptionEntry;
@@ -36,11 +37,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -264,12 +263,13 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		return _keyedLock.withLock(
 			LicenseKeyLockUtil.toAccountLockKey(_toAccountEntryId(licenseKeys)),
 			() -> {
-				Map<Long, Long> pendingServerCounts = new HashMap<>();
+				LicenseKeyQuotaContext licenseKeyQuotaContext =
+					new LicenseKeyQuotaContext();
 
 				for (int i = 0; i < jsonArray.length(); i++) {
 					_validateExtension(
 						jsonArray.getJSONObject(i), licenseKeys.get(i),
-						pendingServerCounts);
+						licenseKeyQuotaContext);
 				}
 
 				List<LicenseKey> extendedLicenseKeys = new ArrayList<>();
@@ -526,7 +526,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 			LicenseKeyLockUtil.toAccountLockKey(_toAccountEntryId(licenseKeys)),
 			() -> {
 				if (active) {
-					Map<Long, Long> pendingServerCounts = new HashMap<>();
+					LicenseKeyQuotaContext licenseKeyQuotaContext =
+						new LicenseKeyQuotaContext();
 
 					for (LicenseKey licenseKey : licenseKeys) {
 						long entitlementId = licenseKey.getEntitlementId();
@@ -540,8 +541,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 						_licenseKeyEntitlementValidator.validateQuota(
 							_entitlementService.getEntitlement(entitlementId),
-							licenseKey.getMaxClusterNodes(),
-							pendingServerCounts);
+							licenseKeyQuotaContext,
+							licenseKey.getMaxClusterNodes());
 					}
 				}
 
@@ -554,7 +555,7 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 	private void _validateExtension(
 			JSONObject jsonObject, LicenseKey licenseKey,
-			Map<Long, Long> pendingServerCounts)
+			LicenseKeyQuotaContext licenseKeyQuotaContext)
 		throws Exception {
 
 		long entitlementId = licenseKey.getEntitlementId();
@@ -596,8 +597,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		if (!licenseKey.isComplimentary()) {
 			_licenseKeyEntitlementValidator.validateQuota(
-				entitlement, licenseKey.getMaxClusterNodes(),
-				pendingServerCounts);
+				entitlement, licenseKeyQuotaContext,
+				licenseKey.getMaxClusterNodes());
 		}
 	}
 

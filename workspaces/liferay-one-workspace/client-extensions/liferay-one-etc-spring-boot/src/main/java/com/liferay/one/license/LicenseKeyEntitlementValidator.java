@@ -21,8 +21,6 @@ import com.liferay.portal.kernel.util.ArrayUtil;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -66,8 +64,8 @@ public class LicenseKeyEntitlementValidator {
 	}
 
 	public void validateQuota(
-			Entitlement entitlement, int maxClusterNodes,
-			Map<Long, Long> pendingServerCounts)
+			Entitlement entitlement,
+			LicenseKeyQuotaContext licenseKeyQuotaContext, int maxClusterNodes)
 		throws Exception {
 
 		validateMaxClusterNodes(maxClusterNodes);
@@ -80,22 +78,22 @@ public class LicenseKeyEntitlementValidator {
 
 		long entitlementId = entitlement.getEntitlementId();
 
-		long pendingServerCount = _getServerCount(maxClusterNodes);
+		if (!licenseKeyQuotaContext.hasServerCount(entitlementId)) {
+			long serverCount = 0;
 
-		Long previousPendingServerCount = pendingServerCounts.get(
-			entitlementId);
+			for (LicenseKey licenseKey :
+					_licenseKeyService.getLicenseKeys(
+						true, false, entitlementId)) {
 
-		if (previousPendingServerCount != null) {
-			pendingServerCount += previousPendingServerCount;
+				serverCount += _getServerCount(licenseKey.getMaxClusterNodes());
+			}
+
+			licenseKeyQuotaContext.setServerCount(entitlementId, serverCount);
 		}
 
-		long serverCount = pendingServerCount;
-
-		for (LicenseKey licenseKey :
-				_licenseKeyService.getLicenseKeys(true, false, entitlementId)) {
-
-			serverCount += _getServerCount(licenseKey.getMaxClusterNodes());
-		}
+		long pendingServerCount =
+			licenseKeyQuotaContext.getPendingServerCount(entitlementId) +
+				_getServerCount(maxClusterNodes);
 
 		Double quantity = entitlement.getQuantity();
 
@@ -105,13 +103,18 @@ public class LicenseKeyEntitlementValidator {
 			maxServerCount = quantity.longValue();
 		}
 
+		long serverCount =
+			licenseKeyQuotaContext.getServerCount(entitlementId) +
+				pendingServerCount;
+
 		if (serverCount > maxServerCount) {
 			throw new PrincipalException(
 				"Entitlement " + entitlementId +
 					" has no more available licenses");
 		}
 
-		pendingServerCounts.put(entitlementId, pendingServerCount);
+		licenseKeyQuotaContext.setPendingServerCount(
+			entitlementId, pendingServerCount);
 	}
 
 	public void validateTerm(
@@ -162,13 +165,11 @@ public class LicenseKeyEntitlementValidator {
 	private static final int _ENTITLEMENT_END_DATE_TOLERANCE_DAYS = 1;
 
 	private static final String[] _LICENSE_TYPES_SELF_SERVICE = {
-		_TYPE_BACKUP, LicenseConstants.TYPE_LIMITED,
-		LicenseConstants.TYPE_PER_USER, LicenseConstants.TYPE_PRODUCTION
+		"backup", LicenseConstants.TYPE_LIMITED, LicenseConstants.TYPE_PER_USER,
+		LicenseConstants.TYPE_PRODUCTION
 	};
 
 	private static final int _MAX_CLUSTER_NODES = 1024;
-
-	private static final String _TYPE_BACKUP = "backup";
 
 	@Autowired
 	private LicenseKeyService _licenseKeyService;

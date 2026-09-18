@@ -1453,6 +1453,51 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysReadsTheEntitlementQuotaOnce()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 10.0);
+
+		Mockito.when(
+			entitlement.getGrantType()
+		).thenReturn(
+			"metered"
+		);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		accountsRestController.postLicenseKeys(
+			null, _EXTERNAL_REFERENCE_CODE, _createLicenseKeysBodyJSON(3, 0));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.times(1)
+		).getLicenseKeys(
+			true, false, _ENTITLEMENT_ID
+		);
+	}
+
+	@Test
 	public void testPostLicenseKeysRejectsComplimentaryFromMismatchedEntitlement()
 		throws Exception {
 
@@ -2961,6 +3006,17 @@ public class AccountsRestControllerTest {
 		).put(
 			_toLicenseKeyJSONObject(maxClusterNodes, owner)
 		).toString();
+	}
+
+	private String _createLicenseKeysBodyJSON(int count, int maxClusterNodes) {
+		JSONArray jsonArray = new JSONArray();
+
+		for (int i = 0; i < count; i++) {
+			jsonArray.put(
+				_toLicenseKeyJSONObject(maxClusterNodes, "jane@example.com"));
+		}
+
+		return jsonArray.toString();
 	}
 
 	private Project _createProject(String accountExternalReferenceCode) {
