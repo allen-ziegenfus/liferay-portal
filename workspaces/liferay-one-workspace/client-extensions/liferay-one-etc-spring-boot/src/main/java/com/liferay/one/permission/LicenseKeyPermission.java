@@ -59,7 +59,8 @@ public class LicenseKeyPermission {
 		Account account = _accountService.fetchAccount(accountEntryId);
 
 		if (account == null) {
-			return;
+			throw new PrincipalException(
+				"No account exists with ID " + accountEntryId);
 		}
 
 		checkSelfProvisioning(account);

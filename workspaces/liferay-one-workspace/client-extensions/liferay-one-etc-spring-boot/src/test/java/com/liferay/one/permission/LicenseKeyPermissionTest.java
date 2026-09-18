@@ -31,16 +31,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 public class LicenseKeyPermissionTest {
 
 	@Test
-	public void testCheckSelfProvisioningGrantsWhenAccountIsMissing()
-		throws Exception {
-
-		LicenseKeyPermission licenseKeyPermission = _createPermission(
-			_createUserAccount(new String[0]));
-
-		licenseKeyPermission.checkSelfProvisioning(_ACCOUNT_ID);
-	}
-
-	@Test
 	public void testCheckSelfProvisioningGrantsWhenCustomFieldIsMissing()
 		throws Exception {
 
@@ -54,6 +44,18 @@ public class LicenseKeyPermissionTest {
 		);
 
 		licenseKeyPermission.checkSelfProvisioning(_ACCOUNT_ID);
+	}
+
+	@Test
+	public void testCheckSelfProvisioningThrowsWhenAccountIsMissing()
+		throws Exception {
+
+		LicenseKeyPermission licenseKeyPermission = _createPermission(
+			_createUserAccount(new String[0]));
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> licenseKeyPermission.checkSelfProvisioning(_ACCOUNT_ID));
 	}
 
 	@Test

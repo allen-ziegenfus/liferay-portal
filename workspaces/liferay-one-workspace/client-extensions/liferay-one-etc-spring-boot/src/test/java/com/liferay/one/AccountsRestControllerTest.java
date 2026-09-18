@@ -158,6 +158,12 @@ public class AccountsRestControllerTest {
 		);
 
 		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
 			_accountRoleService.fetchAccountRole(_ACCOUNT_ROLE_ID)
 		).thenReturn(
 			_createAccountRole("Partner Manager")
@@ -265,6 +271,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -408,6 +420,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -752,6 +770,12 @@ public class AccountsRestControllerTest {
 		);
 
 		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
 			_userAccountService.getMyUserAccount(null)
 		).thenReturn(
 			_createInviterUserAccount()
@@ -810,6 +834,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -1101,6 +1131,12 @@ public class AccountsRestControllerTest {
 		);
 
 		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
 			_userAccountService.getMyUserAccount(null)
 		).thenReturn(
 			_createInviterUserAccount()
@@ -1148,6 +1184,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -1248,10 +1290,18 @@ public class AccountsRestControllerTest {
 	public void testPostLicenseKeysAddsLicenseKey() throws Exception {
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -1296,10 +1346,18 @@ public class AccountsRestControllerTest {
 
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -1345,6 +1403,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -1406,6 +1470,12 @@ public class AccountsRestControllerTest {
 			account
 		);
 
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
 		Entitlement entitlement = _createEntitlement("C_ENT_DEF_SAAS", 5.0);
 
 		Mockito.when(
@@ -1433,10 +1503,18 @@ public class AccountsRestControllerTest {
 
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -1474,6 +1552,12 @@ public class AccountsRestControllerTest {
 			account
 		);
 
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
 		Entitlement entitlement = _createEntitlement(
 			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
 
@@ -1494,10 +1578,18 @@ public class AccountsRestControllerTest {
 	public void testPostLicenseKeysRejectsEmptyBody() throws Exception {
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Assertions.assertThrows(
@@ -1516,10 +1608,18 @@ public class AccountsRestControllerTest {
 
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -1552,10 +1652,18 @@ public class AccountsRestControllerTest {
 
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -1594,10 +1702,18 @@ public class AccountsRestControllerTest {
 
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -1641,6 +1757,12 @@ public class AccountsRestControllerTest {
 			account
 		);
 
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
 		Entitlement entitlement = _createEntitlement(
 			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
 
@@ -1669,10 +1791,18 @@ public class AccountsRestControllerTest {
 
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -1725,6 +1855,12 @@ public class AccountsRestControllerTest {
 			account
 		);
 
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
 		Entitlement entitlement = _createEntitlement(
 			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 5.0);
 
@@ -1753,10 +1889,18 @@ public class AccountsRestControllerTest {
 
 		AccountsRestController accountsRestController = _createController();
 
+		Account account = _createAccount();
+
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
 		).thenReturn(
-			_createAccount()
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
 		);
 
 		Entitlement entitlement = _createEntitlement("C_ENT_DEF_SAAS", 5.0);
@@ -1784,6 +1928,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -1818,6 +1968,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -1914,6 +2070,12 @@ public class AccountsRestControllerTest {
 		);
 
 		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
 			_accountRoleService.fetchAccountRole(_ACCOUNT_ROLE_ID)
 		).thenReturn(
 			_createAccountRole("Support Administrator")
@@ -1949,6 +2111,12 @@ public class AccountsRestControllerTest {
 			account
 		);
 
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
 		UserAccount userAccount = _createUserAccount();
 
 		Mockito.when(
@@ -1977,6 +2145,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -2025,6 +2199,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -2222,6 +2402,12 @@ public class AccountsRestControllerTest {
 		);
 
 		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
 			_accountRoleService.fetchAccountRole(_ACCOUNT_ROLE_ID)
 		).thenReturn(
 			_createAccountRole("Support Administrator")
@@ -2268,6 +2454,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);
@@ -2332,6 +2524,12 @@ public class AccountsRestControllerTest {
 
 		Mockito.when(
 			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
 		).thenReturn(
 			account
 		);

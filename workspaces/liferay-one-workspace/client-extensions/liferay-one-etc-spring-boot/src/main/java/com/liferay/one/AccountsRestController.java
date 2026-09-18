@@ -449,7 +449,16 @@ public class AccountsRestController extends OneBaseRestController {
 
 		_licenseKeyPermission.check(account.getId(), ActionKeys.UPDATE, jwt);
 
-		_licenseKeyPermission.checkSelfProvisioning(account);
+		Account licensingAccount = _accountService.fetchAccount(
+			account.getId());
+
+		if (licensingAccount == null) {
+			throw new PrincipalException(
+				"No account exists with external reference code " +
+					externalReferenceCode);
+		}
+
+		_licenseKeyPermission.checkSelfProvisioning(licensingAccount);
 
 		JSONArray jsonArray = new JSONArray(json);
 
@@ -463,7 +472,7 @@ public class AccountsRestController extends OneBaseRestController {
 		}
 
 		boolean allowPermanentLicenses = AccountUtil.getCustomFieldBoolean(
-			account, "allowPermanentLicenses", true);
+			licensingAccount, "allowPermanentLicenses", true);
 		boolean complimentary = false;
 		List<Entitlement> entitlements = new ArrayList<>();
 		Map<Long, Long> pendingServerCounts = new HashMap<>();
@@ -494,7 +503,7 @@ public class AccountsRestController extends OneBaseRestController {
 							"at once");
 				}
 
-				_validateComplimentary(account, jsonObject);
+				_validateComplimentary(licensingAccount, jsonObject);
 
 				complimentary = true;
 			}
