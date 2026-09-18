@@ -970,6 +970,46 @@ public class LicenseKeysRestControllerTest {
 	}
 
 	@Test
+	public void testPutLicenseKeysActivateRejectsMultipleAccounts()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey1 = _createLicenseKey(1L, _ENTITLEMENT_ID);
+
+		LicenseKey licenseKey2 = _createLicenseKey(2L, _ENTITLEMENT_ID);
+
+		Mockito.when(
+			licenseKey2.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID + 1
+		);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			List.of(licenseKey1, licenseKey2)
+		);
+
+		ResponseStatusException responseStatusException =
+			Assertions.assertThrows(
+				ResponseStatusException.class,
+				() -> licenseKeysRestController.putLicenseKeysActivate(
+					null, new long[] {1L, 2L}));
+
+		Assertions.assertEquals(
+			HttpStatus.BAD_REQUEST, responseStatusException.getStatusCode());
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).updateLicenseKeyActive(
+			Mockito.anyBoolean(), Mockito.anyLong()
+		);
+	}
+
+	@Test
 	public void testPutLicenseKeysActivateThrowsForbiddenWhenAccountNotManageable()
 		throws Exception {
 
@@ -1089,6 +1129,7 @@ public class LicenseKeysRestControllerTest {
 			_createController();
 
 		LicenseKey licenseKey1 = _createLicenseKey(1L, _ENTITLEMENT_ID);
+
 		LicenseKey licenseKey2 = _createLicenseKey(2L, _ENTITLEMENT_ID);
 
 		Mockito.when(

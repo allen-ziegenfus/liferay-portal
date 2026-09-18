@@ -29,8 +29,6 @@ import com.liferay.one.service.SubscriptionEntryService;
 import com.liferay.one.util.AccountUtil;
 import com.liferay.one.util.KeyedLock;
 import com.liferay.one.util.LicenseKeyLockUtil;
-import com.liferay.petra.function.UnsafeRunnable;
-import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 
 import java.time.Instant;
@@ -263,8 +261,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
-		return _withAccountLocks(
-			_toAccountEntryIds(licenseKeys),
+		return _keyedLock.withLock(
+			LicenseKeyLockUtil.toAccountLockKey(_toAccountEntryId(licenseKeys)),
 			() -> {
 				Map<Long, Long> pendingServerCounts = new HashMap<>();
 
@@ -464,14 +462,22 @@ public class LicenseKeysRestController extends OneBaseRestController {
 		return licenseKeys;
 	}
 
-	private Set<Long> _toAccountEntryIds(List<LicenseKey> licenseKeys) {
+	private long _toAccountEntryId(List<LicenseKey> licenseKeys) {
 		Set<Long> accountEntryIds = new TreeSet<>();
 
 		for (LicenseKey licenseKey : licenseKeys) {
 			accountEntryIds.add(licenseKey.getAccountEntryId());
 		}
 
-		return accountEntryIds;
+		if (accountEntryIds.size() > 1) {
+			throw new ResponseStatusException(
+				HttpStatus.BAD_REQUEST,
+				"Every license key must belong to the same account");
+		}
+
+		Iterator<Long> iterator = accountEntryIds.iterator();
+
+		return iterator.next();
 	}
 
 	private long[] _toDistinctLicenseKeyIds(long[] licenseKeyIds) {
@@ -512,8 +518,8 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_checkManageLicenseKeys(licenseKeys, getMyUserAccount(jwt));
 
-		_withAccountLocks(
-			_toAccountEntryIds(licenseKeys),
+		_keyedLock.withLock(
+			LicenseKeyLockUtil.toAccountLockKey(_toAccountEntryId(licenseKeys)),
 			() -> {
 				if (active) {
 					Map<Long, Long> pendingServerCounts = new HashMap<>();
@@ -583,41 +589,6 @@ public class LicenseKeysRestController extends OneBaseRestController {
 
 		_licenseKeyEntitlementValidator.validateQuota(
 			entitlement, licenseKey.getMaxClusterNodes(), pendingServerCounts);
-	}
-
-	private <T> T _withAccountLocks(
-			Iterator<Long> iterator,
-			UnsafeSupplier<T, Exception> unsafeSupplier)
-		throws Exception {
-
-		if (!iterator.hasNext()) {
-			return unsafeSupplier.get();
-		}
-
-		return _keyedLock.withLock(
-			LicenseKeyLockUtil.toAccountLockKey(iterator.next()),
-			() -> _withAccountLocks(iterator, unsafeSupplier));
-	}
-
-	private void _withAccountLocks(
-			Set<Long> accountEntryIds, UnsafeRunnable<Exception> unsafeRunnable)
-		throws Exception {
-
-		_withAccountLocks(
-			accountEntryIds,
-			() -> {
-				unsafeRunnable.run();
-
-				return null;
-			});
-	}
-
-	private <T> T _withAccountLocks(
-			Set<Long> accountEntryIds,
-			UnsafeSupplier<T, Exception> unsafeSupplier)
-		throws Exception {
-
-		return _withAccountLocks(accountEntryIds.iterator(), unsafeSupplier);
 	}
 
 	private static final MediaType _CONTENT_TYPE_CSV = MediaType.parseMediaType(
