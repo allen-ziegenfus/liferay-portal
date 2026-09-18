@@ -1288,6 +1288,53 @@ public class AccountsRestControllerTest {
 	}
 
 	@Test
+	public void testPostLicenseKeysAccumulatesQuotaAcrossTheBatch()
+		throws Exception {
+
+		AccountsRestController accountsRestController = _createController();
+
+		Account account = _createAccount();
+
+		Mockito.when(
+			_accountService.getAccount(_EXTERNAL_REFERENCE_CODE, null)
+		).thenReturn(
+			account
+		);
+
+		Mockito.when(
+			_accountService.fetchAccount(_ACCOUNT_ID)
+		).thenReturn(
+			account
+		);
+
+		Entitlement entitlement = _createEntitlement(
+			EntitlementConstants.EXTERNAL_REFERENCE_CODE_DXP, 1.0);
+
+		Mockito.when(
+			entitlement.getGrantType()
+		).thenReturn(
+			"metered"
+		);
+
+		Mockito.when(
+			_entitlementService.getEntitlement(_ENTITLEMENT_ID)
+		).thenReturn(
+			entitlement
+		);
+
+		accountsRestController.postLicenseKeys(
+			null, _EXTERNAL_REFERENCE_CODE, _createLicenseKeysBodyJSON(1, 0));
+
+		Mockito.reset(_licenseKeyService);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> accountsRestController.postLicenseKeys(
+				null, _EXTERNAL_REFERENCE_CODE,
+				_createLicenseKeysBodyJSON(2, 0)));
+	}
+
+	@Test
 	public void testPostLicenseKeysAddsLicenseKey() throws Exception {
 		AccountsRestController accountsRestController = _createController();
 
