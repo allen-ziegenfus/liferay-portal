@@ -661,6 +661,88 @@ public class LicenseKeysRestControllerTest {
 	}
 
 	@Test
+	public void testPutLicenseKeysActivate() throws Exception {
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = _createLicenseKey(1L, 7L);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
+
+		licenseKeysRestController.putLicenseKeysActivate(null, new long[] {1L});
+
+		Mockito.verify(
+			_licenseKeyPermission
+		).check(
+			Mockito.any(UserAccount.class), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
+		);
+
+		Mockito.verify(
+			_licenseKeyService
+		).updateLicenseKeyActive(
+			true, 1L
+		);
+	}
+
+	@Test
+	public void testPutLicenseKeysActivateThrowsForbiddenWhenAccountNotManageable()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		LicenseKey licenseKey = _createLicenseKey(1L, 7L);
+
+		Mockito.when(
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
+		).thenReturn(
+			Collections.singletonList(licenseKey)
+		);
+
+		Mockito.doThrow(
+			PrincipalException.class
+		).when(
+			_licenseKeyPermission
+		).check(
+			Mockito.any(UserAccount.class), Mockito.eq(_ACCOUNT_ID),
+			Mockito.eq(ActionKeys.UPDATE)
+		);
+
+		Assertions.assertThrows(
+			PrincipalException.class,
+			() -> licenseKeysRestController.putLicenseKeysActivate(
+				null, new long[] {1L}));
+
+		Mockito.verify(
+			_licenseKeyService, Mockito.never()
+		).updateLicenseKeyActive(
+			Mockito.anyBoolean(), Mockito.anyLong()
+		);
+	}
+
+	@Test
+	public void testPutLicenseKeysActivateWhenLicenseKeyIdsIsEmpty()
+		throws Exception {
+
+		LicenseKeysRestController licenseKeysRestController =
+			_createController();
+
+		Assertions.assertThrows(
+			ResponseStatusException.class,
+			() -> licenseKeysRestController.putLicenseKeysActivate(
+				null, new long[0]));
+
+		Mockito.verifyNoInteractions(_licenseKeyService);
+	}
+
+	@Test
 	public void testPutSubscriptions() throws Exception {
 		LicenseKeysRestController licenseKeysRestController =
 			_createController();
@@ -809,6 +891,32 @@ public class LicenseKeysRestControllerTest {
 			userAccountService);
 
 		return licenseKeysRestController;
+	}
+
+	private LicenseKey _createLicenseKey(
+		long licenseKeyId, long entitlementId) {
+
+		LicenseKey licenseKey = Mockito.mock(LicenseKey.class);
+
+		Mockito.when(
+			licenseKey.getAccountEntryId()
+		).thenReturn(
+			_ACCOUNT_ID
+		);
+
+		Mockito.when(
+			licenseKey.getEntitlementId()
+		).thenReturn(
+			entitlementId
+		);
+
+		Mockito.when(
+			licenseKey.getLicenseKeyId()
+		).thenReturn(
+			licenseKeyId
+		);
+
+		return licenseKey;
 	}
 
 	private static final long _ACCOUNT_ID = 555L;
