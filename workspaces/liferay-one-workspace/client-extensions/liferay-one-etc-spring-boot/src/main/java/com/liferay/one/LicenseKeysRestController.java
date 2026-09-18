@@ -37,9 +37,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -248,14 +250,24 @@ public class LicenseKeysRestController extends OneBaseRestController {
 					" license keys may be extended at once");
 		}
 
-		List<LicenseKey> licenseKeys = new ArrayList<>();
+		long[] licenseKeyIds = new long[jsonArray.length()];
 
 		for (int i = 0; i < jsonArray.length(); i++) {
 			JSONObject jsonObject = jsonArray.getJSONObject(i);
 
-			licenseKeys.add(
-				_licenseKeyService.getLicenseKey(
-					jwt, jsonObject.getLong("licenseKeyId")));
+			licenseKeyIds[i] = jsonObject.getLong("licenseKeyId");
+		}
+
+		Map<Long, LicenseKey> licenseKeysMap = new HashMap<>();
+
+		for (LicenseKey licenseKey : _getLicenseKeys(jwt, licenseKeyIds)) {
+			licenseKeysMap.put(licenseKey.getLicenseKeyId(), licenseKey);
+		}
+
+		List<LicenseKey> licenseKeys = new ArrayList<>();
+
+		for (long licenseKeyId : licenseKeyIds) {
+			licenseKeys.add(licenseKeysMap.get(licenseKeyId));
 		}
 
 		_checkManageLicenseKeys(true, licenseKeys, getMyUserAccount(jwt));

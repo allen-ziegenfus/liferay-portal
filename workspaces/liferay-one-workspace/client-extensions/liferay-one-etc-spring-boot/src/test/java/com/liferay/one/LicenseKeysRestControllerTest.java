@@ -589,9 +589,10 @@ public class LicenseKeysRestControllerTest {
 		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(null, 1L)
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Entitlement entitlement = _createEntitlement();
@@ -641,9 +642,10 @@ public class LicenseKeysRestControllerTest {
 		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(null, 1L)
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Entitlement entitlement = _createEntitlement();
@@ -696,9 +698,10 @@ public class LicenseKeysRestControllerTest {
 		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(null, 1L)
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Entitlement entitlement = _createEntitlement();
@@ -749,9 +752,10 @@ public class LicenseKeysRestControllerTest {
 		LicenseKey licenseKey = _createLicenseKey(1L, 0L);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(null, 1L)
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Assertions.assertThrows(
@@ -770,9 +774,10 @@ public class LicenseKeysRestControllerTest {
 		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(null, 1L)
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Entitlement entitlement = _createEntitlement(
@@ -806,9 +811,10 @@ public class LicenseKeysRestControllerTest {
 		LicenseKey licenseKey = _createLicenseKey(1L, _ENTITLEMENT_ID);
 
 		Mockito.when(
-			_licenseKeyService.getLicenseKey(null, 1L)
+			_licenseKeyService.getLicenseKeysByIds(
+				Mockito.any(), Mockito.any(long[].class))
 		).thenReturn(
-			licenseKey
+			Collections.singletonList(licenseKey)
 		);
 
 		Entitlement entitlement = _createEntitlement();
