@@ -45,7 +45,7 @@ function main {
 		--volume "${license_dir}:/mnt/deploy" \
 		liferay/dxp:latest \
 		-c \
-		"cp /opt/liferay/deploy/trial-dxp-license*.xml /mnt/deploy/license.xml"
+		"cp \$(ls /opt/liferay/deploy/trial-dxp-license*.xml /opt/liferay/osgi/modules/trial-dxp-license*.xml 2>/dev/null | head -1) /mnt/deploy/license.xml"
 }
 
 main "${@}"
