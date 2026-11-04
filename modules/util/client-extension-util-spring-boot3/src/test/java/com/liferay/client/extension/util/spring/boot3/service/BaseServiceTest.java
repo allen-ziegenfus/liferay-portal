@@ -22,6 +22,7 @@ import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 
 import org.springframework.http.HttpStatusCode;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 /**
@@ -42,6 +43,20 @@ public class BaseServiceTest {
 	@Test
 	public void testDoGet() {
 		_testDoGet(null, 403);
+	}
+
+	@Test
+	public void testDoGetReusesWebClient() {
+		TestService testService = new TestService();
+
+		String path = "/" + UUID.randomUUID();
+
+		String uri = _getEndpoint("GET", path, "{}", 200);
+
+		testService.doGet(URI.create(uri));
+		testService.doGet(URI.create(uri));
+
+		Assert.assertEquals(1, testService.getWebClientCount());
 	}
 
 	@Test
@@ -158,6 +173,19 @@ public class BaseServiceTest {
 		public String doPost(String body, URI uri) {
 			return post(body, Collections.emptyMap(), uri);
 		}
+
+		public int getWebClientCount() {
+			return _webClientCount;
+		}
+
+		@Override
+		protected ExchangeFilterFunction getWebClientExchangeFilterFunction() {
+			_webClientCount++;
+
+			return super.getWebClientExchangeFilterFunction();
+		}
+
+		private int _webClientCount;
 
 	}
 
