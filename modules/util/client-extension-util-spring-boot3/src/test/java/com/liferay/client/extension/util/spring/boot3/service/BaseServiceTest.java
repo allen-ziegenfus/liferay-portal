@@ -51,12 +51,12 @@ public class BaseServiceTest {
 
 		String path = "/" + UUID.randomUUID();
 
-		String uri = _getEndpoint("GET", path, "{}", 200);
+		String uriString = _getEndpoint("GET", path, "{}", 200);
 
-		testService.doGet(URI.create(uri));
-		testService.doGet(URI.create(uri));
+		testService.doGet(URI.create(uriString));
+		testService.doGet(URI.create(uriString));
 
-		Assert.assertEquals(1, testService.getWebClientCount());
+		Assert.assertEquals(1, testService.getWebClientsCount());
 	}
 
 	@Test
@@ -80,10 +80,10 @@ public class BaseServiceTest {
 
 		String path = "/" + UUID.randomUUID();
 
-		String uri = _getEndpoint("GET", path, "{\"total\": 1}", 200);
+		String uriString = _getEndpoint("GET", path, "{\"total\": 1}", 200);
 
 		Assert.assertEquals(
-			"{\"total\": 1}", testService.doGet(URI.create(uri)));
+			"{\"total\": 1}", testService.doGet(URI.create(uriString)));
 	}
 
 	@Test
@@ -93,9 +93,9 @@ public class BaseServiceTest {
 
 			String path = "/" + UUID.randomUUID();
 
-			String uri = _getEndpoint("POST", path, null, 403);
+			String uriString = _getEndpoint("POST", path, null, 403);
 
-			testService.doPost("{}", URI.create(uri));
+			testService.doPost("{}", URI.create(uriString));
 
 			Assert.fail();
 		}
@@ -142,9 +142,10 @@ public class BaseServiceTest {
 
 			String path = "/" + UUID.randomUUID();
 
-			String uri = _getEndpoint("GET", path, responseBody, statusCode);
+			String uriString = _getEndpoint(
+				"GET", path, responseBody, statusCode);
 
-			testService.doGet(URI.create(uri));
+			testService.doGet(URI.create(uriString));
 
 			Assert.fail();
 		}
@@ -174,18 +175,18 @@ public class BaseServiceTest {
 			return post(body, Collections.emptyMap(), uri);
 		}
 
-		public int getWebClientCount() {
-			return _webClientCount;
+		public int getWebClientsCount() {
+			return _webClientsCount;
 		}
 
 		@Override
 		protected ExchangeFilterFunction getWebClientExchangeFilterFunction() {
-			_webClientCount++;
+			_webClientsCount++;
 
 			return super.getWebClientExchangeFilterFunction();
 		}
 
-		private int _webClientCount;
+		private int _webClientsCount;
 
 	}
 
