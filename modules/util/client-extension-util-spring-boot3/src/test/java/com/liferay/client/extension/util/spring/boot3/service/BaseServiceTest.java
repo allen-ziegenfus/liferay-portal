@@ -51,10 +51,10 @@ public class BaseServiceTest {
 
 		String path = "/" + UUID.randomUUID();
 
-		String uriString = _getEndpoint("GET", path, "{}", 200);
+		String uri = _getEndpoint("GET", path, "{}", 200);
 
-		testService.doGet(URI.create(uriString));
-		testService.doGet(URI.create(uriString));
+		testService.doGet(URI.create(uri));
+		testService.doGet(URI.create(uri));
 
 		Assert.assertEquals(1, testService.getWebClientsCount());
 	}
@@ -80,10 +80,10 @@ public class BaseServiceTest {
 
 		String path = "/" + UUID.randomUUID();
 
-		String uriString = _getEndpoint("GET", path, "{\"total\": 1}", 200);
+		String uri = _getEndpoint("GET", path, "{\"total\": 1}", 200);
 
 		Assert.assertEquals(
-			"{\"total\": 1}", testService.doGet(URI.create(uriString)));
+			"{\"total\": 1}", testService.doGet(URI.create(uri)));
 	}
 
 	@Test
@@ -93,9 +93,9 @@ public class BaseServiceTest {
 
 			String path = "/" + UUID.randomUUID();
 
-			String uriString = _getEndpoint("POST", path, null, 403);
+			String uri = _getEndpoint("POST", path, null, 403);
 
-			testService.doPost("{}", URI.create(uriString));
+			testService.doPost("{}", URI.create(uri));
 
 			Assert.fail();
 		}
@@ -142,10 +142,9 @@ public class BaseServiceTest {
 
 			String path = "/" + UUID.randomUUID();
 
-			String uriString = _getEndpoint(
-				"GET", path, responseBody, statusCode);
+			String uri = _getEndpoint("GET", path, responseBody, statusCode);
 
-			testService.doGet(URI.create(uriString));
+			testService.doGet(URI.create(uri));
 
 			Assert.fail();
 		}
