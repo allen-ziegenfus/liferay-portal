@@ -65,7 +65,6 @@ public class BaseServiceTest {
 	public void testDoGetReusesConnection() throws Exception {
 		HttpServer httpServer = HttpServer.create(
 			new InetSocketAddress("localhost", 0), 0);
-
 		Set<Integer> remotePorts = ConcurrentHashMap.newKeySet();
 
 		httpServer.createContext(
@@ -113,11 +112,11 @@ public class BaseServiceTest {
 
 	@Test
 	public void testDoGetReusesWebClient() {
-		TestService testService = new TestService();
-
 		String path = "/" + UUID.randomUUID();
 
 		String uri = _getEndpoint("GET", path, "{}", 200);
+
+		TestService testService = new TestService();
 
 		testService.doGet(URI.create(uri));
 		testService.doGet(URI.create(uri));
