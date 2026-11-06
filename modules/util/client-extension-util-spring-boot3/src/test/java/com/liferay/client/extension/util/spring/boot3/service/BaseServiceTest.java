@@ -5,10 +5,21 @@
 
 package com.liferay.client.extension.util.spring.boot3.service;
 
+import com.sun.net.httpserver.HttpServer;
+
+import java.io.OutputStream;
+
+import java.net.InetSocketAddress;
 import java.net.URI;
 
+import java.nio.charset.StandardCharsets;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -22,8 +33,13 @@ import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
 
 import org.springframework.http.HttpStatusCode;
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import reactor.core.publisher.Mono;
 
 /**
  * @author Allen Ziegenfus
@@ -46,6 +62,56 @@ public class BaseServiceTest {
 	}
 
 	@Test
+	public void testDoGetReusesConnection() throws Exception {
+		HttpServer httpServer = HttpServer.create(
+			new InetSocketAddress("localhost", 0), 0);
+
+		Set<Integer> remotePorts = ConcurrentHashMap.newKeySet();
+
+		httpServer.createContext(
+			"/",
+			httpExchange -> {
+				InetSocketAddress inetSocketAddress =
+					httpExchange.getRemoteAddress();
+
+				remotePorts.add(inetSocketAddress.getPort());
+
+				byte[] bytes = "{}".getBytes(StandardCharsets.UTF_8);
+
+				httpExchange.sendResponseHeaders(200, bytes.length);
+
+				try (OutputStream outputStream =
+						httpExchange.getResponseBody()) {
+
+					outputStream.write(bytes);
+				}
+			});
+
+		httpServer.start();
+
+		try {
+			InetSocketAddress inetSocketAddress = httpServer.getAddress();
+
+			URI uri = URI.create(
+				"http://localhost:" + inetSocketAddress.getPort());
+
+			TestService testService1 = new TestService();
+
+			testService1.doGet(uri);
+			testService1.doGet(uri);
+
+			TestService testService2 = new TestService();
+
+			testService2.doGet(uri);
+
+			Assert.assertEquals(remotePorts.toString(), 1, remotePorts.size());
+		}
+		finally {
+			httpServer.stop(0);
+		}
+	}
+
+	@Test
 	public void testDoGetReusesWebClient() {
 		TestService testService = new TestService();
 
@@ -56,7 +122,14 @@ public class BaseServiceTest {
 		testService.doGet(URI.create(uri));
 		testService.doGet(URI.create(uri));
 
-		Assert.assertEquals(1, testService.getWebClientsCount());
+		List<ExchangeFilterFunction> exchangeFilterFunctions =
+			testService.getExchangeFilterFunctions();
+
+		Assert.assertEquals(
+			exchangeFilterFunctions.toString(), 2,
+			exchangeFilterFunctions.size());
+		Assert.assertSame(
+			exchangeFilterFunctions.get(0), exchangeFilterFunctions.get(1));
 	}
 
 	@Test
@@ -174,18 +247,33 @@ public class BaseServiceTest {
 			return post(body, Collections.emptyMap(), uri);
 		}
 
-		public int getWebClientsCount() {
-			return _webClientsCount;
+		public List<ExchangeFilterFunction> getExchangeFilterFunctions() {
+			return _exchangeFilterFunctions;
 		}
 
 		@Override
 		protected ExchangeFilterFunction getWebClientExchangeFilterFunction() {
-			_webClientsCount++;
+			ExchangeFilterFunction exchangeFilterFunction =
+				super.getWebClientExchangeFilterFunction();
 
-			return super.getWebClientExchangeFilterFunction();
+			return new ExchangeFilterFunction() {
+
+				@Override
+				public Mono<ClientResponse> filter(
+					ClientRequest clientRequest,
+					ExchangeFunction exchangeFunction) {
+
+					_exchangeFilterFunctions.add(this);
+
+					return exchangeFilterFunction.filter(
+						clientRequest, exchangeFunction);
+				}
+
+			};
 		}
 
-		private int _webClientsCount;
+		private final List<ExchangeFilterFunction> _exchangeFilterFunctions =
+			new ArrayList<>();
 
 	}
 
