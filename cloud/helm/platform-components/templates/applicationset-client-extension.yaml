@@ -73,11 +73,12 @@ spec:
     {{- /*
     Maps the client extension descriptor that Workspace publishes onto the
     liferay-client-extension chart. The descriptor holds the client
-    extension's LCP.json as it is, under lcp, so the platform decides which
-    of its fields to use. The descriptor comes from the customer's
-    registry, so every value is built into a dict and written with toJson,
-    never interpolated into YAML. Nothing here may fail the template, because
-    a failing template stops the ApplicationSet from updating any of its
+    extension's LCP.json as it is, under lcp, so the platform decides which of
+    its fields to use. Its cpu, in cores, and memory, in megabytes, become
+    resource requests. The descriptor comes from the customer's registry, so
+    every value is built into a dict and written with toJson, never
+    interpolated into YAML. Nothing here may fail the template, because a
+    failing template stops the ApplicationSet from updating any of its
     Applications: maps of the wrong type become empty, the port and replicas
     are coerced to integers (a port that is not one becomes 80), and the
     probes are passed to the chart as they are, where a bad probe only fails
@@ -101,6 +102,12 @@ spec:
 {{- if not (kindIs "map" $loadBalancer) }}{{ $loadBalancer = dict }}{{ end }}
 {{- $workload := dict "containerPort" (get $loadBalancer "targetPort" | int | default 80) "enabled" $workloadEnabled "env" $env "kind" $kind "replicas" (get $lcp "scale" | default 1 | int) }}
 {{- with get $lcp "schedule" }}{{ $_ := set $workload "schedule" (toString .) }}{{ end }}
+{{- $requests := dict }}
+{{- $cpu := get $lcp "cpu" }}
+{{- if and (or (kindIs "float64" $cpu) (kindIs "int" $cpu) (kindIs "int64" $cpu)) (gt (float64 $cpu) 0.0) }}{{ $_ := set $requests "cpu" (printf "%dm" (mulf (float64 $cpu) 1000 | ceil | int)) }}{{ end }}
+{{- $memory := get $lcp "memory" }}
+{{- if and (or (kindIs "float64" $memory) (kindIs "int" $memory) (kindIs "int64" $memory)) (gt (float64 $memory) 0.0) }}{{ $_ := set $requests "memory" (printf "%dMi" (float64 $memory | ceil | int)) }}{{ end }}
+{{- if $requests }}{{ $_ := set $workload "resources" (dict "requests" $requests) }}{{ end }}
 {{- $startupProbe := dict }}
 {{- range $probeName := list "livenessProbe" "readinessProbe" }}
 {{- $probe := get $lcp $probeName }}
