@@ -10,8 +10,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.gradle.api.GradleException;
-
 /**
  * @author Gregory Amerson
  */
@@ -25,7 +23,7 @@ public class ClientExtensionDescriptor {
 
 	public static final String TYPE_SERVICE = "service";
 
-	public static final int VERSION = 1;
+	public static final int VERSION = 2;
 
 	public static Map<String, Object> derive(
 		String baseImage, Map<String, Object> configsMap, String imageDigest,
@@ -48,20 +46,8 @@ public class ClientExtensionDescriptor {
 			clientExtensionMap.put("image", imageMap);
 		}
 
-		String oAuthApplicationHeadlessServerERC =
-			_getOAuthApplicationHeadlessServerERC(configsMap);
-
-		if (oAuthApplicationHeadlessServerERC != null) {
-			clientExtensionMap.put(
-				"oauthApplicationHeadlessServerERC",
-				oAuthApplicationHeadlessServerERC);
-		}
-
+		clientExtensionMap.put("lcp", lcpMap);
 		clientExtensionMap.put("type", type);
-
-		if (!type.equals(TYPE_CONFIGURATION)) {
-			clientExtensionMap.put("workload", _getWorkloadMap(lcpMap));
-		}
 
 		return Collections.singletonMap("clientExtension", clientExtensionMap);
 	}
@@ -124,143 +110,6 @@ public class ClientExtensionDescriptor {
 		return TYPE_CONFIGURATION.equals(getType(baseImage));
 	}
 
-	private static Integer _getInteger(Object value) {
-		if (value instanceof Number) {
-			Number number = (Number)value;
-
-			return number.intValue();
-		}
-
-		return null;
-	}
-
-	private static Map<?, ?> _getMap(Object value) {
-		if (value instanceof Map<?, ?>) {
-			return (Map<?, ?>)value;
-		}
-
-		return null;
-	}
-
-	private static String _getOAuthApplicationHeadlessServerERC(
-		Map<String, Object> configsMap) {
-
-		String oAuthApplicationHeadlessServerERC = null;
-
-		for (String configurationKey : configsMap.keySet()) {
-			int index = configurationKey.indexOf(
-				_CONFIGURATION_KEY_HEADLESS_SERVER);
-
-			if (index < 0) {
-				continue;
-			}
-
-			String identifier = configurationKey.substring(
-				index + _CONFIGURATION_KEY_HEADLESS_SERVER.length());
-
-			index = identifier.indexOf('/');
-
-			if (index >= 0) {
-				identifier = identifier.substring(0, index);
-			}
-
-			if ((oAuthApplicationHeadlessServerERC != null) &&
-				!oAuthApplicationHeadlessServerERC.equals(identifier)) {
-
-				throw new GradleException(
-					"Unable to choose between OAuth 2 headless server " +
-						"applications \"" + oAuthApplicationHeadlessServerERC +
-							"\" and \"" + identifier + "\"");
-			}
-
-			oAuthApplicationHeadlessServerERC = identifier;
-		}
-
-		return oAuthApplicationHeadlessServerERC;
-	}
-
-	private static String _getString(Object value) {
-		if (value instanceof String) {
-			String string = (String)value;
-
-			if (!string.isEmpty()) {
-				return string;
-			}
-		}
-
-		return null;
-	}
-
-	private static Map<String, Object> _getWorkloadMap(
-		Map<String, Object> lcpMap) {
-
-		Map<String, Object> workloadMap = new LinkedHashMap<>();
-
-		Map<String, Object> envMap = new TreeMap<>();
-
-		Map<?, ?> lcpEnvMap = _getMap(lcpMap.get("env"));
-
-		if (lcpEnvMap != null) {
-			for (Map.Entry<?, ?> entry : lcpEnvMap.entrySet()) {
-				envMap.put(
-					String.valueOf(entry.getKey()),
-					String.valueOf(entry.getValue()));
-			}
-		}
-
-		workloadMap.put("env", envMap);
-
-		String kind = _getString(lcpMap.get("kind"));
-
-		if (kind == null) {
-			kind = "Deployment";
-		}
-
-		workloadMap.put("kind", kind);
-
-		for (String probeName :
-				new String[] {"livenessProbe", "readinessProbe"}) {
-
-			Map<?, ?> probeMap = _getMap(lcpMap.get(probeName));
-
-			if ((probeMap == null) || probeMap.isEmpty()) {
-				continue;
-			}
-
-			workloadMap.put(probeName, probeMap);
-		}
-
-		Integer port = null;
-
-		Map<?, ?> loadBalancerMap = _getMap(lcpMap.get("loadBalancer"));
-
-		if (loadBalancerMap != null) {
-			port = _getInteger(loadBalancerMap.get("targetPort"));
-		}
-
-		if (port == null) {
-			port = 80;
-		}
-
-		workloadMap.put("port", port);
-
-		Integer replicas = _getInteger(lcpMap.get("scale"));
-
-		if (replicas == null) {
-			replicas = 1;
-		}
-
-		workloadMap.put("replicas", replicas);
-
-		String schedule = _getString(lcpMap.get("schedule"));
-
-		if (schedule != null) {
-			workloadMap.put("schedule", schedule);
-		}
-
-		return workloadMap;
-	}
-
 	private static boolean _isLiferayRepository(
 		String repository, String name) {
 
@@ -274,9 +123,5 @@ public class ClientExtensionDescriptor {
 
 		return false;
 	}
-
-	private static final String _CONFIGURATION_KEY_HEADLESS_SERVER =
-		"com.liferay.oauth2.provider.configuration." +
-			"OAuth2ProviderApplicationHeadlessServerConfiguration~";
 
 }

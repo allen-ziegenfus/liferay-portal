@@ -72,7 +72,9 @@ spec:
                     limit: 10
     {{- /*
     Maps the client extension descriptor that Workspace publishes onto the
-    liferay-client-extension chart. The descriptor comes from the customer's
+    liferay-client-extension chart. The descriptor holds the client
+    extension's LCP.json as it is, under lcp, so the platform decides which
+    of its fields to use. The descriptor comes from the customer's
     registry, so every value is built into a dict and written with toJson,
     never interpolated into YAML. Nothing here may fail the template, because
     a failing template stops the ApplicationSet from updating any of its
@@ -89,19 +91,19 @@ spec:
 {{- if not (kindIs "map" $descriptor) }}{{ $descriptor = dict }}{{ end }}
 {{- $type := toString (get $descriptor "type" | default "service") }}
 {{- $workloadEnabled := ne $type "configuration" }}
-{{- $descriptorWorkload := get $descriptor "workload" }}
-{{- if not (kindIs "map" $descriptorWorkload) }}{{ $descriptorWorkload = dict }}{{ end }}
-{{- $kind := toString (get $descriptorWorkload "kind" | default "Deployment") }}
+{{- $lcp := get $descriptor "lcp" }}
+{{- if not (kindIs "map" $lcp) }}{{ $lcp = dict }}{{ end }}
+{{- $kind := toString (get $lcp "kind" | default "Deployment") }}
 {{- $env := dict }}
-{{- $descriptorEnv := get $descriptorWorkload "env" }}
-{{- if kindIs "map" $descriptorEnv }}{{ range $key, $value := $descriptorEnv }}{{ $_ := set $env (toString $key) (toString $value) }}{{ end }}{{ end }}
-{{- $oauthApplicationERC := toString (get $descriptor "oauthApplicationHeadlessServerERC") }}
-{{- if and (eq $type "batch") $oauthApplicationERC }}{{ $_ := set $env "LIFERAY_BATCH_OAUTH_APP_ERC" $oauthApplicationERC }}{{ end }}
-{{- $workload := dict "containerPort" (get $descriptorWorkload "port" | int | default 80) "enabled" $workloadEnabled "env" $env "kind" $kind "replicas" (get $descriptorWorkload "replicas" | default 1 | int) }}
-{{- with get $descriptorWorkload "schedule" }}{{ $_ := set $workload "schedule" (toString .) }}{{ end }}
+{{- $lcpEnv := get $lcp "env" }}
+{{- if kindIs "map" $lcpEnv }}{{ range $key, $value := $lcpEnv }}{{ $_ := set $env (toString $key) (toString $value) }}{{ end }}{{ end }}
+{{- $loadBalancer := get $lcp "loadBalancer" }}
+{{- if not (kindIs "map" $loadBalancer) }}{{ $loadBalancer = dict }}{{ end }}
+{{- $workload := dict "containerPort" (get $loadBalancer "targetPort" | int | default 80) "enabled" $workloadEnabled "env" $env "kind" $kind "replicas" (get $lcp "scale" | default 1 | int) }}
+{{- with get $lcp "schedule" }}{{ $_ := set $workload "schedule" (toString .) }}{{ end }}
 {{- $startupProbe := dict }}
 {{- range $probeName := list "livenessProbe" "readinessProbe" }}
-{{- $probe := get $descriptorWorkload $probeName }}
+{{- $probe := get $lcp $probeName }}
 {{- if and (kindIs "map" $probe) $probe }}
 {{- $_ := set $workload $probeName $probe }}
 {{- $handler := pick $probe "exec" "grpc" "httpGet" "tcpSocket" }}

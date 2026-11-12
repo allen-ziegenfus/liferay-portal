@@ -28,23 +28,20 @@ runGradleTest {
 		Map<String, Object> able = _pullDescriptor(registry, "able").clientExtension
 
 		assert able.configs.size() > 0
-		assert able.descriptorVersion == 1
+		assert able.descriptorVersion == 2
 		assert able.image.digest == digest
 		assert able.image.repository == "${registry}/able"
 		assert able.image.tag == "1.0.0"
-		assert able.serviceId == null
+		assert able.lcp.kind == "Deployment"
+		assert able.lcp.loadBalancer.targetPort == 58081
 		assert able.type == "service"
-		assert able.workload.kind == "Deployment"
-		assert able.workload.port == 58081
-		assert able.workload.replicas == 1
 
 		Map<String, Object> baker = _pullDescriptor(registry, "baker").clientExtension
 
 		assert baker.configs.size() > 0
 		assert baker.image == null
-		assert baker.oauthApplicationHeadlessServerERC == "baker-oauth-application-headless-server"
+		assert baker.lcp.id == "baker"
 		assert baker.type == "configuration"
-		assert baker.workload == null
 	}
 }
 
