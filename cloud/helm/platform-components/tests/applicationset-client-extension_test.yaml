@@ -18,7 +18,7 @@ tests:
     -   asserts:
             -   equal:
                     path: spec.template.metadata.name
-                    value: "{{ index .path.segments 2 }}-{{ index .path.segments 4 }}-{{ base .descriptor }}"
+                    value: "{{ index .path.segments 2 }}-{{ index .path.segments 4 }}-{{ trimSuffix \"-descriptor\" (base .descriptor) }}"
                 template: templates/applicationset-client-extension.yaml
             -   equal:
                     path: spec.template.spec.destination.namespace
@@ -119,8 +119,8 @@ tests:
                     path: spec.template.spec.source
                     value:
                         helm:
-                            releaseName: "{{ base .descriptor }}"
-                            values: "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (base .descriptor)) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (base .descriptor) \"network\" (dict \"gatewayName\" (printf \"%s-%s-gateway\" (index .path.segments 2) (index .path.segments 4)))) $values | toJson }}"
+                            releaseName: "{{ trimSuffix \"-descriptor\" (base .descriptor) }}"
+                            values: "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor))) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%s-%s-gateway\" (index .path.segments 2) (index .path.segments 4)))) $values | toJson }}"
                         path: .
                         repoURL: oci://registry.example.com/charts/liferay-client-extension
                         targetRevision: 0.2.0
