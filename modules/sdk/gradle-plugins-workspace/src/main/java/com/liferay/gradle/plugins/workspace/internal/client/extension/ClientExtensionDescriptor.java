@@ -5,7 +5,10 @@
 
 package com.liferay.gradle.plugins.workspace.internal.client.extension;
 
+import com.liferay.gradle.plugins.workspace.internal.util.StringUtil;
+
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -67,7 +70,16 @@ public class ClientExtensionDescriptor {
 		return Collections.singletonMap("clientExtension", clientExtensionMap);
 	}
 
+	/**
+	 * Returns the image that the last stage of a Dockerfile builds on, which
+	 * is the image the client extension runs. When that stage builds on an
+	 * earlier stage, as in FROM build, it returns the earlier stage's image.
+	 */
 	public static String getBaseImage(String dockerfileText) {
+		String baseImage = "";
+
+		Map<String, String> stageBaseImages = new HashMap<>();
+
 		for (String line : dockerfileText.split("\n")) {
 			String trimmedLine = line.trim();
 
@@ -77,14 +89,30 @@ public class ClientExtensionDescriptor {
 				continue;
 			}
 
-			for (int i = 1; i < tokens.length; i++) {
-				if (!tokens[i].startsWith("--")) {
-					return tokens[i];
-				}
+			int i = 1;
+
+			while ((i < tokens.length) && tokens[i].startsWith("--")) {
+				i++;
 			}
+
+			if (i == tokens.length) {
+				continue;
+			}
+
+			baseImage = stageBaseImages.getOrDefault(
+				StringUtil.toLowerCase(tokens[i]), tokens[i]);
+
+			if (((i + 2) >= tokens.length) ||
+				!tokens[i + 1].equalsIgnoreCase("AS")) {
+
+				continue;
+			}
+
+			stageBaseImages.put(
+				StringUtil.toLowerCase(tokens[i + 2]), baseImage);
 		}
 
-		return "";
+		return baseImage;
 	}
 
 	public static String getRepository(String image) {

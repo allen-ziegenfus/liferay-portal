@@ -5,6 +5,8 @@
 
 package com.liferay.gradle.plugins.workspace.internal.client.extension;
 
+import com.liferay.gradle.plugins.workspace.internal.util.StringUtil;
+
 import java.util.Map;
 
 import org.gradle.api.GradleException;
@@ -109,9 +111,34 @@ public class ClientExtensionDescriptorTest {
 			"liferay/caddy:latest",
 			ClientExtensionDescriptor.getBaseImage(
 				"# A comment\nFROM --platform=linux/amd64 " +
-					"liferay/caddy:latest AS base\nFROM other"));
+					"liferay/caddy:latest\nCOPY . /public_html"));
 		Assert.assertEquals(
 			"", ClientExtensionDescriptor.getBaseImage("COPY . /public_html"));
+	}
+
+	@Test
+	public void testGetBaseImageWhenIsMultiStage() {
+		String dockerfileText = StringUtil.concat(
+			"FROM gradle:8-jdk21 AS build\n", "RUN gradle bootJar\n",
+			"FROM liferay/caddy:latest\n",
+			"COPY --from=build /out /public_html");
+
+		Assert.assertEquals(
+			"liferay/caddy:latest",
+			ClientExtensionDescriptor.getBaseImage(dockerfileText));
+		Assert.assertEquals(
+			ClientExtensionDescriptor.TYPE_FRONTEND,
+			ClientExtensionDescriptor.getType(
+				ClientExtensionDescriptor.getBaseImage(dockerfileText)));
+
+		Assert.assertEquals(
+			"liferay/jar-runner:latest",
+			ClientExtensionDescriptor.getBaseImage(
+				StringUtil.concat(
+					"FROM liferay/jar-runner:latest AS runtime\n",
+					"from --platform=linux/amd64 gradle:8-jdk21 as Build\n",
+					"RUN gradle bootJar\n", "FROM RUNTIME\n",
+					"COPY --from=build /out /opt/liferay")));
 	}
 
 	@Test
