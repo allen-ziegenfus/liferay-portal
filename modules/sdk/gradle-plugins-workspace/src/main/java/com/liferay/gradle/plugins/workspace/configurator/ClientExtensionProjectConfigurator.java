@@ -596,7 +596,7 @@ public class ClientExtensionProjectConfigurator
 			});
 
 		Provider<String> descriptorImageProvider = _getImageProvider(
-			project, "descriptors/");
+			project, "-descriptor");
 
 		TaskProvider<DockerBuildImage>
 			buildClientExtensionDescriptorImageTaskProvider =
@@ -1362,14 +1362,14 @@ public class ClientExtensionProjectConfigurator
 	}
 
 	private Provider<String> _getImageProvider(
-		Project project, String repositoryPrefix) {
+		Project project, String repositorySuffix) {
 
 		Provider<String> registryProvider = _getRegistryProvider(project);
 
 		return registryProvider.zip(
 			_getVersionProvider(project),
 			(registry, version) -> StringUtil.concat(
-				registry, "/", repositoryPrefix, project.getName(), ":",
+				registry, "/", project.getName(), repositorySuffix, ":",
 				version));
 	}
 

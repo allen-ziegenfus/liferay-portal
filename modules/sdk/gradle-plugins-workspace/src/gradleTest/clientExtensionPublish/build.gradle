@@ -11,8 +11,8 @@ runGradleTest {
 		Map<String, Object> catalog = new JsonSlurper().parse(new URL("http://${registry}/v2/_catalog"))
 
 		assert catalog.repositories.contains("able")
-		assert catalog.repositories.contains("descriptors/able")
-		assert catalog.repositories.contains("descriptors/baker")
+		assert catalog.repositories.contains("able-descriptor")
+		assert catalog.repositories.contains("baker-descriptor")
 		assert !catalog.repositories.contains("baker")
 
 		HttpURLConnection httpURLConnection = _openManifest(registry, "able", "1.0.0")
@@ -53,11 +53,11 @@ HttpURLConnection _openManifest(String registry, String name, String reference) 
 }
 
 Map<String, Object> _pullDescriptor(String registry, String name) {
-	Map<String, Object> manifest = new JsonSlurper().parse(_openManifest(registry, "descriptors/${name}", "1.0.0").inputStream)
+	Map<String, Object> manifest = new JsonSlurper().parse(_openManifest(registry, "${name}-descriptor", "1.0.0").inputStream)
 
 	assert manifest.layers.size() == 1
 
-	Map<String, Object> config = new JsonSlurper().parse(new URL("http://${registry}/v2/descriptors/${name}/blobs/${manifest.config.digest}"))
+	Map<String, Object> config = new JsonSlurper().parse(new URL("http://${registry}/v2/${name}-descriptor/blobs/${manifest.config.digest}"))
 
 	assert config.config.Labels["com.liferay.client-extension.descriptor.version"] == "1"
 
@@ -65,7 +65,7 @@ Map<String, Object> _pullDescriptor(String registry, String name) {
 
 	layerFile.parentFile.mkdirs()
 
-	layerFile.bytes = new URL("http://${registry}/v2/descriptors/${name}/blobs/${manifest.layers[0].digest}").bytes
+	layerFile.bytes = new URL("http://${registry}/v2/${name}-descriptor/blobs/${manifest.layers[0].digest}").bytes
 
 	File descriptorFile = tarTree(resources.gzip(layerFile)).matching {
 		include "client-extension-descriptor.json"
