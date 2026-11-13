@@ -1,7 +1,5 @@
 import groovy.json.JsonSlurper
 
-import org.yaml.snakeyaml.Yaml
-
 String registry = project.property("liferay.workspace.client.extension.registry")
 
 task runGradleTest
@@ -34,9 +32,7 @@ runGradleTest {
 		assert able.image.tag == "1.0.0"
 		assert able.serviceId == null
 		assert able.type == "service"
-		assert able.workload.kind == "Deployment"
-		assert able.workload.port == 58081
-		assert able.workload.replicas == 1
+		assert able.workload == null
 
 		Map<String, Object> baker = _pullDescriptor(registry, "baker").clientExtension
 
@@ -61,6 +57,10 @@ Map<String, Object> _pullDescriptor(String registry, String name) {
 
 	assert manifest.layers.size() == 1
 
+	Map<String, Object> config = new JsonSlurper().parse(new URL("http://${registry}/v2/descriptors/${name}/blobs/${manifest.config.digest}"))
+
+	assert config.config.Labels["com.liferay.client-extension.descriptor.version"] == "1"
+
 	File layerFile = new File(buildDir, "pulled-descriptors/${name}.tar.gz")
 
 	layerFile.parentFile.mkdirs()
@@ -68,8 +68,8 @@ Map<String, Object> _pullDescriptor(String registry, String name) {
 	layerFile.bytes = new URL("http://${registry}/v2/descriptors/${name}/blobs/${manifest.layers[0].digest}").bytes
 
 	File descriptorFile = tarTree(resources.gzip(layerFile)).matching {
-		include "client-extension.yaml"
+		include "client-extension-descriptor.json"
 	}.singleFile
 
-	return new Yaml().load(descriptorFile.text)
+	return new JsonSlurper().parse(descriptorFile)
 }
