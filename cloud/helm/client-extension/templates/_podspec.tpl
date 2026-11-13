@@ -48,16 +48,6 @@ containers:
             {{- toYaml . | nindent 12 }}
         {{- end }}
         volumeMounts:
-            {{- if .Values.artifact.reference }}
-            {{- range .Values.artifact.mounts }}
-            -   mountPath: {{ .mountPath }}
-                name: artifact
-                readOnly: true
-                {{- with .subPath }}
-                subPath: {{ . }}
-                {{- end }}
-            {{- end }}
-            {{- end }}
             -   mountPath: /etc/caddy.d
                 name: caddy-d
             -   mountPath: /etc/liferay/lxc/dxp-metadata
@@ -94,12 +84,6 @@ tolerations:
     {{- toYaml . | nindent 4 }}
 {{- end }}
 volumes:
-    {{- with .Values.artifact.reference }}
-    -   image:
-            pullPolicy: {{ $.Values.artifact.pullPolicy }}
-            reference: {{ . }}
-        name: artifact
-    {{- end }}
     -   emptyDir: {}
         name: caddy-d
     -   configMap:
