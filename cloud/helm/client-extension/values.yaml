@@ -4,6 +4,7 @@ clientExtension:
     dxpNamespace: ""
     serviceId: ""
     virtualInstanceId: liferay.com
+descriptor: {}
 fullnameOverride: ""
 image:
     pullPolicy: IfNotPresent
@@ -23,7 +24,7 @@ operatorServiceAccount:
 podAnnotations: {}
 podLabels: {}
 service:
-    enabled: false
+    enabled: null
     port: 80
     type: ClusterIP
 serviceAccount:
@@ -34,9 +35,9 @@ workload:
     affinity: {}
     backoffLimit: 6
     containerPort: 80
-    enabled: true
+    enabled: null
     env: {}
-    kind: Deployment
+    kind: ""
     livenessProbe: {}
     nodeSelector: {}
     podSecurityContext:

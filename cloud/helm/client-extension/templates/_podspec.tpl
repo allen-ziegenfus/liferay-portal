@@ -1,5 +1,7 @@
 {{- define "liferay-client-extension.podSpec" -}}
+{{- $descriptor := include "liferay-client-extension.descriptor" . | fromJson -}}
 {{- $extInit := include "liferay-client-extension.requiresExtInit" . -}}
+{{- $kind := include "liferay-client-extension.workloadKind" . -}}
 {{- with .Values.workload.affinity }}
 affinity:
     {{- toYaml . | nindent 4 }}
@@ -12,20 +14,25 @@ containers:
             {{- end }}
             -   name: LIFERAY_ROUTES_DXP
                 value: /etc/liferay/lxc/dxp-metadata
+            {{- $batchOAuthApplicationERC := get $descriptor "oauthApplicationHeadlessServerERC" }}
+            {{- if and (eq (get $descriptor "type") "batch") $batchOAuthApplicationERC (not (hasKey (.Values.workload.env | default dict) "LIFERAY_BATCH_OAUTH_APP_ERC")) }}
+            -   name: LIFERAY_BATCH_OAUTH_APP_ERC
+                value: {{ $batchOAuthApplicationERC | quote }}
+            {{- end }}
             {{- range $name, $value := .Values.workload.env }}
             {{- if not (has $name (list "LIFERAY_ROUTES_CLIENT_EXTENSION" "LIFERAY_ROUTES_DXP")) }}
             -   name: {{ $name }}
                 value: {{ $value | quote }}
             {{- end }}
             {{- end }}
-        image: "{{ required "image.repository is required" .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+        image: {{ include "liferay-client-extension.image" . | quote }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- with .Values.workload.livenessProbe }}
         livenessProbe:
             {{- toYaml . | nindent 12 }}
         {{- end }}
         name: client-extension
-        {{- if eq .Values.workload.kind "Deployment" }}
+        {{- if eq $kind "Deployment" }}
         ports:
             -   containerPort: {{ .Values.workload.containerPort }}
                 name: http
@@ -69,7 +76,7 @@ imagePullSecrets:
 nodeSelector:
     {{- toYaml . | nindent 4 }}
 {{- end }}
-{{- if ne .Values.workload.kind "Deployment" }}
+{{- if ne $kind "Deployment" }}
 restartPolicy: Never
 {{- end }}
 {{- with .Values.workload.podSecurityContext }}
