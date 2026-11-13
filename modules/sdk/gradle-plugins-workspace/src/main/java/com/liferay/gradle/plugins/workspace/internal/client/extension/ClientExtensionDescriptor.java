@@ -78,7 +78,7 @@ public class ClientExtensionDescriptor {
 	public static String getBaseImage(String dockerfileText) {
 		String baseImage = "";
 
-		Map<String, String> stageBaseImages = new HashMap<>();
+		Map<String, String> stageBaseImageMap = new HashMap<>();
 
 		for (String line : dockerfileText.split("\n")) {
 			String trimmedLine = line.trim();
@@ -99,7 +99,7 @@ public class ClientExtensionDescriptor {
 				continue;
 			}
 
-			baseImage = stageBaseImages.getOrDefault(
+			baseImage = stageBaseImageMap.getOrDefault(
 				StringUtil.toLowerCase(tokens[i]), tokens[i]);
 
 			if (((i + 2) >= tokens.length) ||
@@ -108,7 +108,7 @@ public class ClientExtensionDescriptor {
 				continue;
 			}
 
-			stageBaseImages.put(
+			stageBaseImageMap.put(
 				StringUtil.toLowerCase(tokens[i + 2]), baseImage);
 		}
 
