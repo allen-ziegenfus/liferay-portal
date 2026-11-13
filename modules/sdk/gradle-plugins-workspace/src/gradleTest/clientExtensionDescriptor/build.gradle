@@ -1,0 +1,35 @@
+import groovy.json.JsonSlurper
+
+task runGradleTest
+
+runGradleTest {
+	dependsOn ":client-extensions:able:createClientExtensionDescriptor", ":client-extensions:baker:createClientExtensionDescriptor"
+
+	doLast {
+		Map<String, Object> able = _readDescriptor("able").clientExtension
+
+		assert able.configs.size() > 0
+		assert able.descriptorVersion == 1
+		assert able.image.digest == null
+		assert able.image.repository == "localhost:5999/able"
+		assert able.image.tag == "1.0.0"
+		assert able.type == "service"
+		assert able.workload == null
+
+		Map<String, Object> baker = _readDescriptor("baker").clientExtension
+
+		assert baker.configs.size() > 0
+		assert baker.image == null
+		assert baker.oauthApplicationHeadlessServerERC == "baker-oauth-application-headless-server"
+		assert baker.type == "configuration"
+
+		String dockerfileText = project(":client-extensions:able").file("build/client-extension-descriptor/Dockerfile").text
+
+		assert dockerfileText.contains("COPY client-extension-descriptor.json /")
+		assert dockerfileText.contains("LABEL com.liferay.client-extension.descriptor.version=\"1\"")
+	}
+}
+
+Map<String, Object> _readDescriptor(String name) {
+	return new JsonSlurper().parse(project(":client-extensions:${name}").file("build/client-extension-descriptor/client-extension-descriptor.json"))
+}
