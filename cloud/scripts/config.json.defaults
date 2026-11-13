@@ -39,11 +39,11 @@
 			},
 			"liferay-platform": {
 				"registry": "us-central1-docker.pkg.dev/external-assets-prd/liferay-helm-chart",
-				"version": "0.3.1"
+				"version": "0.3.2"
 			},
 			"liferay-platform-components": {
 				"registry": "us-central1-docker.pkg.dev/external-assets-prd/liferay-helm-chart",
-				"version": "0.3.2"
+				"version": "0.3.3"
 			},
 			"observability": {
 				"registry": "us-central1-docker.pkg.dev/external-assets-prd/liferay-helm-chart",

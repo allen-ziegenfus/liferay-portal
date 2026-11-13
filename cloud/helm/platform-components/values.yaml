@@ -34,7 +34,7 @@ argocd:
 clientExtensions:
     chart:
         repoURL: oci://us-central1-docker.pkg.dev/external-assets-prd/liferay-helm-chart/liferay-client-extension
-        targetRevision: 0.1.1
+        targetRevision: 0.1.2
     requeueAfterSeconds: 180
 clusterBootstrap:
     enabled: true
