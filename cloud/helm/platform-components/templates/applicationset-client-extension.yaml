@@ -61,7 +61,7 @@ spec:
             labels:
                 {{- include "liferay-platform.labels" . | nindent 16 }}
                 app.kubernetes.io/name: client-extension
-            name: {{ printf "{{ %s }}-{{ %s }}-{{ base .descriptor }}" $projectId $environmentId | quote }}
+            name: {{ printf "{{ %s }}-{{ %s }}-{{ trimSuffix \"-descriptor\" (base .descriptor) }}" $projectId $environmentId | quote }}
         spec:
             destination:
                 namespace: {{ printf "liferay-{{ %s }}-{{ %s }}" $projectId $environmentId | quote }}
@@ -70,7 +70,7 @@ spec:
             source:
                 {{- include "liferay-platform.chartSource" .Values.clientExtensions.chart | nindent 16 }}
                 helm:
-                    releaseName: {{ `{{ base .descriptor }}` | quote }}
+                    releaseName: {{ `{{ trimSuffix "-descriptor" (base .descriptor) }}` | quote }}
                     {{- /*
                     Passes the descriptor that Workspace publishes to the
                     liferay-client-extension chart as it is, which maps it and
@@ -79,7 +79,7 @@ spec:
                     updating any of its Applications. The values from
                     liferay.yaml take precedence.
                     */}}
-                    values: {{ printf "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (base .descriptor)) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (base .descriptor) \"network\" (dict \"gatewayName\" (printf \"%%s-%%s-gateway\" (%s) (%s)))) $values | toJson }}" $projectId $environmentId | quote }}
+                    values: {{ printf "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor))) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%%s-%%s-gateway\" (%s) (%s)))) $values | toJson }}" $projectId $environmentId | quote }}
             syncPolicy:
                 automated:
                     prune: true
