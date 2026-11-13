@@ -5,7 +5,6 @@
 
 package com.liferay.gradle.plugins.workspace.internal.client.extension;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.gradle.api.GradleException;
@@ -20,14 +19,8 @@ public class ClientExtensionDescriptorTest {
 
 	@Test
 	public void testDerive() {
-		Map<String, Object> lcpMap = new LinkedHashMap<>();
-
-		lcpMap.put("env", Map.of("A", "lcp", "PORT", 58081));
-		lcpMap.put("loadBalancer", Map.of("targetPort", 58081));
-		lcpMap.put("scale", 2);
-
 		Map<String, Object> clientExtensionMap = _derive(
-			Map.of("key~able", Map.of()), "liferay/jar-runner:latest", lcpMap);
+			Map.of("key~able", Map.of()), "liferay/jar-runner:latest");
 
 		Assert.assertEquals(
 			Map.of("key~able", Map.of()), clientExtensionMap.get("configs"));
@@ -45,11 +38,7 @@ public class ClientExtensionDescriptorTest {
 		Assert.assertEquals(
 			ClientExtensionDescriptor.TYPE_SERVICE,
 			clientExtensionMap.get("type"));
-		Assert.assertEquals(
-			Map.of(
-				"env", Map.of("A", "lcp", "PORT", "58081"), "kind",
-				"Deployment", "port", 58081, "replicas", 2),
-			clientExtensionMap.get("workload"));
+		Assert.assertNull(clientExtensionMap.get("workload"));
 	}
 
 	@Test
@@ -60,7 +49,7 @@ public class ClientExtensionDescriptorTest {
 					"OAuth2ProviderApplicationHeadlessServerConfiguration~" +
 						"able-batch/liferay.com",
 				Map.of()),
-			"liferay/batch:latest", Map.of("kind", "Job"));
+			"liferay/batch:latest");
 
 		Assert.assertEquals(
 			"able-batch",
@@ -69,19 +58,13 @@ public class ClientExtensionDescriptorTest {
 			ClientExtensionDescriptor.TYPE_BATCH,
 			clientExtensionMap.get("type"));
 
-		Map<String, Object> workloadMap =
-			(Map<String, Object>)clientExtensionMap.get("workload");
-
-		Assert.assertEquals(Map.of(), workloadMap.get("env"));
-		Assert.assertEquals("Job", workloadMap.get("kind"));
-
 		clientExtensionMap = _derive(
 			Map.of(
 				_CONFIGURATION_KEY_HEADLESS_SERVER + "able-batch/able.com",
 				Map.of(),
 				_CONFIGURATION_KEY_HEADLESS_SERVER + "able-batch/liferay.com",
 				Map.of()),
-			"liferay/batch:latest", Map.of());
+			"liferay/batch:latest");
 
 		Assert.assertEquals(
 			"able-batch",
@@ -96,7 +79,7 @@ public class ClientExtensionDescriptorTest {
 					_CONFIGURATION_KEY_HEADLESS_SERVER +
 						"baker-batch/liferay.com",
 					Map.of()),
-				"liferay/batch:latest", Map.of());
+				"liferay/batch:latest");
 
 			Assert.fail();
 		}
@@ -111,36 +94,13 @@ public class ClientExtensionDescriptorTest {
 	@Test
 	public void testDeriveWhenIsConfigurationOnly() {
 		Map<String, Object> clientExtensionMap = _derive(
-			Map.of(), "liferay/noop", Map.of());
+			Map.of(), "liferay/noop");
 
 		Assert.assertNull(clientExtensionMap.get("image"));
 		Assert.assertEquals(
 			ClientExtensionDescriptor.TYPE_CONFIGURATION,
 			clientExtensionMap.get("type"));
 		Assert.assertNull(clientExtensionMap.get("workload"));
-	}
-
-	@Test
-	public void testDeriveWhenLCPJsonHasProbesAndSchedule() {
-		Map<String, Object> readinessProbeMap = new LinkedHashMap<>();
-
-		readinessProbeMap.put("httpGet", Map.of("path", "/ready"));
-		readinessProbeMap.put("timeoutSeconds", 5);
-
-		Map<String, Object> clientExtensionMap = _derive(
-			Map.of(), "liferay/jar-runner:latest",
-			Map.of(
-				"kind", "CronJob", "livenessProbe", Map.of(), "readinessProbe",
-				readinessProbeMap, "schedule", "*/5 * * * *"));
-
-		Map<String, Object> workloadMap =
-			(Map<String, Object>)clientExtensionMap.get("workload");
-
-		Assert.assertNull(workloadMap.get("livenessProbe"));
-		Assert.assertEquals(
-			readinessProbeMap, workloadMap.get("readinessProbe"));
-		Assert.assertEquals("*/5 * * * *", workloadMap.get("schedule"));
-		Assert.assertNull(workloadMap.get("startupProbe"));
 	}
 
 	@Test
@@ -180,12 +140,10 @@ public class ClientExtensionDescriptorTest {
 	}
 
 	private Map<String, Object> _derive(
-		Map<String, Object> configsMap, String baseImage,
-		Map<String, Object> lcpMap) {
+		Map<String, Object> configsMap, String baseImage) {
 
 		Map<String, Object> descriptorMap = ClientExtensionDescriptor.derive(
-			baseImage, configsMap, "sha256:1", "registry/able", "1.0.0",
-			lcpMap);
+			baseImage, configsMap, "sha256:1", "registry/able", "1.0.0");
 
 		Assert.assertEquals(descriptorMap.toString(), 1, descriptorMap.size());
 

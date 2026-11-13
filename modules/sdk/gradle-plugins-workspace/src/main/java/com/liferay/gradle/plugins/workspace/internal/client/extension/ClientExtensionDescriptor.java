@@ -17,6 +17,11 @@ import org.gradle.api.GradleException;
  */
 public class ClientExtensionDescriptor {
 
+	public static final String FILE_NAME = "client-extension-descriptor.json";
+
+	public static final String LABEL_VERSION =
+		"com.liferay.client-extension.descriptor.version";
+
 	public static final String TYPE_BATCH = "batch";
 
 	public static final String TYPE_CONFIGURATION = "configuration";
@@ -29,7 +34,7 @@ public class ClientExtensionDescriptor {
 
 	public static Map<String, Object> derive(
 		String baseImage, Map<String, Object> configsMap, String imageDigest,
-		String imageRepository, String imageTag, Map<String, Object> lcpMap) {
+		String imageRepository, String imageTag) {
 
 		String type = getType(baseImage);
 
@@ -58,10 +63,6 @@ public class ClientExtensionDescriptor {
 		}
 
 		clientExtensionMap.put("type", type);
-
-		if (!type.equals(TYPE_CONFIGURATION)) {
-			clientExtensionMap.put("workload", _getWorkloadMap(lcpMap));
-		}
 
 		return Collections.singletonMap("clientExtension", clientExtensionMap);
 	}
@@ -124,24 +125,6 @@ public class ClientExtensionDescriptor {
 		return TYPE_CONFIGURATION.equals(getType(baseImage));
 	}
 
-	private static Integer _getInteger(Object value) {
-		if (value instanceof Number) {
-			Number number = (Number)value;
-
-			return number.intValue();
-		}
-
-		return null;
-	}
-
-	private static Map<?, ?> _getMap(Object value) {
-		if (value instanceof Map<?, ?>) {
-			return (Map<?, ?>)value;
-		}
-
-		return null;
-	}
-
 	private static String _getOAuthApplicationHeadlessServerERC(
 		Map<String, Object> configsMap) {
 
@@ -177,88 +160,6 @@ public class ClientExtensionDescriptor {
 		}
 
 		return oAuthApplicationHeadlessServerERC;
-	}
-
-	private static String _getString(Object value) {
-		if (value instanceof String) {
-			String string = (String)value;
-
-			if (!string.isEmpty()) {
-				return string;
-			}
-		}
-
-		return null;
-	}
-
-	private static Map<String, Object> _getWorkloadMap(
-		Map<String, Object> lcpMap) {
-
-		Map<String, Object> workloadMap = new LinkedHashMap<>();
-
-		Map<String, Object> envMap = new TreeMap<>();
-
-		Map<?, ?> lcpEnvMap = _getMap(lcpMap.get("env"));
-
-		if (lcpEnvMap != null) {
-			for (Map.Entry<?, ?> entry : lcpEnvMap.entrySet()) {
-				envMap.put(
-					String.valueOf(entry.getKey()),
-					String.valueOf(entry.getValue()));
-			}
-		}
-
-		workloadMap.put("env", envMap);
-
-		String kind = _getString(lcpMap.get("kind"));
-
-		if (kind == null) {
-			kind = "Deployment";
-		}
-
-		workloadMap.put("kind", kind);
-
-		for (String probeName :
-				new String[] {"livenessProbe", "readinessProbe"}) {
-
-			Map<?, ?> probeMap = _getMap(lcpMap.get(probeName));
-
-			if ((probeMap == null) || probeMap.isEmpty()) {
-				continue;
-			}
-
-			workloadMap.put(probeName, probeMap);
-		}
-
-		Integer port = null;
-
-		Map<?, ?> loadBalancerMap = _getMap(lcpMap.get("loadBalancer"));
-
-		if (loadBalancerMap != null) {
-			port = _getInteger(loadBalancerMap.get("targetPort"));
-		}
-
-		if (port == null) {
-			port = 80;
-		}
-
-		workloadMap.put("port", port);
-
-		Integer replicas = _getInteger(lcpMap.get("scale"));
-
-		if (replicas == null) {
-			replicas = 1;
-		}
-
-		workloadMap.put("replicas", replicas);
-
-		String schedule = _getString(lcpMap.get("schedule"));
-
-		if (schedule != null) {
-			workloadMap.put("schedule", schedule);
-		}
-
-		return workloadMap;
 	}
 
 	private static boolean _isLiferayRepository(
