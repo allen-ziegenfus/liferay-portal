@@ -9,8 +9,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerPushImage;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
@@ -56,8 +55,6 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskOutputs;
 
-import org.yaml.snakeyaml.DumperOptions;
-
 /**
  * @author Gregory Amerson
  */
@@ -70,7 +67,6 @@ public class PublishClientExtensionTask extends DockerPushImage {
 
 		_clientExtensionConfigFile = objectFactory.fileProperty();
 		_dockerfile = objectFactory.fileProperty();
-		_lcpJsonFile = objectFactory.fileProperty();
 		_outputDir = objectFactory.directoryProperty();
 		_registry = objectFactory.property(String.class);
 		_version = objectFactory.property(String.class);
@@ -102,11 +98,6 @@ public class PublishClientExtensionTask extends DockerPushImage {
 	@InputFile
 	public RegularFileProperty getDockerfile() {
 		return _dockerfile;
-	}
-
-	@Internal
-	public RegularFileProperty getLcpJsonFile() {
-		return _lcpJsonFile;
 	}
 
 	@OutputDirectory
@@ -167,18 +158,27 @@ public class PublishClientExtensionTask extends DockerPushImage {
 
 		outputDir.mkdirs();
 
-		_yamlObjectMapper.writeValue(
-			new File(outputDir, "client-extension.yaml"),
+		ObjectWriter objectWriter =
+			_objectMapper.writerWithDefaultPrettyPrinter();
+
+		objectWriter.writeValue(
+			new File(outputDir, ClientExtensionDescriptor.FILE_NAME),
 			ClientExtensionDescriptor.derive(
 				baseImage, _readJSON(_clientExtensionConfigFile), imageDigest,
-				imageRepository, imageTag, _readJSON(_lcpJsonFile)));
+				imageRepository, imageTag));
 
 		Files.write(
 			new File(
 				outputDir, "Dockerfile"
 			).toPath(),
-			"FROM scratch\n\nCOPY client-extension.yaml /\n".getBytes(
-				StandardCharsets.UTF_8));
+			String.format(
+				"FROM scratch\n\nLABEL %s=\"%d\"\n\nCOPY %s /\n",
+				ClientExtensionDescriptor.LABEL_VERSION,
+				ClientExtensionDescriptor.VERSION,
+				ClientExtensionDescriptor.FILE_NAME
+			).getBytes(
+				StandardCharsets.UTF_8
+			));
 
 		String descriptorImage = getDescriptorImage();
 
@@ -289,25 +289,9 @@ public class PublishClientExtensionTask extends DockerPushImage {
 	}
 
 	private static final ObjectMapper _objectMapper = new ObjectMapper();
-	private static final ObjectMapper _yamlObjectMapper;
-
-	static {
-		DumperOptions dumperOptions = new DumperOptions();
-
-		dumperOptions.setMaxSimpleKeyLength(1024);
-
-		_yamlObjectMapper = new ObjectMapper(
-			YAMLFactory.builder(
-			).disable(
-				YAMLGenerator.Feature.WRITE_DOC_START_MARKER
-			).dumperOptions(
-				dumperOptions
-			).build());
-	}
 
 	private final RegularFileProperty _clientExtensionConfigFile;
 	private final RegularFileProperty _dockerfile;
-	private final RegularFileProperty _lcpJsonFile;
 	private final DirectoryProperty _outputDir;
 	private final Property<String> _registry;
 	private final Property<String> _version;

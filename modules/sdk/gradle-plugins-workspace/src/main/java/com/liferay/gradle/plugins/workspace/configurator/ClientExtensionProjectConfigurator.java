@@ -527,13 +527,6 @@ public class ClientExtensionProjectConfigurator
 
 				imagesSetProperty.addAll(_getRegistryImageProvider(project));
 
-				RegularFileProperty lcpJsonFileProperty =
-					publishClientExtensionTask.getLcpJsonFile();
-
-				lcpJsonFileProperty.fileProvider(
-					createClientExtensionConfigTaskProvider.map(
-						CreateClientExtensionConfigTask::getLcpJsonFile));
-
 				Property<String> registryProperty =
 					publishClientExtensionTask.getRegistry();
 
