@@ -359,6 +359,54 @@ func assertCondition(
 	}
 }
 
+func TestWorkloadSummary(t *testing.T) {
+	testCases := map[string]struct {
+		workload          client.Object
+		workloadAvailable metav1.Condition
+		want              string
+	}{
+		"a CronJob that has not run yet": {
+			workload: &batchv1.CronJob{}, workloadAvailable: metav1.Condition{Reason: ReasonCronJobScheduled},
+			want: "Scheduled",
+		},
+		"a CronJob whose last run failed": {
+			workload: &batchv1.CronJob{}, workloadAvailable: metav1.Condition{Reason: ReasonJobFailed}, want: "Failed",
+		},
+		"a CronJob whose last run succeeded": {
+			workload: &batchv1.CronJob{
+				Status: batchv1.CronJobStatus{LastSuccessfulTime: &metav1.Time{Time: time.Now()}},
+			},
+			workloadAvailable: metav1.Condition{Reason: ReasonCronJobScheduled}, want: "Completed",
+		},
+		"a CronJob with a running Job": {
+			workload: &batchv1.CronJob{
+				Status: batchv1.CronJobStatus{Active: []corev1.ObjectReference{{Name: "able-1"}}},
+			},
+			workloadAvailable: metav1.Condition{Reason: ReasonCronJobScheduled}, want: "Running",
+		},
+		"a Deployment rolling out": {
+			workload: newAvailabilityDeployment(2, 1, 1), want: "1/2",
+		},
+		"a Job that completed": {
+			workload: &batchv1.Job{}, workloadAvailable: metav1.Condition{Reason: ReasonJobComplete}, want: "Completed",
+		},
+		"a Job that failed": {
+			workload: &batchv1.Job{}, workloadAvailable: metav1.Condition{Reason: ReasonJobFailed}, want: "Failed",
+		},
+		"a Job that is running": {
+			workload: &batchv1.Job{}, workloadAvailable: metav1.Condition{Reason: ReasonJobRunning}, want: "Running",
+		},
+	}
+
+	for name, testCase := range testCases {
+		t.Run(name, func(t *testing.T) {
+			if got := workloadSummary(testCase.workload, testCase.workloadAvailable); got != testCase.want {
+				t.Errorf("workloadSummary() = %q, want %q", got, testCase.want)
+			}
+		})
+	}
+}
+
 func newAvailabilityDeployment(
 	replicas int32,
 	availableReplicas int32,
