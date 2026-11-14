@@ -3,6 +3,7 @@ clientExtension:
     domain: ""
     dxpNamespace: ""
     serviceId: ""
+    version: ""
     virtualInstanceId: liferay.com
 descriptor: {}
 fullnameOverride: ""

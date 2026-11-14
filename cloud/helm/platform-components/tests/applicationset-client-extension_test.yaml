@@ -120,7 +120,7 @@ tests:
                     value:
                         helm:
                             releaseName: "{{ trimSuffix \"-descriptor\" (base .descriptor) }}"
-                            values: "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor))) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%s-%s-gateway\" (index .path.segments 2) (index .path.segments 4)))) $values | toJson }}"
+                            values: "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor)) \"version\" .version) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%s-%s-gateway\" (index .path.segments 2) (index .path.segments 4)))) $values | toJson }}"
                         path: .
                         repoURL: oci://registry.example.com/charts/liferay-client-extension
                         targetRevision: 0.2.0

@@ -79,7 +79,7 @@ spec:
                     updating any of its Applications. The values from
                     liferay.yaml take precedence.
                     */}}
-                    values: {{ printf "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor))) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%%s-%%s-gateway\" (%s) (%s)))) $values | toJson }}" $projectId $environmentId | quote }}
+                    values: {{ printf "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor)) \"version\" .version) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%%s-%%s-gateway\" (%s) (%s)))) $values | toJson }}" $projectId $environmentId | quote }}
             syncPolicy:
                 automated:
                     prune: true
