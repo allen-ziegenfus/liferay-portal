@@ -40,6 +40,12 @@ spec:
         -   jsonPath: .status.phase
             name: Phase
             type: string
+        -   jsonPath: .spec.version
+            name: Version
+            type: string
+        -   jsonPath: .status.workloadSummary
+            name: Workload-Status
+            type: string
         -   jsonPath: .metadata.creationTimestamp
             name: Age
             type: date
@@ -53,6 +59,10 @@ spec:
             type: string
         -   jsonPath: .status.image
             name: Image
+            priority: 1
+            type: string
+        -   jsonPath: .status.url
+            name: URL
             priority: 1
             type: string
         name: v1alpha1
@@ -96,6 +106,12 @@ spec:
                                 maxLength: 63
                                 minLength: 1
                                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                type: string
+                            version:
+                                description: |-
+                                    The version of the client extension that is deployed, as published by
+                                    Workspace. Informational: the operator shows it but does not act on it.
+                                maxLength: 128
                                 type: string
                             virtualInstanceId:
                                 maxLength: 63
@@ -223,11 +239,22 @@ spec:
                                 -   Pending
                                 -   Ready
                                 type: string
+                            url:
+                                description: |-
+                                    The client extension's address, https://<spec.domain>, when it has a
+                                    domain.
+                                type: string
                             workloadIssues:
                                 items:
                                     type: string
                                 type: array
                             workloadName:
+                                type: string
+                            workloadSummary:
+                                description: |-
+                                    A short summary of the workload: the available replicas of a
+                                    Deployment, such as 1/1, or whether a Job or the last run of a CronJob
+                                    is Running, Completed, or Failed.
                                 type: string
                         type: object
                 type: object

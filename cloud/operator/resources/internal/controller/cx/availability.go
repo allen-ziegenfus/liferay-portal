@@ -200,6 +200,44 @@ func podProblem(pods []corev1.Pod) string {
 	return ""
 }
 
+func workloadSummary(workload client.Object, workloadAvailable metav1.Condition) string {
+	switch workload := workload.(type) {
+	case *appsv1.Deployment:
+		replicas := int32(1)
+
+		if workload.Spec.Replicas != nil {
+			replicas = *workload.Spec.Replicas
+		}
+
+		return fmt.Sprintf("%d/%d", workload.Status.AvailableReplicas, replicas)
+	case *batchv1.CronJob:
+		if workloadAvailable.Reason == ReasonJobFailed {
+			return "Failed"
+		}
+
+		if len(workload.Status.Active) > 0 {
+			return "Running"
+		}
+
+		if workload.Status.LastSuccessfulTime != nil {
+			return "Completed"
+		}
+
+		return "Scheduled"
+	case *batchv1.Job:
+		switch workloadAvailable.Reason {
+		case ReasonJobComplete:
+			return "Completed"
+		case ReasonJobFailed:
+			return "Failed"
+		}
+
+		return "Running"
+	}
+
+	return ""
+}
+
 func (clientExtensionReconciler *ClientExtensionReconciler) listPods(
 	context context.Context,
 	namespace string,

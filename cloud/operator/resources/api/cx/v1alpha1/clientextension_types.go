@@ -63,10 +63,13 @@ func init() {
 // +kubebuilder:printcolumn:JSONPath=`.status.conditions[?(@.type=="Provisioned")].status`,name="Provisioned",type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.conditions[?(@.type=="WorkloadAvailable")].status`,name="Available",type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.phase`,name="Phase",type=string
+// +kubebuilder:printcolumn:JSONPath=`.spec.version`,name="Version",type=string
+// +kubebuilder:printcolumn:JSONPath=`.status.workloadSummary`,name="Workload-Status",type=string
 // +kubebuilder:printcolumn:JSONPath=`.metadata.creationTimestamp`,name="Age",type=date
 // +kubebuilder:printcolumn:JSONPath=`.spec.serviceId`,name="Service-ID",priority=1,type=string
 // +kubebuilder:printcolumn:JSONPath=`.spec.domain`,name="Domain",priority=1,type=string
 // +kubebuilder:printcolumn:JSONPath=`.status.image`,name="Image",priority=1,type=string
+// +kubebuilder:printcolumn:JSONPath=`.status.url`,name="URL",priority=1,type=string
 // +kubebuilder:resource:shortName=cx
 // +kubebuilder:subresource:status
 type ClientExtension struct {
@@ -112,6 +115,12 @@ type ClientExtensionSpec struct {
 	// +kubebuilder:validation:Required
 	VirtualInstanceID string `json:"virtualInstanceId"`
 
+	// The version of the client extension that is deployed, as published by
+	// Workspace. Informational: the operator shows it but does not act on it.
+	// +kubebuilder:validation:MaxLength=128
+	// +optional
+	Version string `json:"version,omitempty"`
+
 	// +optional
 	WorkloadRef *WorkloadRef `json:"workloadRef,omitempty"`
 }
@@ -147,11 +156,22 @@ type ClientExtensionStatus struct {
 	// +optional
 	Phase string `json:"phase,omitempty"`
 
+	// The client extension's address, https://<spec.domain>, when it has a
+	// domain.
+	// +optional
+	URL string `json:"url,omitempty"`
+
 	// +optional
 	WorkloadIssues []string `json:"workloadIssues,omitempty"`
 
 	// +optional
 	WorkloadName string `json:"workloadName,omitempty"`
+
+	// A short summary of the workload: the available replicas of a
+	// Deployment, such as 1/1, or whether a Job or the last run of a CronJob
+	// is Running, Completed, or Failed.
+	// +optional
+	WorkloadSummary string `json:"workloadSummary,omitempty"`
 }
 
 // +kubebuilder:pruning:PreserveUnknownFields

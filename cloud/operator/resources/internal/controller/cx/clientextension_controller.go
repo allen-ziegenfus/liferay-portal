@@ -62,6 +62,11 @@ const deliveryClusterRoleName = "client-extension-delivery-cluster-role"
 
 const extInitGracePeriod = 30 * time.Second
 
+// DXP writes its metadata ConfigMap only once it has started, which can take
+// many minutes on a cold start, so a client extension waits that long before
+// its unknown virtual instance counts as a failure.
+const unknownVirtualInstanceGracePeriod = 30 * time.Minute
+
 const refusalRequeueInterval = time.Minute
 
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
@@ -110,7 +115,7 @@ func (clientExtensionReconciler *ClientExtensionReconciler) Reconcile(
 			newCondition(
 				metav1.ConditionFalse, refusalMessage(&clientExtension, dxpNamespace, refusedReason), refusedReason,
 			),
-			"", nil, nil, nil, nil, "", nil,
+			"", nil, nil, nil, nil, "", "", nil,
 		); error != nil {
 			return controllerruntime.Result{}, error
 		}
@@ -144,14 +149,20 @@ func (clientExtensionReconciler *ClientExtensionReconciler) Reconcile(
 	}
 
 	if apierrors.IsNotFound(error) || (dxpMetadata.Labels[LabelMirror] == "true") {
-		return controllerruntime.Result{}, clientExtensionReconciler.updateStatus(
+		if error := clientExtensionReconciler.updateStatus(
 			&clientExtension, context,
 			newCondition(
 				metav1.ConditionFalse, unknownVirtualInstanceMessage(&clientExtension, dxpNamespace),
 				ReasonUnknownVirtualInstance,
 			),
-			"", nil, nil, nil, nil, "", nil,
-		)
+			"", nil, nil, nil, nil, "", "", nil,
+		); error != nil {
+			return controllerruntime.Result{}, error
+		}
+
+		return controllerruntime.Result{
+			RequeueAfter: unknownVirtualInstanceGraceRemaining(&clientExtension.Status),
+		}, nil
 	}
 
 	payload, error := json.MarshalIndent(clientExtension.Spec.Configs, "", "\t")
@@ -176,7 +187,7 @@ func (clientExtensionReconciler *ClientExtensionReconciler) Reconcile(
 					),
 					ReasonDeliveryNotPermitted,
 				),
-				"", nil, nil, nil, nil, "", nil,
+				"", nil, nil, nil, nil, "", "", nil,
 			)
 	}
 
@@ -191,7 +202,7 @@ func (clientExtensionReconciler *ClientExtensionReconciler) Reconcile(
 				metav1.ConditionFalse, serviceIDConflictMessage(&clientExtension, conflictingConfigMap),
 				ReasonServiceIDConflict,
 			),
-			"", nil, nil, nil, nil, "", nil,
+			"", nil, nil, nil, nil, "", "", nil,
 		)
 	}
 
@@ -256,7 +267,7 @@ func (clientExtensionReconciler *ClientExtensionReconciler) Reconcile(
 		}
 	}
 
-	workloadAcceptedCondition, workloadAvailableCondition, image, workloadIssues, error :=
+	workloadAcceptedCondition, workloadAvailableCondition, image, workloadSummary, workloadIssues, error :=
 		clientExtensionReconciler.workloadCondition(&clientExtension, configMapsWithDigest, context)
 
 	if error != nil {
@@ -267,7 +278,7 @@ func (clientExtensionReconciler *ClientExtensionReconciler) Reconcile(
 		&clientExtension, context,
 		newCondition(metav1.ConditionTrue, message, ReasonDelivered),
 		extProvisionResourceVersion, &mirroredCondition, &provisionedCondition,
-		&workloadAcceptedCondition, workloadAvailableCondition, image, workloadIssues,
+		&workloadAcceptedCondition, workloadAvailableCondition, image, workloadSummary, workloadIssues,
 	); error != nil {
 		return controllerruntime.Result{}, error
 	}
@@ -818,6 +829,16 @@ func unknownVirtualInstanceMessage(clientExtension *cxv1alpha1.ClientExtension, 
 	)
 }
 
+func unknownVirtualInstanceGraceRemaining(status *cxv1alpha1.ClientExtensionStatus) time.Duration {
+	delivered := meta.FindStatusCondition(status.Conditions, cxv1alpha1.ConditionDelivered)
+
+	if (delivered == nil) || (delivered.Reason != ReasonUnknownVirtualInstance) {
+		return 0
+	}
+
+	return max(time.Until(delivered.LastTransitionTime.Add(unknownVirtualInstanceGracePeriod)), 0)
+}
+
 func (clientExtensionReconciler *ClientExtensionReconciler) updateStatus(
 	clientExtension *cxv1alpha1.ClientExtension,
 	context context.Context,
@@ -828,6 +849,7 @@ func (clientExtensionReconciler *ClientExtensionReconciler) updateStatus(
 	workloadAccepted *metav1.Condition,
 	workloadAvailable *metav1.Condition,
 	image string,
+	workloadSummary string,
 	workloadIssues []string,
 ) error {
 	status := clientExtension.Status.DeepCopy()
@@ -872,15 +894,22 @@ func (clientExtensionReconciler *ClientExtensionReconciler) updateStatus(
 
 	status.Image = image
 	status.ObservedGeneration = clientExtension.Generation
+	status.URL = ""
+
+	if clientExtension.Spec.Domain != "" {
+		status.URL = "https://" + clientExtension.Spec.Domain
+	}
 
 	status.WorkloadIssues = workloadIssues
 	status.WorkloadName = ""
+	status.WorkloadSummary = workloadSummary
 
 	if (clientExtension.Spec.WorkloadRef != nil) && (workloadAccepted != nil) {
 		status.WorkloadName = clientExtension.Spec.WorkloadRef.Name
 	}
 
 	if ((ready.Reason == ReasonExtInitMissing) && (extInitGraceRemaining(status) > 0)) ||
+		((ready.Reason == ReasonUnknownVirtualInstance) && (unknownVirtualInstanceGraceRemaining(status) > 0)) ||
 		((ready.Reason == ReasonWorkloadNotFound) && (workloadGraceRemaining(status) > 0)) ||
 		(ready.Reason == ReasonJobRunning) || (ready.Reason == ReasonWorkloadProgressing) {
 
