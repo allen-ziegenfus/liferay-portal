@@ -20,6 +20,9 @@ spec:
     dxpNamespace: {{ . | quote }}
     {{- end }}
     serviceId: {{ include "liferay-client-extension.serviceId" . | quote }}
+    {{- with .Values.clientExtension.version }}
+    version: {{ . | quote }}
+    {{- end }}
     virtualInstanceId: {{ .Values.clientExtension.virtualInstanceId | quote }}
     {{- if include "liferay-client-extension.workloadEnabled" . }}
     workloadRef:
