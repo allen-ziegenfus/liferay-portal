@@ -25,6 +25,7 @@ resource "helm_release" "argocd" {
 					configs={
 						cm={
 							"admin.enabled"=var.argocd_admin_login_enabled
+							"helm.valuesFileSchemes"="cxdescriptor, http, https"
 							"kustomize.buildOptions"="--enable-helm"
 							"resource.customizations.health.argoproj.io_Application"=file("${path.module}/health-argoproj.io_Application.lua")
 							"resource.customizations.health.cx.liferay.com_ClientExtension"=file("${path.module}/health-cx.liferay.com_ClientExtension.lua")
@@ -118,14 +119,6 @@ resource "helm_release" "argocd" {
 						}
 						params={
 							"controller.sync.timeout.seconds"="3600"
-							"reposerver.oci.layer.media.types"=join(
-								",",
-								[
-									"application/vnd.cncf.helm.chart.content.v1.tar+gzip",
-									"application/vnd.docker.image.rootfs.diff.tar.gzip",
-									"application/vnd.oci.image.layer.v1.tar",
-									"application/vnd.oci.image.layer.v1.tar+gzip",
-								])
 							"server.insecure"="true"
 						}
 					}
@@ -152,6 +145,18 @@ resource "helm_release" "argocd" {
 						}
 					}
 					extraObjects=[
+						{
+							apiVersion="v1"
+							data={
+								"cxdescriptor.sh"=file("${path.module}/cxdescriptor/cxdescriptor.sh")
+								"plugin.yaml"=file("${path.module}/cxdescriptor/plugin.yaml")
+							}
+							kind="ConfigMap"
+							metadata={
+								labels=local.common_labels
+								name="argocd-repo-server-cxdescriptor"
+							}
+						},
 						{
 							apiVersion="networking.k8s.io/v1"
 							kind="NetworkPolicy"
@@ -438,6 +443,49 @@ resource "helm_release" "argocd" {
 						}
 					}
 					repoServer={
+						env=[
+							{
+								name="CXDESCRIPTOR_REGISTRIES"
+								value=join(" ", var.client_extension_registries)
+							},
+							{
+								name="HELM_PLUGINS"
+								value="/helm-plugins"
+							},
+						]
+						initContainers=[
+							{
+								command=[
+									"/busybox/sh",
+									"-c",
+									"mkdir -p /helm-plugins/cxdescriptor/bin && cp /cxdescriptor/plugin.yaml /helm-plugins/cxdescriptor && cp /cxdescriptor/cxdescriptor.sh /ko-app/crane /helm-plugins/cxdescriptor/bin && chmod 755 /helm-plugins/cxdescriptor/bin/*",
+								]
+								image="gcr.io/go-containerregistry/crane:debug@sha256:e505815aa3573ae223c2ddcd004c8d4f7a6608df85da429af1e0f6aff728a1f0"
+								name="cxdescriptor"
+								securityContext={
+									allowPrivilegeEscalation=false
+									capabilities={
+										drop=["ALL"]
+									}
+									readOnlyRootFilesystem=true
+									runAsNonRoot=true
+									runAsUser=65532
+									seccompProfile={
+										type="RuntimeDefault"
+									}
+								}
+								volumeMounts=[
+									{
+										mountPath="/cxdescriptor"
+										name="cxdescriptor"
+									},
+									{
+										mountPath="/helm-plugins"
+										name="helm-plugins"
+									},
+								]
+							},
+						]
 						livenessProbe={
 							failureThreshold=6
 							periodSeconds=15
@@ -456,6 +504,25 @@ resource "helm_release" "argocd" {
 								memory="128Mi"
 							}
 						}
+						volumeMounts=[
+							{
+								mountPath="/helm-plugins"
+								name="helm-plugins"
+								readOnly=true
+							},
+						]
+						volumes=[
+							{
+								configMap={
+									name="argocd-repo-server-cxdescriptor"
+								}
+								name="cxdescriptor"
+							},
+							{
+								emptyDir={}
+								name="helm-plugins"
+							},
+						]
 					}
 					server={
 						livenessProbe={

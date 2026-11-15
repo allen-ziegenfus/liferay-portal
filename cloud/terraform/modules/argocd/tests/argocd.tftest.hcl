@@ -1,17 +1,6 @@
 mock_provider "helm" {}
 mock_provider "kubernetes" {}
 mock_provider "random" {}
-run "should_accept_docker_layers_in_oci_artifacts" {
-	assert {
-		condition=contains(split(",", yamldecode(helm_release.argocd.values[0]).configs.params["reposerver.oci.layer.media.types"]), "application/vnd.docker.image.rootfs.diff.tar.gzip")
-		error_message="The repo server must read OCI artifacts that Docker pushed, such as client extension descriptors"
-	}
-	assert {
-		condition=contains(split(",", yamldecode(helm_release.argocd.values[0]).configs.params["reposerver.oci.layer.media.types"]), "application/vnd.cncf.helm.chart.content.v1.tar+gzip")
-		error_message="The repo server must keep reading Helm charts from OCI registries"
-	}
-	command=plan
-}
 run "should_add_every_metrics_rule_when_observability_is_enabled" {
 	assert {
 		condition=[for o in yamldecode(helm_release.argocd.values[0]).extraObjects : o if o.metadata.name == "argocd-application-controller"][0].spec.ingress[0].from[0].namespaceSelector.matchLabels["kubernetes.io/metadata.name"] == "observability"
@@ -152,6 +141,29 @@ run "should_enforce_the_restricted_pod_security_standard" {
 	}
 	command=plan
 }
+run "should_install_the_cxdescriptor_helm_plugin" {
+	assert {
+		condition=contains(split(", ", yamldecode(helm_release.argocd.values[0]).configs.cm["helm.valuesFileSchemes"]), "cxdescriptor")
+		error_message="The repo server must accept cxdescriptor:// value files"
+	}
+	assert {
+		condition=contains(split(", ", yamldecode(helm_release.argocd.values[0]).configs.cm["helm.valuesFileSchemes"]), "https")
+		error_message="The repo server must keep accepting https:// value files"
+	}
+	assert {
+		condition=[for e in yamldecode(helm_release.argocd.values[0]).repoServer.env : e.value if e.name == "HELM_PLUGINS"][0] == "/helm-plugins"
+		error_message="The repo server must load Helm plugins from /helm-plugins"
+	}
+	assert {
+		condition=yamldecode([for o in yamldecode(helm_release.argocd.values[0]).extraObjects : o if o.metadata.name == "argocd-repo-server-cxdescriptor"][0].data["plugin.yaml"]).downloaders[0].protocols == ["cxdescriptor"]
+		error_message="The cxdescriptor plugin must handle the cxdescriptor protocol"
+	}
+	assert {
+		condition=yamldecode(helm_release.argocd.values[0]).repoServer.initContainers[0].securityContext.runAsUser == 65532
+		error_message="The cxdescriptor init container must run as a non-root user in the restricted argocd-system namespace"
+	}
+	command=plan
+}
 run "should_keep_the_chart_resource_exclusions" {
 	assert {
 		condition=alltrue([for kind in ["CertificateSigningRequest", "CiliumEndpoint", "CiliumIdentity", "EndpointSlice", "Endpoints", "Lease", "PolicyReport", "TokenReview"] : anytrue([for exclusion in yamldecode(yamldecode(helm_release.argocd.values[0]).configs.cm["resource.exclusions"]) : contains(exclusion.kinds, kind)])])
@@ -184,6 +196,19 @@ run "should_omit_the_external_url_and_the_dex_connector_by_default" {
 		error_message="The ArgoCD release must omit the SAML connector while ArgoCD is not externally reachable"
 	}
 	command=plan
+}
+run "should_pass_the_client_extension_registries_to_the_cxdescriptor_helm_plugin" {
+	assert {
+		condition=[for e in yamldecode(helm_release.argocd.values[0]).repoServer.env : e.value if e.name == "CXDESCRIPTOR_REGISTRIES"][0] == "docker.io/liferay ghcr.io/example"
+		error_message="The repo server must pass the allowed client extension registries to the cxdescriptor plugin"
+	}
+	command=plan
+	variables {
+		client_extension_registries=[
+			"docker.io/liferay",
+			"ghcr.io/example",
+		]
+	}
 }
 run "should_register_the_client_extension_health_check" {
 	assert {
@@ -239,12 +264,12 @@ run "should_tolerate_the_restore_workflow_by_its_field_manager" {
 }
 run "should_write_the_network_policies_through_extra_objects" {
 	assert {
-		condition=length(yamldecode(helm_release.argocd.values[0]).extraObjects) == 8 && alltrue([for o in yamldecode(helm_release.argocd.values[0]).extraObjects : o.kind == "NetworkPolicy"])
+		condition=length([for o in yamldecode(helm_release.argocd.values[0]).extraObjects : o if o.kind == "NetworkPolicy"]) == 8
 		error_message="The ArgoCD release must render exactly eight NetworkPolicies through extraObjects"
 	}
 	assert {
 		condition=alltrue([for o in yamldecode(helm_release.argocd.values[0]).extraObjects : !contains(keys(o.metadata), "namespace")])
-		error_message="The NetworkPolicies must inherit the release namespace"
+		error_message="The extra objects must inherit the release namespace"
 	}
 	command=plan
 }

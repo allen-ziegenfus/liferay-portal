@@ -26,33 +26,13 @@ spec:
     generators:
         -   matrix:
                 generators:
-                    -   matrix:
-                            generators:
-                                -   git:
-                                        files:
-                                            -   path: {{ $layout.environments }}/{{ $layout.liferayValuesFilename }}
-                                        repoURL: {{ $gitops.repository.url }}
-                                        revision: {{ $gitops.repository.revision }}
-                                {{- /*
-                                Emits one element per entry of liferay.yaml's
-                                clientExtensions list that has a descriptor and
-                                a version, and skips anything else instead of
-                                failing. The entry's values are passed as a
-                                JSON string: the matrix merges the descriptor
-                                file's top-level keys into the same parameters
-                                and keeps this side only for keys it has, so a
-                                map could be extended by the descriptor while a
-                                string that is never empty cannot.
-                                */}}
-                                -   list:
-                                        elementsYaml: {{ `{{ $elements := list }}{{ $clientExtensions := get . "clientExtensions" }}{{ if kindIs "slice" $clientExtensions }}{{ range $clientExtensions }}{{ if and (kindIs "map" .) (kindIs "string" (get . "descriptor")) (get . "descriptor") (get . "version") }}{{ $values := get . "values" }}{{ if not (kindIs "map" $values) }}{{ $values = dict }}{{ end }}{{ $elements = append $elements (dict "descriptor" (get . "descriptor") "valuesJson" (toJson $values) "version" (toString (get . "version"))) }}{{ end }}{{ end }}{{ end }}{{ toJson $elements }}` | quote }}
-                    -   oci:
+                    -   git:
                             files:
-                                -   path: client-extension-descriptor.json
-                            pathParamPrefix: descriptorFile
-                            repoURL: {{ `{{ .descriptor }}` | quote }}
-                            requeueAfterSeconds: {{ .Values.clientExtensions.requeueAfterSeconds }}
-                            revision: {{ `{{ .version }}` | quote }}
+                                -   path: {{ $layout.environments }}/{{ $layout.liferayValuesFilename }}
+                            repoURL: {{ $gitops.repository.url }}
+                            revision: {{ $gitops.repository.revision }}
+                    -   list:
+                            elementsYaml: {{ `{{ get . "clientExtensions" | default list | toJson }}` | quote }}
     goTemplate: true
     goTemplateOptions:
         -   missingkey=error
@@ -69,17 +49,31 @@ spec:
             project: liferay-client-extension
             source:
                 {{- include "liferay-platform.chartSource" .Values.clientExtensions.chart | nindent 16 }}
+                {{- /*
+                The descriptor that Workspace publishes is read for each
+                Application by the repo server's cxdescriptor Helm plugin, so a
+                descriptor that cannot be read or mapped fails only its own
+                Application. The values from liferay.yaml come next, and the
+                parameters, which the ApplicationSet derives, take precedence.
+                */}}
                 helm:
+                    parameters:
+                        -   forceString: true
+                            name: clientExtension.serviceId
+                            value: {{ `{{ trimSuffix "-descriptor" (base .descriptor) }}` | quote }}
+                        -   forceString: true
+                            name: clientExtension.version
+                            value: {{ `{{ .version }}` | quote }}
+                        -   forceString: true
+                            name: fullnameOverride
+                            value: {{ `{{ trimSuffix "-descriptor" (base .descriptor) }}` | quote }}
+                        -   forceString: true
+                            name: network.gatewayName
+                            value: {{ printf "{{ %s }}-{{ %s }}-gateway" $projectId $environmentId | quote }}
                     releaseName: {{ `{{ trimSuffix "-descriptor" (base .descriptor) }}` | quote }}
-                    {{- /*
-                    Passes the descriptor that Workspace publishes to the
-                    liferay-client-extension chart as it is, which maps it and
-                    fails only this Application when it cannot. Nothing here
-                    may fail: a failing template stops the ApplicationSet from
-                    updating any of its Applications. The values from
-                    liferay.yaml take precedence.
-                    */}}
-                    values: {{ printf "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor)) \"version\" .version) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%%s-%%s-gateway\" (%s) (%s)))) $values | toJson }}" $projectId $environmentId | quote }}
+                    valueFiles:
+                        -   {{ `cxdescriptor://{{ trimPrefix "oci://" .descriptor }}:{{ .version }}` | quote }}
+                    values: {{ `{{ get . "values" | default dict | toJson }}` | quote }}
             syncPolicy:
                 automated:
                     prune: true

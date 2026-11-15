@@ -24,9 +24,12 @@ tests:
                     path: spec.template.spec.destination.namespace
                     value: liferay-{{ index .path.segments 2 }}-{{ index .path.segments 4 }}
                 template: templates/applicationset-client-extension.yaml
-            -   matchRegex:
-                    path: spec.template.spec.source.helm.values
-                    pattern: "\\(printf \"%s-%s-gateway\" \\(index \\.path\\.segments 2\\) \\(index \\.path\\.segments 4\\)\\)"
+            -   contains:
+                    content:
+                        forceString: true
+                        name: network.gatewayName
+                        value: "{{ index .path.segments 2 }}-{{ index .path.segments 4 }}-gateway"
+                    path: spec.template.spec.source.helm.parameters
                 template: templates/applicationset-client-extension.yaml
         it: Derives the application names and namespaces from the layout expressions
     -   asserts:
@@ -80,29 +83,21 @@ tests:
                 enabled: false
     -   asserts:
             -   equal:
-                    path: spec.generators[0].matrix.generators[1].oci.repoURL
-                    value: "{{ .descriptor }}"
-                template: templates/applicationset-client-extension.yaml
-            -   equal:
-                    path: spec.generators[0].matrix.generators[1].oci.revision
-                    value: "{{ .version }}"
-                template: templates/applicationset-client-extension.yaml
-            -   equal:
-                    path: spec.generators[0].matrix.generators[1].oci.files
+                    path: spec.template.spec.source.helm.valueFiles
                     value:
-                        -   path: client-extension-descriptor.json
+                        -   "cxdescriptor://{{ trimPrefix \"oci://\" .descriptor }}:{{ .version }}"
                 template: templates/applicationset-client-extension.yaml
-            -   equal:
-                    path: spec.generators[0].matrix.generators[1].oci.requeueAfterSeconds
-                    value: 60
+            -   lengthEqual:
+                    count: 2
+                    path: spec.generators[0].matrix.generators
                 template: templates/applicationset-client-extension.yaml
-        it: Reads each client extension descriptor from its OCI artifact
-        set:
-            clientExtensions:
-                requeueAfterSeconds: 60
+            -   notExists:
+                    path: spec.generators[0].matrix.generators[1].oci
+                template: templates/applicationset-client-extension.yaml
+        it: Reads each client extension descriptor for its own Application, not in a generator
     -   asserts:
             -   equal:
-                    path: spec.generators[0].matrix.generators[0].matrix.generators[0].git
+                    path: spec.generators[0].matrix.generators[0].git
                     value:
                         files:
                             -   path: liferay/projects/*/environments/*/liferay.yaml
@@ -110,17 +105,32 @@ tests:
                         revision: HEAD
                 template: templates/applicationset-client-extension.yaml
             -   equal:
-                    path: spec.generators[0].matrix.generators[0].matrix.generators[1].list.elementsYaml
-                    value: "{{ $elements := list }}{{ $clientExtensions := get . \"clientExtensions\" }}{{ if kindIs \"slice\" $clientExtensions }}{{ range $clientExtensions }}{{ if and (kindIs \"map\" .) (kindIs \"string\" (get . \"descriptor\")) (get . \"descriptor\") (get . \"version\") }}{{ $values := get . \"values\" }}{{ if not (kindIs \"map\" $values) }}{{ $values = dict }}{{ end }}{{ $elements = append $elements (dict \"descriptor\" (get . \"descriptor\") \"valuesJson\" (toJson $values) \"version\" (toString (get . \"version\"))) }}{{ end }}{{ end }}{{ end }}{{ toJson $elements }}"
+                    path: spec.generators[0].matrix.generators[1].list.elementsYaml
+                    value: "{{ get . \"clientExtensions\" | default list | toJson }}"
                 template: templates/applicationset-client-extension.yaml
-        it: Reads the client extensions from each environment's liferay.yaml, with their values as a JSON string
+        it: Reads the client extensions from each environment's liferay.yaml
     -   asserts:
             -   equal:
                     path: spec.template.spec.source
                     value:
                         helm:
+                            parameters:
+                                -   forceString: true
+                                    name: clientExtension.serviceId
+                                    value: "{{ trimSuffix \"-descriptor\" (base .descriptor) }}"
+                                -   forceString: true
+                                    name: clientExtension.version
+                                    value: "{{ .version }}"
+                                -   forceString: true
+                                    name: fullnameOverride
+                                    value: "{{ trimSuffix \"-descriptor\" (base .descriptor) }}"
+                                -   forceString: true
+                                    name: network.gatewayName
+                                    value: "{{ index .path.segments 2 }}-{{ index .path.segments 4 }}-gateway"
                             releaseName: "{{ trimSuffix \"-descriptor\" (base .descriptor) }}"
-                            values: "{{ $values := fromJson .valuesJson }}{{ mergeOverwrite (dict \"clientExtension\" (dict \"serviceId\" (trimSuffix \"-descriptor\" (base .descriptor)) \"version\" .version) \"descriptor\" (get . \"clientExtension\") \"fullnameOverride\" (trimSuffix \"-descriptor\" (base .descriptor)) \"network\" (dict \"gatewayName\" (printf \"%s-%s-gateway\" (index .path.segments 2) (index .path.segments 4)))) $values | toJson }}"
+                            valueFiles:
+                                -   "cxdescriptor://{{ trimPrefix \"oci://\" .descriptor }}:{{ .version }}"
+                            values: "{{ get . \"values\" | default dict | toJson }}"
                         path: .
                         repoURL: oci://registry.example.com/charts/liferay-client-extension
                         targetRevision: 0.2.0
@@ -143,4 +153,4 @@ tests:
                     path: spec.template.spec.source.helm.values
                     pattern: "\\b(fail|required)\\b"
                 template: templates/applicationset-client-extension.yaml
-        it: Passes the descriptor to the chart through toJson, without a template patch or anything that can fail
+        it: Passes the liferay.yaml values to the chart through toJson, without a template patch or anything that can fail
