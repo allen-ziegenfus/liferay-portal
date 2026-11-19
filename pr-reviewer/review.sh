@@ -283,6 +283,11 @@ function _has_file_kind {
 
 	for kind in "${@}"
 	do
+		if [[ ${kind} == groovy ]] && echo "${reviewed_files}" | grep --regexp "[.]gradle$" --regexp "[.]groovy$" > /dev/null
+		then
+			return 0
+		fi
+
 		if [[ ${kind} == java ]] && echo "${reviewed_files}" | grep "[.]java$" > /dev/null
 		then
 			return 0
@@ -504,8 +509,8 @@ _GROUPS=(
 	"ordering-1|201 202 203 204|all"
 	"ordering-2|205 206 207 208 209|all"
 	"utility-methods|3|java"
-	"control-flow|4|java sh"
-	"redundancy-and-visibility|5 8|java"
+	"control-flow|4|groovy java sh"
+	"redundancy-and-visibility|5 8|groovy java"
 	"tests|6|test"
 	"prose-1|70|all"
 	"prose-2|71|all"
