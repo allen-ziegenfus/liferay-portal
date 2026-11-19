@@ -52,7 +52,7 @@ Five principles run through everything:
 ## Control flow and form
 
 - No `switch` or `case`; use an `if` / `else if` / `else` chain. [401]
-- Chain method calls only on a builder or a fluent type (`*Builder`, `Stream`, `Optional`, `Instant`, `JSONArray`, `JSONObject`, and the rest of `ChainingCheck`'s allow list); otherwise assign the result to a local and call on it. [402]
+- Chain method calls only on a builder or a fluent type (`*Builder`, `Stream`, `Optional`, `Instant`, `JSONArray`, `JSONObject`, and the rest of `ChainingCheck`'s allow list); otherwise assign the result to a local and call on it. This includes Groovy and Gradle scripts, where a property read counts as a call. [402]
 - Use an enhanced `for` loop, not an explicit `Iterator` with `while (hasNext())`. [403]
 - Hoist a call out of a loop only when it does real work (database, network, non trivial computation), not for cheap invariant calls like `map.get(key)`, a list index access, or a plain getter — those read more directly inline at the use site. [404]
 - In bash under `set -o errexit`, preincrement a counter with `((++var))` rather than `((var++))` or `var=$((var + 1))`; postincrementing from `0` makes the arithmetic expression evaluate to `0`, which exits `1` and trips `errexit`. [405]
@@ -63,7 +63,7 @@ Five principles run through everything:
 
 ## Removing the unnecessary ("Simplify")
 
-This is the most taste driven area and the hardest to reduce to a rule, so it deserves the most explanation. The codified pieces are small: remove an assertion a later line already proves [501], inline a private constant used once [502], pass an expression directly instead of naming it for one call [503], name a delegating helper after its delegate or inline it [504], drop a narrative message from `assertTrue` and `assertFalse` [505], drop a redundant `L` suffix [506], and divide whole unit values with integer arithmetic rather than a defensive `Math.ceil` [507]. The broader instinct, which a reviewer should apply by judgment:
+This is the most taste driven area and the hardest to reduce to a rule, so it deserves the most explanation. The codified pieces are small: remove an assertion a later line already proves [501], inline a private constant used once [502], pass an expression directly instead of naming it for one call [503], name a delegating helper after its delegate or inline it [504], drop a narrative message from `assertTrue` and `assertFalse` [505], drop a redundant `L` suffix [506], divide whole unit values with integer arithmetic rather than a defensive `Math.ceil` [507], do not add comments that restate the code [508], and return what every caller uses rather than a wrapper each caller unwraps [509]. The broader instinct, which a reviewer should apply by judgment:
 
 - Prefer the form a careful reader grasps fastest: fewer lines, fewer variables, fewer levels of nesting, fewer moving parts.
 - If removing something would not be noticed — a variable, a comment, a guard, an assertion, a wrapper, a `finally` — remove it.
