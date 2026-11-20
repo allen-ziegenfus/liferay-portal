@@ -1,0 +1,97 @@
+sourceCompatibility = "17"
+targetCompatibility = "17"
+
+// ---------------------------------------------------------------------------
+// ONE ADAPTER, NOT ONE PER SPRING BOOT GENERATION.
+//
+// Verified by compiling this exact source against both stacks:
+//
+//   Spring Boot 3.5.14 / Spring Security 6.5.10 / Framework 6.2.19  -> COMPILES
+//   Spring Boot 4.1.1  / Spring Security 7.1.1  / Framework 7.0.9   -> COMPILES
+//
+// Nothing this adapter touches moved between the two majors:
+//
+//   @AutoConfiguration, @ConditionalOnProperty, @ConditionalOnMissingBean,
+//   @ConditionalOnClass, @ConditionalOnWebApplication,
+//   @EnableConfigurationProperties, @ConfigurationProperties
+//     -> identical packages in 3.5.14 and 4.1.1
+//   META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+//     -> identical resource name in 3.5.14 and 4.1.1
+//   The security filter chain
+//     -> written in the lambda DSL, which is the only form that exists in 7
+//   JSON
+//     -> never named. RestClient.toEntity(Map.class) uses the application's own
+//        message converters, so Jackson 2 on Boot 3 and Jackson 3 on Boot 4
+//        both work from this one source.
+//
+// So there is no -boot4-adapter in this prototype, because building one would
+// be building a copy. See PACKAGE-VERSIONING.md for when to fork and what to
+// name it if that day comes.
+// ---------------------------------------------------------------------------
+
+ext {
+	// The floor is 3.2, not 3.1, because RestClient arrived in Boot 3.2.
+	// Declared deliberately rather than discovered at runtime.
+	springBootFloor = "3.2.12"
+}
+
+configurations {
+	compat32
+	compat35
+	compat41
+}
+
+dependencies {
+	api project(":liferay-client-extension-core")
+
+	compileOnly group: "org.springframework.boot", name: "spring-boot-autoconfigure", version: springBootFloor
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: springBootFloor
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: springBootFloor
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-web", version: springBootFloor
+
+	compat32 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.2.12"
+	compat32 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.2.12"
+	compat35 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.5.14"
+	compat35 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.5.14"
+	compat41 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "4.1.1"
+	compat41 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "4.1.1"
+
+	testImplementation group: "org.junit.jupiter", name: "junit-jupiter", version: "5.10.2"
+}
+
+// The claim above, asserted on every build rather than trusted.
+["32", "35", "41"].each { String suffix ->
+	tasks.register("testCompat${suffix}", Test) {
+		classpath = sourceSets.test.output + sourceSets.main.output +
+			configurations."compat${suffix}"
+		description = "Runs the tests against the Spring Boot ${suffix} line."
+		group = "verification"
+		testClassesDirs = sourceSets.test.output.classesDirs
+
+		useJUnitPlatform()
+	}
+}
+
+tasks.named("check") {
+	dependsOn "testCompat32", "testCompat35", "testCompat41"
+}
+
+// ---------------------------------------------------------------------------
+// If a fork ever does become necessary, this is what keeps it safe.
+//
+// Every adapter declares the SAME capability, regardless of its artifact id.
+// Two adapters can never resolve onto one classpath: Gradle fails the build
+// with "Cannot select module with conflict on capability" instead of silently
+// picking one and producing duplicate auto-configurations in the same package.
+//
+// This is the safety property that versioning the PACKAGE was informally
+// providing, obtained without making every consumer edit their imports.
+// ---------------------------------------------------------------------------
+
+["apiElements", "runtimeElements"].each { String name ->
+	configurations.named(name) {
+		outgoing {
+			capability "com.liferay:liferay-client-extension-spring-boot-adapter:${project.version}"
+		}
+	}
+}

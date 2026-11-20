@@ -1,0 +1,35 @@
+plugins {
+	id "java"
+	id "org.springframework.boot" version "3.4.5"
+	id "io.spring.dependency-management" version "1.1.7"
+}
+
+dependencies {
+	// Pick one of the two.
+	//
+	// The starter is the "give me something that works" path: it declares
+	// spring-boot-starter-web, -oauth2-client and -oauth2-resource-server for
+	// you, and pulls -core transitively.
+	implementation "com.liferay:com.liferay.client.extension.spring.boot.starter:2.0.0"
+
+	// Or -core alone, and declare Spring yourself. Forgetting one is a compile
+	// error, which is the correct failure mode.
+	//
+	//implementation "com.liferay:com.liferay.client.extension.spring.boot.core:2.0.0"
+	//implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+	//implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
+	//implementation "org.springframework.boot:spring-boot-starter-web"
+
+	// Not present, and not needed. This client extension is MVC only, so it
+	// ships no Reactor Netty. Adding webflux here is what makes
+	// LiferayWebClient appear.
+	//implementation "org.springframework.boot:spring-boot-starter-webflux"
+
+	// Only for a consumer that still has classes extending BaseService. This is
+	// what carries webflux and org.json, and it is the dependency a workspace
+	// removes when the last subclass is migrated.
+	//implementation "com.liferay:com.liferay.client.extension.spring.boot.legacy:2.0.0"
+
+	testImplementation "org.springframework.boot:spring-boot-starter-test"
+	testImplementation "org.mockito:mockito-core"
+}

@@ -1,0 +1,86 @@
+sourceCompatibility = "17"
+targetCompatibility = "17"
+
+// The supported floor, declared once and used everywhere below. Chosen because
+// nothing in this module uses an API newer than Spring Boot 3.1: the only two
+// version-sensitive calls are HttpStatusCode (Spring 6.0) and requestMatchers
+// (Spring Security 5.8).
+ext {
+	springBootFloor = "3.1.12"
+}
+
+configurations {
+	all {
+		exclude group: "com.liferay", module: "org.springframework.test"
+	}
+
+	// One per supported line. Same bytecode, different runtime.
+	compat31
+	compat33
+	compat35
+
+	// Spring Boot 4 is GA (4.1.1 at time of writing, on Spring Security 7.1.1).
+	// This row is what turns "should work on 4" into something the build
+	// answers. It is expected to be the first one to break, and that is the
+	// point of having it.
+	compat40
+}
+
+dependencies {
+
+	// WAS: api ... version "3.5.14" (x4)
+	//
+	// "api" made this library's Spring version every consumer's Spring version.
+	// "compileOnly" means the consumer's application supplies Spring at runtime,
+	// which it already does, because it is a Spring Boot application.
+	//
+	// The version is now the FLOOR, not the ceiling. Compiling against 3.5.14
+	// and running on 3.3 is how you get a NoSuchMethodError the compiler cannot
+	// see. Compiling low and running high is safe.
+
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: springBootFloor
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: springBootFloor
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-web", version: springBootFloor
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: springBootFloor
+
+	implementation group: "org.json", name: "json", version: "20231013"
+
+	compat31 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.1.12"
+	compat31 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.1.12"
+	compat31 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.1.12"
+	compat33 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.3.13"
+	compat33 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.3.13"
+	compat33 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.3.13"
+	compat35 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.5.14"
+	compat35 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.5.14"
+	compat35 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.5.14"
+	compat40 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "4.1.1"
+	compat40 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "4.1.1"
+	compat40 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "4.1.1"
+
+	testImplementation group: "junit", name: "junit", version: "4.13.1"
+	testImplementation group: "org.mock-server", name: "mockserver-client-java", version: "3.12"
+	testImplementation group: "org.mock-server", name: "mockserver-netty", version: "3.12"
+	testImplementation group: "org.mockito", name: "mockito-core", version: "5.15.2"
+	testImplementation group: "org.springframework", name: "spring-test", version: "6.2.19"
+	testImplementation group: "org.springframework.boot", name: "spring-boot-starter-web", version: springBootFloor
+	testImplementation group: "org.springframework.boot", name: "spring-boot-test-autoconfigure", version: "3.5.14"
+}
+
+// The compatibility matrix. Runs the existing test suite against each supported
+// Spring Boot line. This is what turns "works on 3.x" from a hope into
+// something the build checks.
+
+["31", "33", "35", "40"].each { String suffix ->
+	tasks.register("testCompat${suffix}", Test) {
+		classpath = sourceSets.test.output + sourceSets.main.output +
+			configurations."compat${suffix}"
+		description = "Runs the tests against the Spring Boot ${suffix} line."
+		group = "verification"
+		testClassesDirs = sourceSets.test.output.classesDirs
+	}
+}
+
+tasks.named("check") {
+	dependsOn "testCompat31", "testCompat33", "testCompat35", "testCompat40"
+}

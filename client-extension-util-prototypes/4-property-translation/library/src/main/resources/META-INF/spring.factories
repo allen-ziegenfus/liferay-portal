@@ -1,0 +1,5 @@
+# EnvironmentPostProcessor is one of the few extension points still registered
+# through spring.factories in Spring Boot 3. It has to run before the context
+# exists, which is earlier than AutoConfiguration.imports is read.
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.liferay.client.extension.spring.boot.env.LiferayEnvironmentPostProcessor

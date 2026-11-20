@@ -1,0 +1,38 @@
+// The consumer side of Option 2.
+//
+// BEFORE: the library exported Spring, and the consumer duplicated the same
+// version numbers to keep their IDE and the library in agreement. Note that
+// the real liferay-marketplace-etc-spring-boot/build.gradle currently pairs
+// com.liferay.client.extension.util.spring.boot3 (which exports Boot 3.5.14)
+// with spring-boot-gradle-plugin 2.7.18 and starter-web 2.7.18. Boot 2 and
+// Boot 3 on one classpath, resolved by whichever wins.
+//
+//   dependencies {
+//       implementation group: "com.liferay",
+//           name: "com.liferay.client.extension.util.spring.boot3",
+//           version: "latest.release"
+//       implementation group: "org.springframework.boot",
+//           name: "spring-boot-starter-web", version: "2.7.18"
+//   }
+//
+// AFTER: the consumer owns the Spring version outright. The library has no
+// opinion, so there is nothing to conflict with and no reason for the two
+// numbers to drift.
+
+plugins {
+	id "java"
+	id "org.springframework.boot" version "3.4.5"
+	id "io.spring.dependency-management" version "1.1.7"
+}
+
+dependencies {
+	// No version. Spring's BOM decides, which is what the consumer wanted all
+	// along.
+	implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+	implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
+	implementation "org.springframework.boot:spring-boot-starter-web"
+
+	// The library brings no transitive Spring at all. Upgrading to Boot 4 is
+	// a one line change here and does not wait on a library release.
+	implementation "com.liferay:com.liferay.client.extension.spring.boot.core:2.0.0"
+}

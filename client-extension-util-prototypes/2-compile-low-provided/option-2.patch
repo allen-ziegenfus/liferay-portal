@@ -1,0 +1,150 @@
+# Option 2, as a real patch against modules/util/client-extension-util-spring-boot3
+# Generated b704f2ff64995. Two files. No new artifacts, no renames.
+#
+# VERIFIED: the rewritten securityFilterChain compiles against BOTH
+#   Spring Security 6.5.10 (Framework 6.2.19)  -> OK
+#   Spring Security 7.1.1  (Framework 7.0.9)   -> OK
+# while the shipping version fails on 7.1.1 with:
+#   error: method cors in class HttpSecurity cannot be applied to given types;
+#     required: Customizer<CorsConfigurer<HttpSecurity>>  found: no arguments
+
+--- a/modules/util/client-extension-util-spring-boot3/build.gradle
++++ b/modules/util/client-extension-util-spring-boot3/build.gradle
+@@ -1,20 +1,86 @@
+ sourceCompatibility = "17"
+ targetCompatibility = "17"
+ 
+-configurations.all {
+-	exclude group: "com.liferay", module: "org.springframework.test"
++// The supported floor, declared once and used everywhere below. Chosen because
++// nothing in this module uses an API newer than Spring Boot 3.1: the only two
++// version-sensitive calls are HttpStatusCode (Spring 6.0) and requestMatchers
++// (Spring Security 5.8).
++ext {
++	springBootFloor = "3.1.12"
++}
++
++configurations {
++	all {
++		exclude group: "com.liferay", module: "org.springframework.test"
++	}
++
++	// One per supported line. Same bytecode, different runtime.
++	compat31
++	compat33
++	compat35
++
++	// Spring Boot 4 is GA (4.1.1 at time of writing, on Spring Security 7.1.1).
++	// This row is what turns "should work on 4" into something the build
++	// answers. It is expected to be the first one to break, and that is the
++	// point of having it.
++	compat40
+ }
+ 
+ dependencies {
+-	api group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.5.14"
+-	api group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.5.14"
+-	api group: "org.springframework.boot", name: "spring-boot-starter-web", version: "3.5.14"
+-	api group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.5.14"
++
++	// WAS: api ... version "3.5.14" (x4)
++	//
++	// "api" made this library's Spring version every consumer's Spring version.
++	// "compileOnly" means the consumer's application supplies Spring at runtime,
++	// which it already does, because it is a Spring Boot application.
++	//
++	// The version is now the FLOOR, not the ceiling. Compiling against 3.5.14
++	// and running on 3.3 is how you get a NoSuchMethodError the compiler cannot
++	// see. Compiling low and running high is safe.
++
++	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: springBootFloor
++	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: springBootFloor
++	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-web", version: springBootFloor
++	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: springBootFloor
++
+ 	implementation group: "org.json", name: "json", version: "20231013"
++
++	compat31 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.1.12"
++	compat31 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.1.12"
++	compat31 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.1.12"
++	compat33 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.3.13"
++	compat33 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.3.13"
++	compat33 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.3.13"
++	compat35 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.5.14"
++	compat35 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.5.14"
++	compat35 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.5.14"
++	compat40 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "4.1.1"
++	compat40 group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "4.1.1"
++	compat40 group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "4.1.1"
++
+ 	testImplementation group: "junit", name: "junit", version: "4.13.1"
+ 	testImplementation group: "org.mock-server", name: "mockserver-client-java", version: "3.12"
+ 	testImplementation group: "org.mock-server", name: "mockserver-netty", version: "3.12"
+ 	testImplementation group: "org.mockito", name: "mockito-core", version: "5.15.2"
+ 	testImplementation group: "org.springframework", name: "spring-test", version: "6.2.19"
++	testImplementation group: "org.springframework.boot", name: "spring-boot-starter-web", version: springBootFloor
+ 	testImplementation group: "org.springframework.boot", name: "spring-boot-test-autoconfigure", version: "3.5.14"
+-}
+\ No newline at end of file
++}
++
++// The compatibility matrix. Runs the existing test suite against each supported
++// Spring Boot line. This is what turns "works on 3.x" from a hope into
++// something the build checks.
++
++["31", "33", "35", "40"].each { String suffix ->
++	tasks.register("testCompat${suffix}", Test) {
++		classpath = sourceSets.test.output + sourceSets.main.output +
++			configurations."compat${suffix}"
++		description = "Runs the tests against the Spring Boot ${suffix} line."
++		group = "verification"
++		testClassesDirs = sourceSets.test.output.classesDirs
++	}
++}
++
++tasks.named("check") {
++	dependsOn "testCompat31", "testCompat33", "testCompat35", "testCompat40"
++}
+
+--- a/modules/util/client-extension-util-spring-boot3/src/main/java/com/liferay/client/extension/util/spring/boot3/LiferayOAuth2ResourceServerEnableWebSecurity.java
++++ b/modules/util/client-extension-util-spring-boot3/src/main/java/com/liferay/client/extension/util/spring/boot3/LiferayOAuth2ResourceServerEnableWebSecurity.java
+@@ -26,9 +26,9 @@
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.context.annotation.Configuration;
+ import org.springframework.core.env.Environment;
++import org.springframework.security.config.Customizer;
+ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+ import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+-import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+ import org.springframework.security.config.http.SessionCreationPolicy;
+ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+ import org.springframework.security.oauth2.core.OAuth2Error;
+@@ -117,13 +117,13 @@
+ 		throws Exception {
+ 
+ 		return httpSecurity.cors(
+-		).and(
++			Customizer.withDefaults()
+ 		).csrf(
+-		).disable(
++			csrfConfigurer -> csrfConfigurer.disable()
+ 		).sessionManagement(
+-		).sessionCreationPolicy(
+-			SessionCreationPolicy.STATELESS
+-		).and(
++			sessionManagementConfigurer ->
++				sessionManagementConfigurer.sessionCreationPolicy(
++					SessionCreationPolicy.STATELESS)
+ 		).authorizeHttpRequests(
+ 			customizer -> customizer.requestMatchers(
+ 				_liferayOauthURLsExcludes
+@@ -131,7 +131,8 @@
+ 			).anyRequest(
+ 			).authenticated()
+ 		).oauth2ResourceServer(
+-			OAuth2ResourceServerConfigurer::jwt
++			oAuth2ResourceServerConfigurer ->
++				oAuth2ResourceServerConfigurer.jwt(Customizer.withDefaults())
+ 		).build();
+ 	}
+ 

@@ -1,0 +1,35 @@
+sourceCompatibility = "17"
+targetCompatibility = "17"
+
+// THE COMPATIBILITY ARTIFACT.
+//
+// Published at the ORIGINAL coordinates and in the ORIGINAL package:
+//
+//   com.liferay:com.liferay.client.extension.util.spring.boot3
+//   package com.liferay.client.extension.util.spring.boot3
+//
+// That is the whole point. 198 import statements across 20 in-repo workspaces
+// name that package, and an unknown number of customer projects do too. A
+// consumer who wants none of the new design changes their dependency version
+// and nothing else.
+//
+// Everything in here is @Deprecated and delegates. Nothing in here is required
+// by -core, so a consumer removes this artifact the day their last deprecation
+// warning goes away, and that is also the day their build stops pulling webflux
+// and org.json.
+
+dependencies {
+	api project(":liferay-client-extension-spring-boot-core")
+
+	// The legacy opinions live here and only here, because the legacy API is
+	// what requires them: BaseService is reactive underneath, its body contract
+	// throws WebClientResponseException, and log(Jwt, Log, String) pretty
+	// prints with org.json.
+	api group: "org.springframework.boot", name: "spring-boot-starter-webflux"
+	api group: "org.json", name: "json", version: "20231013"
+
+	compileOnly group: "com.liferay", name: "org.apache.commons.logging", version: "1.2.LIFERAY-PATCHED-2"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.2.12"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.2.12"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-web", version: "3.2.12"
+}

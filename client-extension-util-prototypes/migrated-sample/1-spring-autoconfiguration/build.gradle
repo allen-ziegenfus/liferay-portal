@@ -1,0 +1,24 @@
+plugins {
+	id "java"
+	id "org.springframework.boot" version "3.4.5"
+	id "io.spring.dependency-management" version "1.1.7"
+}
+
+dependencies {
+	// One coordinate instead of four. The starter declares web,
+	// oauth2-client and oauth2-resource-server.
+	implementation "com.liferay:com.liferay.client.extension.spring.boot.starter:2.0.0"
+
+	implementation "org.json:json:20231013"
+
+	// GONE: spring-boot-starter-webflux. The shipping sample declares it, and
+	// inherits it again transitively, purely so BaseService can call block().
+	// Nothing in this controller is reactive, so Reactor Netty is no longer
+	// in the image.
+
+	// GONE: org.apache.commons.logging. Only BaseService.log(Jwt, Log, String)
+	// needed it, and this controller does not call that.
+
+	testImplementation "org.springframework.boot:spring-boot-starter-test"
+	testImplementation "org.mockito:mockito-core"
+}

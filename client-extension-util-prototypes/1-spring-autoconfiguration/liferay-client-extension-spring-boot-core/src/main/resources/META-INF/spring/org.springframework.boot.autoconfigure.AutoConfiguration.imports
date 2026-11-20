@@ -1,0 +1,4 @@
+com.liferay.client.extension.spring.boot.autoconfigure.LiferayCorsAutoConfiguration
+com.liferay.client.extension.spring.boot.autoconfigure.LiferayOAuth2ClientAutoConfiguration
+com.liferay.client.extension.spring.boot.autoconfigure.LiferayOAuth2ResourceServerAutoConfiguration
+com.liferay.client.extension.spring.boot.autoconfigure.LiferayRestClientAutoConfiguration

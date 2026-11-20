@@ -1,0 +1,16 @@
+sourceCompatibility = "17"
+targetCompatibility = "17"
+
+// The smallest possible library. Two beans and one EnvironmentPostProcessor.
+//
+// Everything else the current 1,100 line module does is expressed as standard
+// Spring Boot property keys, which Boot's own auto-configuration consumes.
+
+dependencies {
+	compileOnly group: "com.nimbusds", name: "nimbus-jose-jwt", version: "9.37.3"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-autoconfigure", version: "3.1.12"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.1.12"
+
+	testImplementation group: "org.junit.jupiter", name: "junit-jupiter", version: "5.10.2"
+	testImplementation group: "org.springframework.boot", name: "spring-boot-test", version: "3.1.12"
+}

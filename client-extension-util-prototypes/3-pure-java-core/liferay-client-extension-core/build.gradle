@@ -1,0 +1,25 @@
+sourceCompatibility = "17"
+targetCompatibility = "17"
+
+// ---------------------------------------------------------------------------
+// Zero runtime dependencies. Not "compileOnly Spring", not "provided Spring".
+// None.
+//
+// HTTP is java.net.http, in the JDK since 11. JSON parsing is a
+// Function<String, Map<String, String>> supplied by whoever constructs the
+// lookup. Logging is java.util.logging, so the jar does not even pick a
+// logging facade for the consumer.
+//
+// Consequences worth stating plainly:
+//
+//   - This artifact can never appear in a Spring CVE advisory, because it has
+//     no Spring in it.
+//   - Its version does not have to move when Spring's does.
+//   - Its tests need a JUnit jar and nothing else, so they cannot be broken by
+//     the portal's repo-wide test dependency injection. That is precisely what
+//     killed the boot2 module's test suite and forced its removal.
+// ---------------------------------------------------------------------------
+
+dependencies {
+	testImplementation group: "org.junit.jupiter", name: "junit-jupiter", version: "5.10.2"
+}

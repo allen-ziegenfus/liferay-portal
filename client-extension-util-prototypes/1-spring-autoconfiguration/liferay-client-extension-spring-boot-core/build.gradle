@@ -1,0 +1,30 @@
+sourceCompatibility = "17"
+targetCompatibility = "17"
+
+// Point 4. Nothing here is "api". The consumer's application brings Spring at
+// runtime, so this jar never pins their Spring version and never appears in a
+// CVE report for a Spring advisory it cannot fix.
+//
+// Compiled against the LOWEST supported Spring Boot, not the highest. The
+// existing module compiles against 3.5.14 and exports it as "api", which means
+// a consumer pinned to 3.3 can link against a method that does not exist there
+// and fail at runtime with NoSuchMethodError. Compiling low and running high is
+// safe; the reverse is not.
+
+dependencies {
+	compileOnly group: "com.liferay", name: "org.apache.commons.logging", version: "1.2.LIFERAY-PATCHED-2"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-autoconfigure", version: "3.2.12"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.2.12"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.2.12"
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-web", version: "3.2.12"
+
+	// Optional. Only needed to compile LiferayWebClient, which is registered
+	// at runtime solely when the consumer put webflux on their own classpath.
+	compileOnly group: "org.springframework.boot", name: "spring-boot-starter-webflux", version: "3.2.12"
+
+	testImplementation group: "org.junit.jupiter", name: "junit-jupiter", version: "5.10.2"
+	testImplementation group: "org.springframework.boot", name: "spring-boot-test", version: "3.2.12"
+	testImplementation group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client", version: "3.2.12"
+	testImplementation group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server", version: "3.2.12"
+	testImplementation group: "org.springframework.boot", name: "spring-boot-starter-web", version: "3.2.12"
+}

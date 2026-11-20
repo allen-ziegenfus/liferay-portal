@@ -1,0 +1,25 @@
+plugins {
+	id "java"
+	id "org.springframework.boot" version "3.4.5"
+	id "io.spring.dependency-management" version "1.1.7"
+}
+
+dependencies {
+	// Stock Spring Boot. These are the dependencies the consumer would declare
+	// for any OAuth2-secured service, Liferay or not.
+	implementation "org.springframework.boot:spring-boot-starter-oauth2-client"
+	implementation "org.springframework.boot:spring-boot-starter-oauth2-resource-server"
+	implementation "org.springframework.boot:spring-boot-starter-web"
+
+	// The Liferay part. It contributes an EnvironmentPostProcessor and one
+	// JwtDecoder bean, and appears in no import statement anywhere in this
+	// project's source.
+	//
+	// runtimeOnly is accurate and worth writing: nothing here compiles against
+	// it. That is the strongest form of "un-opinionated" available - the
+	// library cannot shape the consumer's code because the consumer's code
+	// never names it.
+	runtimeOnly "com.liferay:com.liferay.client.extension.spring.boot:2.0.0"
+
+	testImplementation "org.springframework.boot:spring-boot-starter-test"
+}

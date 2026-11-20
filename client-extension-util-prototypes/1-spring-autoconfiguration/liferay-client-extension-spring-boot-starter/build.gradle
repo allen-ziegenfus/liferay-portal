@@ -1,0 +1,24 @@
+// The other half of point 4: a starter whose only content is a dependency list.
+//
+// This is the standard Spring Boot convention, and it splits the two audiences
+// that the single existing artifact was trying to serve at once:
+//
+//   - "give me something that works"      -> depend on the starter
+//   - "I manage my own Spring versions"   -> depend on -core
+//
+// A consumer depending on -core alone gets a compile error if they forget a
+// starter, which is the correct failure mode and strictly better than the
+// current situation where they cannot choose at all.
+
+dependencies {
+	api project(":liferay-client-extension-spring-boot-core")
+
+	api group: "org.springframework.boot", name: "spring-boot-starter-oauth2-client"
+	api group: "org.springframework.boot", name: "spring-boot-starter-oauth2-resource-server"
+	api group: "org.springframework.boot", name: "spring-boot-starter-web"
+
+	// Deliberately absent: spring-boot-starter-webflux. The existing module
+	// declares it "api", so all 26 consumers ship Reactor Netty in order to
+	// call block() on it. Consumers who genuinely want reactive add it
+	// themselves and LiferayWebClient appears.
+}
