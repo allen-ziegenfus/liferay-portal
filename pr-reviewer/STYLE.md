@@ -26,7 +26,7 @@ Five principles run through everything:
 
 - Uppercase acronyms, but defer to the real class name: `JSONObject` and `getAPIURL`, yet `JsonNode` stays `JsonNode` because that is the class. [101]
 - Prefix a boolean method with `is` or `has` — a variable or field does not take the prefix — and prefer `has` over `contains` or `exists`. [102]
-- Name a variable after the type or content it holds, not an incidental role; when one instance of a type is in scope, the plain type name is enough. [103]
+- Name a variable after what it holds, not an incidental role; add a type suffix only to tell similar values apart (`ableDescriptorMap` and `bakerDescriptorMap`), so `String name` and `String[] ids` need none. [103]
 - When a class owns the plain name (a `Filter` is `filter`), give a different type that holds the same thing a type suffix: a filter string is `filterString`, and a `JSONObject` is `xyzJSONObject` while its serialized string is `xyzJSON`. [104]
 - Name a method for what it actually does, not a convenient paraphrase: a helper that creates an account entry user relation is `_associateUser`, not the inaccurate `_addUserToAccount`. [105]
 - Across a parallel set, mirror each type name one to one: a method throwing `PrincipalException` is `principalException`, not `principalDenied`, so no stray word lands on some names but not the type. [106]
@@ -52,7 +52,7 @@ Five principles run through everything:
 ## Control flow and form
 
 - No `switch` or `case`; use an `if` / `else if` / `else` chain. [401]
-- Chain method calls only on a builder or a fluent type (`*Builder`, `Stream`, `Optional`, `Instant`, `JSONArray`, `JSONObject`, and the rest of `ChainingCheck`'s allow list); otherwise assign the result to a local and call on it. This includes Groovy and Gradle scripts, where a property read counts as a call. [402]
+- Chain method calls only on a builder or a fluent type (`*Builder`, `Stream`, `Optional`, `Instant`, `JSONArray`, `JSONObject`, and the rest of `ChainingCheck`'s allow list); otherwise assign the result to a local and call on it. This includes Groovy and Gradle scripts, where a property read is fine but a call on another call's result is not. [402]
 - Use an enhanced `for` loop, not an explicit `Iterator` with `while (hasNext())`. [403]
 - Hoist a call out of a loop only when it does real work (database, network, non trivial computation), not for cheap invariant calls like `map.get(key)`, a list index access, or a plain getter — those read more directly inline at the use site. [404]
 - In bash under `set -o errexit`, preincrement a counter with `((++var))` rather than `((var++))` or `var=$((var + 1))`; postincrementing from `0` makes the arithmetic expression evaluate to `0`, which exits `1` and trips `errexit`. [405]
