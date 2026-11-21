@@ -47,13 +47,13 @@ tests:
                     pattern: bind_port="7800"
             -   matchRegex:
                     path: data["unicast-control.xml"]
-                    pattern: dns_query='_cluster\._tcp\.
+                    pattern: dns_query="_cluster\._tcp\.
             -   matchRegex:
                     path: data["unicast-transport.xml"]
                     pattern: bind_port="7801"
             -   matchRegex:
                     path: data["unicast-transport.xml"]
-                    pattern: dns_query='_cluster-tx\._tcp\.
+                    pattern: dns_query="_cluster-tx\._tcp\.
         it: Binds each cluster channel to its own port and discovery query
         set:
             replicaCount: 2
