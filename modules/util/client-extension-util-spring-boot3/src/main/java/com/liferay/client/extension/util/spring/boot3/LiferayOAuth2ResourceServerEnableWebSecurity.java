@@ -15,8 +15,8 @@ import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 
 import java.net.URL;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -90,7 +90,7 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 		NimbusJwtDecoder nimbusJwtDecoder = new NimbusJwtDecoder(
 			defaultJWTProcessor);
 
-		Map<String, String> clientIds = new HashMap<>();
+		List<String> externalReferenceCodes = new ArrayList<>();
 
 		for (String externalReferenceCode :
 				liferayOauthApplicationExternalReferenceCodes.split(",")) {
@@ -107,18 +107,14 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 				}
 			}
 
-			if (clientId == null) {
-				clientId = _environment.getProperty(
-					externalReferenceCode +
-						".oauth2.headless.server.client.id");
-			}
-
-			clientIds.put(externalReferenceCode, clientId);
+			externalReferenceCodes.add(externalReferenceCode);
 		}
 
 		nimbusJwtDecoder.setJwtValidator(
 			new DelegatingOAuth2TokenValidator<>(
-				new LiferayOAuth2TokenValidator(clientIds)));
+				new LiferayOAuth2TokenValidator(
+					new LiferayOAuth2ClientIds(
+						this::_getClientId, externalReferenceCodes))));
 
 		return nimbusJwtDecoder;
 	}
@@ -144,6 +140,25 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 		).oauth2ResourceServer(
 			OAuth2ResourceServerConfigurer::jwt
 		).build();
+	}
+
+	private String _getClientId(String externalReferenceCode) {
+		String clientId = _environment.getProperty(
+			externalReferenceCode + ".oauth2.user.agent.client.id");
+
+		if (clientId != null) {
+			return clientId;
+		}
+
+		clientId = _environment.getProperty(
+			externalReferenceCode + ".oauth2.headless.server.client.id");
+
+		if (clientId != null) {
+			return clientId;
+		}
+
+		return LiferayOAuth2Util.getClientId(
+			externalReferenceCode, _lxcDXPMainDomain, _lxcDXPServerProtocol);
 	}
 
 	private String _getClientIdLogMessage(
@@ -195,39 +210,24 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 
 		@Override
 		public OAuth2TokenValidatorResult validate(Jwt jwt) {
-			if (_isIssuedToListedApplication(jwt)) {
-				return OAuth2TokenValidatorResult.success();
-			}
+			if (_isIssuedToListedApplication(jwt) ||
+				_liferayOAuth2ClientIds.hasClientId(
+					jwt.getClaimAsString("client_id"))) {
 
-			String jwtClientId = jwt.getClaimAsString("client_id");
-
-			if (jwtClientId == null) {
-				return OAuth2TokenValidatorResult.failure(_oAuth2Error);
-			}
-
-			if (_clientIds.containsValue(jwtClientId)) {
-				return OAuth2TokenValidatorResult.success();
-			}
-
-			_clientIds.forEach(
-				(externalReferenceCode, clientId) -> _clientIds.computeIfAbsent(
-					externalReferenceCode,
-					key -> LiferayOAuth2Util.getClientId(
-						key, _lxcDXPMainDomain, _lxcDXPServerProtocol)));
-
-			if (_clientIds.containsValue(jwtClientId)) {
 				return OAuth2TokenValidatorResult.success();
 			}
 
 			return OAuth2TokenValidatorResult.failure(_oAuth2Error);
 		}
 
-		private LiferayOAuth2TokenValidator(Map<String, String> clientIds) {
-			_clientIds = clientIds;
+		private LiferayOAuth2TokenValidator(
+			LiferayOAuth2ClientIds liferayOAuth2ClientIds) {
+
+			_liferayOAuth2ClientIds = liferayOAuth2ClientIds;
 		}
 
 		private boolean _isIssuedToListedApplication(Jwt jwt) {
-			if (!_clientIds.containsKey(
+			if (!_liferayOAuth2ClientIds.hasExternalReferenceCode(
 					jwt.getClaimAsString("external_reference_code"))) {
 
 				return false;
@@ -242,7 +242,7 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 			return false;
 		}
 
-		private final Map<String, String> _clientIds;
+		private final LiferayOAuth2ClientIds _liferayOAuth2ClientIds;
 		private final OAuth2Error _oAuth2Error = new OAuth2Error(
 			"invalid_token", "The client_id does not match", null);
 
