@@ -210,7 +210,7 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 
 		@Override
 		public OAuth2TokenValidatorResult validate(Jwt jwt) {
-			if (_isIssuedToListedApplication(jwt) ||
+			if (_hasListedExternalReferenceCode(jwt) ||
 				_liferayOAuth2ClientIds.hasClientId(
 					jwt.getClaimAsString("client_id"))) {
 
@@ -226,7 +226,7 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 			_liferayOAuth2ClientIds = liferayOAuth2ClientIds;
 		}
 
-		private boolean _isIssuedToListedApplication(Jwt jwt) {
+		private boolean _hasListedExternalReferenceCode(Jwt jwt) {
 			if (!_liferayOAuth2ClientIds.hasExternalReferenceCode(
 					jwt.getClaimAsString("external_reference_code"))) {
 
