@@ -201,6 +201,10 @@ public class LiferayOAuth2ResourceServerEnableWebSecurity {
 
 			String jwtClientId = jwt.getClaimAsString("client_id");
 
+			if (jwtClientId == null) {
+				return OAuth2TokenValidatorResult.failure(_oAuth2Error);
+			}
+
 			if (_clientIds.containsValue(jwtClientId)) {
 				return OAuth2TokenValidatorResult.success();
 			}

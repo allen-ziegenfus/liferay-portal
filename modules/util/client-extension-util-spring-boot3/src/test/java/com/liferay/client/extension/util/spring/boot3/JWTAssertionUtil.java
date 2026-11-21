@@ -51,6 +51,13 @@ public class JWTAssertionUtil {
 			).build());
 	}
 
+	public static String getJWTWithoutClientId() throws Exception {
+		return _getJWT(
+			_getJWTClaimsSetBuilder(
+				"localhost"
+			).build());
+	}
+
 	private static String _getJWT(JWTClaimsSet jwtClaimsSet) throws Exception {
 		JWSHeader jwsHeader = new JWSHeader.Builder(
 			JWSAlgorithm.RS256
