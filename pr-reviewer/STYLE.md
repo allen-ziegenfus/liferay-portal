@@ -26,7 +26,7 @@ Five principles run through everything:
 
 - Uppercase acronyms, but defer to the real class name: `JSONObject` and `getAPIURL`, yet `JsonNode` stays `JsonNode` because that is the class. [101]
 - Prefix a boolean method with `is` or `has` — a variable or field does not take the prefix — and prefer `has` over `contains` or `exists`. [102]
-- Name a variable after what it holds, not an incidental role; add a type suffix only to tell similar values apart (`ableDescriptorMap` and `bakerDescriptorMap`), so `String name` and `String[] ids` need none. [103]
+- Name a variable after what it holds, not an incidental role. A custom type carries its type name (`user`, `scopeGroup`, `responseJSONObject`); a `String`, primitive, boxed primitive, or collection does not (`String name`, `long groupId`, `String[] ids`) unless a suffix tells similar values apart (`ableDescriptorMap` and `bakerDescriptorMap`). [103]
 - When a class owns the plain name (a `Filter` is `filter`), give a different type that holds the same thing a type suffix: a filter string is `filterString`, and a `JSONObject` is `xyzJSONObject` while its serialized string is `xyzJSON`. [104]
 - Name a method for what it actually does, not a convenient paraphrase: a helper that creates an account entry user relation is `_associateUser`, not the inaccurate `_addUserToAccount`. [105]
 - Across a parallel set, mirror each type name one to one: a method throwing `PrincipalException` is `principalException`, not `principalDenied`, so no stray word lands on some names but not the type. [106]
